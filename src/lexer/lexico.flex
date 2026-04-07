@@ -139,8 +139,8 @@ OP_MULTI = \*
 OP_DIV = \/
 
 IGUAL= "="
-OP_OR= "&&"
-OP_AND= "\|\|"
+OP_AND= "&&"
+OP_OR= "\|\|"
 OP_NOT= "!"
 
 IGUAL_IGUAL= "=="
@@ -232,8 +232,8 @@ BlankLine      = {HSpace}* {LineTerminator}
         /* ===== OPERADORES LÓGICOS ===== */
 
         {IGUAL}      { return token("IGUAL", yytext()); }
-        {OP_AND}        { return token("AND", yytext()); }
-        {OP_OR}      { return token("OR", yytext()); }
+        {OP_OR}        { return token("OR", yytext()); }
+        {OP_AND}      { return token("AND", yytext()); }
         {OP_NOT}         { return token("NOT", yytext()); }
 
         /* ===== OPERADORES DE COMPARACIÓN ===== */
