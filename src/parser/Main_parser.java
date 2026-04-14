@@ -24,6 +24,7 @@ public class Main_parser {
         Parser parser= new Parser(lexer, sf);
         try{
             parser.parse();
+            parser.tablaSimbolos.print();
             System.out.println("Análisis sintáctico finalizado.");}
         catch (Exception e){
             System.out.println(e.getMessage());

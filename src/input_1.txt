@@ -1,3 +1,5 @@
+INT: a
+FLOAT: b
 PROGRAM
 valor = 15
 if valor > 10
@@ -5,7 +7,7 @@ if valor > 10
     if valor == 15
         print 100
 elif valor > 5
-    print 2
+    print ("hola mundo")
 else
     print 0
 

@@ -1,6 +1,7 @@
 package parser;
 import java_cup.runtime.*;
 import java.util.Hashtable;
+import java.util.ArrayList;
 
 class Parser;
 
@@ -30,8 +31,16 @@ terminal String ENTERO;
 terminal String FLOAT;
 terminal String FLOAT_ARRAY;
 terminal String BOOLEAN;
+terminal String STRING;
+terminal String DOS_PUNTOS;
+terminal String COMA;
 
-terminal PROGRAM, CODE;
+terminal TYPE_INT;
+terminal TYPE_FLOAT;
+terminal TYPE_BOOL;
+terminal TYPE_STR;
+
+terminal PROGRAM;
 terminal IF, ELSE, ELIF;
 terminal WHILE, ALT_WHILE;
 terminal BEGIN, END;
@@ -42,58 +51,102 @@ terminal AND, OR, NOT;
 terminal IGUAL, IGUALDAD;
 terminal MAYOR, MENOR, MAYORIGUAL, MENORIGUAL;
 terminal PAREN_A, PAREN_C;
+terminal CORCH_A, CORCH_C;
 terminal INDENT, DEDENT;
+
+terminal READ_INT;
+terminal READ_FLOAT;
+terminal READ_BOOL;
 
 /* -------- NO TERMINALES -------- */
 non terminal String programa;
 non terminal String lista_sentencias;
 non terminal String sentencia;
 non terminal String bloque;
+non terminal lista_variables;
+non terminal lista_de_lineas;
+non terminal variable;
+non terminal ArrayList<String> lista_de_variable;
+non terminal String tipo_datos;
 
 non terminal String sentencia_if;
 non terminal String sentencia_elif;
 non terminal String sentencia_while;
 non terminal String sentencia_alt;
 
-non terminal String expresion;
 non terminal String expr_logica;
 non terminal String expr_relacional;
 non terminal String expr_arit;
 non terminal String termino;
 non terminal String factor;
 
-/* -------- PRECEDENCIA -------- (MAS ARRIBA ES MAS PROIRIDAD MAS ABAJO ES MENOS)*/
-precedence left OR;
-precedence left AND;
+/* -------- PRECEDENCIA -------- (MAS ABAJO ES MAS PROIRIDAD MAS ARRIBA ES MENOS)*/
+precedence right OR;
+precedence right AND;
 precedence right NOT;
-
-// Agregamos comas entre los terminales del mismo nivel
-precedence nonassoc IGUALDAD, MAYOR, MENOR, MAYORIGUAL, MENORIGUAL;
-
-precedence left OP_SUMA, OP_RESTA;
-precedence left OP_MULTI, OP_DIV;
 
 /* -------- START -------- */
 start with programa;
 
 /* -------- GRAMÁTICA -------- */
 
-programa ::= PROGRAM lista_sentencias:l {:
+programa ::= lista_variables PROGRAM lista_sentencias:l {:
     System.out.println("REGLA 0: programa -> PROGRAM lista_sentencias");
     System.out.printf("REGLA 0: programa -> %s%n%n", l);
     RESULT = l;
 :};
+
+lista_variables ::= lista_de_lineas | ;
+
+lista_de_lineas ::= lista_de_lineas variable
+                  | variable;
+
+
+variable ::= tipo_datos:t DOS_PUNTOS lista_de_variable:nombres {:
+for (String id : nombres) {
+        if (tablaSimbolos.exists(id)) {
+            System.err.println("Error: Variable '" + id + "' ya declarada.");
+        } else {
+            tablaSimbolos.add(t, id, t, null, null);
+            System.out.println("Declarado: " + id + " de tipo " + t);
+        }
+    }
+:}
+| FLOAT_ARRAY CORCH_A ENTERO CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
+String tipoEspecial = "FLOAT_ARRAY";
+    for (String id : nombres) {
+        if (tablaSimbolos.exists(id)) {
+            System.err.println("Error: Variable '" + id + "' ya declarada.");
+        } else {
+            tablaSimbolos.add(id, tipoEspecial, null, null, null);
+            System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
+        }
+    }
+:};
+
+
+
+lista_de_variable ::= lista_de_variable:list COMA ID:e {:
+      list.add(e);
+      RESULT = list;
+:}
+| ID:n{:
+        ArrayList<String> lista = new ArrayList<>();
+        lista.add(n);
+        RESULT = lista;
+:};
+
+tipo_datos ::= TYPE_INT{: RESULT = "INT";  :}
+| TYPE_FLOAT  {: RESULT = "FLOAT";   :}
+| TYPE_BOOL   {: RESULT = "BOOLEAN"; :}
+| TYPE_STR    {: RESULT = "STRING";  :};
 
 lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.println("REGLA 1.1: lista_sentencias -> lista_sentencias sentencia");
     System.out.printf("REGLA 1.1: lista_sentencias -> %s %s%n%n", l, s);
     RESULT = l + "\n" + s;
 :}
-| sentencia:s {:
-    System.out.println("REGLA 1.2: lista_sentencias -> sentencia");
-    System.out.printf("REGLA 1.2: lista_sentencias -> %s%n%n", s);
-    RESULT = s;
-:};
+| ;
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
@@ -116,10 +169,21 @@ sentencia ::= sentencia_if:s {:
     System.out.printf("REGLA 3.3: sentencia -> %s%n%n", s);
     RESULT = s;
 :}
-| PRINT expresion:e {:
+| PRINT expr_logica:e {:
     System.out.println("REGLA 3.4: sentencia -> PRINT expresion");
     System.out.printf("REGLA 3.4: sentencia -> %s%n%n", e);
     RESULT = "print " + e;
+:}
+| PRINT PAREN_A STRING:str PAREN_C
+{:
+        String contenido = str.replace("\"", "");
+
+        // Según tu formato: ID (null o autogenerado), Tipo (CTE_STR), Valor (contenido)
+        tablaSimbolos.add("CTE_STR", "-", "STRING", contenido, null);
+
+        System.out.println("REGLA: PRINT -> cadena constante: " + contenido);
+        RESULT = "print(" + str + ");";
+
 :}
 | BREAK {:
     System.out.println("REGLA 3.5: sentencia -> BREAK");
@@ -131,7 +195,7 @@ sentencia ::= sentencia_if:s {:
     System.out.printf("REGLA 3.6: sentencia -> continue%n%n");
     RESULT = "continue";
 :}
-| ID:id IGUAL expresion:e {:
+| ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 3.7: sentencia -> ID = expresion");
     System.out.printf("REGLA 3.7: sentencia -> %s = %s%n%n", id, e);
     RESULT = "asignacion " + id;
@@ -139,7 +203,7 @@ sentencia ::= sentencia_if:s {:
 
 /* -------- IF -------- */
 
-sentencia_if ::= IF expresion:e bloque:b sentencia_elif:s_elif
+sentencia_if ::= IF expr_logica:e bloque:b sentencia_elif:s_elif
 {:
     System.out.println("REGLA 4: sentencia_if -> IF expresion bloque sentencia_elif");
     System.out.printf("REGLA 4: if %s then %s %s%n%n", e, b, s_elif);
@@ -148,7 +212,7 @@ sentencia_if ::= IF expresion:e bloque:b sentencia_elif:s_elif
 
 /* -------- ELIF / ELSE -------- */
 
-sentencia_elif ::= ELIF expresion:e bloque:b sentencia_elif:s
+sentencia_elif ::= ELIF expr_logica:e bloque:b sentencia_elif:s
 {:
     System.out.println("REGLA 5.1: sentencia_elif -> ELIF expresion bloque sentencia_elif");
     System.out.printf("REGLA 5.1: elif %s then %s %s%n%n", e, b, s);
@@ -166,14 +230,14 @@ sentencia_elif ::= ELIF expresion:e bloque:b sentencia_elif:s
     RESULT = "";
 :};
 
-sentencia_while ::= WHILE expresion:e bloque:b
+sentencia_while ::= WHILE expr_logica:e bloque:b
 {:
     System.out.println("REGLA 6: sentencia_while -> WHILE expresion bloque");
     System.out.printf("REGLA 6: while %s do %s%n%n", e, b);
     RESULT = "while";
 :};
 
-sentencia_alt ::= ALT_WHILE expresion:e bloque:b
+sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b
 {:
     System.out.println("REGLA 7: sentencia_alt -> ALT_WHILE expresion bloque");
     System.out.printf("REGLA 7: alt_while %s do %s%n%n", e, b);
@@ -181,12 +245,6 @@ sentencia_alt ::= ALT_WHILE expresion:e bloque:b
 :};
 
 /* -------- EXPRESIONES -------- */
-
-expresion ::= expr_logica:e {:
-    System.out.println("REGLA 9: expresion -> expr_logica");
-    System.out.printf("REGLA 9: expresion -> %s%n%n", e);
-    RESULT = e;
-:};
 
 expr_logica ::= expr_logica:e1 OR expr_relacional:e2 {:
     System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
@@ -292,13 +350,29 @@ factor ::= ENTERO:e {:
     System.out.printf("REGLA 14.4: factor -> %s%n%n", e);
     RESULT = e;
 :}
+| ID CORCH_A expr_arit CORCH_C {:
+    System.out.println("REGLA 14.8: factor -> ID");
+:}
 | FLOAT_ARRAY:e {:
     System.out.println("REGLA 14.5: factor -> FLOAT_ARRAY");
     System.out.printf("REGLA 14.5: factor -> %s%n%n", e);
     RESULT = e;
 :}
-| PAREN_A expresion:e PAREN_C {:
+|READ_INT
+{:
+    System.out.println("REGLA 14.5: factor -> READ_INT()");
+:}
+|READ_FLOAT
+{:
+    System.out.println("REGLA 14.5: factor -> READ_FLOAT()");
+:}
+|READ_BOOL
+{:
+    System.out.println("REGLA 14.5: factor -> READ_FLOAT()");
+:}
+| PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 14.6: factor -> PAREN_A expresion PAREN_C");
     System.out.printf("REGLA 14.6: factor -> (%s)%n%n", e);
     RESULT = "(" + e + ")";
 :};
+

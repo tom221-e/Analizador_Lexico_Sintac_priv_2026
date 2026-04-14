@@ -130,8 +130,10 @@ ID             = [a-zA-Z][a-zA-Z0-9]*
 ENTERO         = [0-9]+
 FLOAT          = ([0-9]+\.[0-9]+)|([0-9]+\.)|(\.[0-9]+)
 BOOLEAN        = true|false
+STRING_LITERAL = \"([^\"\\\n\r]|\\\"|\\\\|\\n|\\t)*\"
 
 FLOAT_ARRAY=\[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
+
 
 OP_SUMA = \+
 OP_RESTA = -
@@ -202,10 +204,6 @@ BlankLine      = {HSpace}* {LineTerminator}
    YYINITIAL — análisis normal dentro de una línea
    ════════════════════════════════════════════════════════════════════════ */
 <YYINITIAL> {
-
-    /* ── Código ─────────────────────────────────────────────────── */
-      "CODE"             { return token("CODE",   yytext()); }
-
       /* ===== PALABRAS RESERVADAS ===== */
       "PROGRAM"   { return token("PROGRAM", yytext()); }
       "if"        { return token("IF", yytext()); }
@@ -218,6 +216,11 @@ BlankLine      = {HSpace}* {LineTerminator}
       "print"     { return token("PRINT", yytext()); }
       "break"     { return token("BREAK", yytext()); }
       "continue"  { return token("CONTINUE", yytext()); }
+      "INT"          { return token("TYPE_INT", yytext()); }
+      "FLOAT"        { return token("TYPE_FLOAT", yytext()); }
+      "BOOLEAN"      { return token("TYPE_BOOL", yytext()); }
+      "STRING"       { return token("TYPE_STR", yytext()); }
+      "ARRAY"        { return token("TYPE_ARRAY", yytext()); }
 
       {BOOLEAN}   { return token("BOOLEAN", yytext()); }
 
@@ -262,6 +265,20 @@ BlankLine      = {HSpace}* {LineTerminator}
         /* ===== IDENTIFICADORES ===== */
 
         {ID}        { return token("ID", yytext()); }
+
+        /* ===== STRING ===== */
+
+        {STRING_LITERAL} { return token("STRING", yytext()); }
+        ":"                     { return token("DOS_PUNTOS", yytext()); }
+        "["                     { return token("CORCH_A", yytext()); }
+        "]"                     { return token("CORCH_C", yytext()); }
+        ","                     { return token("COMA", yytext()); }
+
+      /* ===== READ ===== */
+
+      "READ_INT()"     { return token("READ_INT", yytext()); }
+      "READ_FLOAT()"   { return token("READ_FLOAT", yytext()); }
+      "READ_BOOL()"    { return token("READ_BOOL", yytext()); }
 
       /*========COMENTARIOS==========*/
        {COMENTARIO_MULTILINEA_PARENTESIS}         { return token("COMENTARIO_MULTILINEA_PARENTESIS", yytext()); }
