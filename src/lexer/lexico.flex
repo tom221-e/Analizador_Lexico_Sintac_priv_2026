@@ -126,42 +126,23 @@ import java.util.ArrayList;
 LineTerminator = \r\n | \r | \n
 HSpace         = [ \t]
 
-ID             = [a-zA-Z][a-zA-Z0-9]*
+/* ── Línea en blanco (sólo espacios + fin de línea) ────────────────────── */
+BlankLine      = {HSpace}* {LineTerminator}
+
+/* ── Variables y constantes ────────────────────────────────────────────── */
+
+ID             = [a-zA-Z][a-zA-Z0-9_]*
 ENTERO         = [0-9]+
 FLOAT          = ([0-9]+\.[0-9]+)|([0-9]+\.)|(\.[0-9]+)
 BOOLEAN        = true|false
-
 FLOAT_ARRAY=\[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 
-OP_SUMA = \+
-OP_RESTA = -
-OP_MULTI = \*
-OP_DIV = \/
-
-IGUAL= "="
-OP_AND= "&&"
-OP_OR= "\|\|"
-OP_NOT= "!"
-
-IGUAL_IGUAL= "=="
-MAYOR= ">"
-MENOR= "<"
-MENOR_IGUAL="<="
-MAYOR_IGUAL= ">="
-
-PAREN_A= "("
-PAREN_C= ")"
-
-/*COMENTARIOS*/
-/*COMENTARIOS*/
 COMENTARIO_SIMPLE_LLAVES = \{.*\}
 COMENTARIO_SIMPLE = %.*\n
 COMENTARIO_MULTILINEA_PARENTESIS = \(\*([^*]|\*+[^)])*\*+\)
 COMENTARIO_MULTILINEA_CORCHETE = \[\*([^*]|\*+[^\]])*\*+\]
 COMENTARIO_MULTILINEA_LLAVES = \{\*([^*]|\*+[^\}])*\*+\}
 
-/* ── Línea en blanco (sólo espacios + fin de línea) ────────────────────── */
-BlankLine      = {HSpace}* {LineTerminator}
 
 /* ── Estados adicionales ────────────────────────────────────────────────── */
 %state LINE_START
@@ -203,72 +184,85 @@ BlankLine      = {HSpace}* {LineTerminator}
    ════════════════════════════════════════════════════════════════════════ */
 <YYINITIAL> {
 
-    /* ── Código ─────────────────────────────────────────────────── */
-      "CODE"             { return token("CODE",   yytext()); }
+    /* ===== OPERADORES ARITMÉTICOS ===== */
 
-      /* ===== PALABRAS RESERVADAS ===== */
-      "PROGRAM"   { return token("PROGRAM", yytext()); }
-      "if"        { return token("IF", yytext()); }
-      "else"      { return token("ELSE", yytext()); }
-      "while"     { return token("WHILE", yytext()); }
-      "alt_while"  { return token("ALT_WHILE", yytext()); }
-      "elif"       { return token("ELIF", yytext()); }
-      "begin"     { return token("BEGIN", yytext()); }
-      "end"       { return token("END", yytext()); }
-      "print"     { return token("PRINT", yytext()); }
-      "break"     { return token("BREAK", yytext()); }
-      "continue"  { return token("CONTINUE", yytext()); }
+    "+"        { return token("OP_SUMA", yytext()); }
+    "-"        { return token("OP_RESTA", yytext()); }
+    "*"        { return token("OP_MULTI", yytext()); }
+    "/"        { return token("OP_DIV",  yytext()); }
 
-      {BOOLEAN}   { return token("BOOLEAN", yytext()); }
+    /* ===== OTROS OPERADORES ===== */
 
+    "="        { return token("OP_ASIGNACION", yytext()); }
+    "("        { return token("PARENTESIS_IZQ", yytext()); }
+    ")"        { return token("PARENTESIS_DER", yytext()); }
 
-        /* ===== OPERADORES ARITMÉTICOS ===== */
+    /* ===== OPERADORES LÓGICOS ===== */
 
-        {OP_SUMA}         { return token("OP_SUMA", yytext()); }
-        {OP_RESTA}         { return token("OP_RESTA", yytext()); }
-        {OP_MULTI}         { return token("OP_MULTI", yytext()); }
-        {OP_DIV}    { return token("OP_DIV", yytext()); }
+    "||"       { return token("OP_OR", yytext()); }
+    "&&"       { return token("OP_AND", yytext()); }
+    "!"        { return token("OP_NOT", yytext()); }
 
-        /* ===== OPERADORES LÓGICOS ===== */
+    /* ===== OPERADORES DE COMPARACIÓN ===== */
 
-        {IGUAL}      { return token("IGUAL", yytext()); }
-        {OP_OR}        { return token("OR", yytext()); }
-        {OP_AND}      { return token("AND", yytext()); }
-        {OP_NOT}         { return token("NOT", yytext()); }
+    "=="       { return token("OP_IGUAL", yytext()); }
+    "!="       { return token("OP_DESIGUAL", yytext()); }
+    "<"        { return token("OP_MENOR", yytext()); }
+    "<="       { return token("OP_MENORIGUAL", yytext()); }
+    ">"        { return token("OP_MAYOR", yytext()); }
+    ">="       { return token("OP_MAYORIGUAL", yytext()); }
 
-        /* ===== OPERADORES DE COMPARACIÓN ===== */
+    /* ===== ITERACIÓN ===== */
 
-        {IGUAL_IGUAL}        { return token("IGUALDAD", yytext()); }
-        {MENOR_IGUAL}        { return token("MENORIGUAL", yytext()); }
-        {MAYOR_IGUAL}        { return token("MAYORIGUAL", yytext()); }
+    "while"     { return token("WHILE", yytext()); }
+    "alt_while" { return token("ALT_WHILE", yytext()); }
+    "break"     { return token("BREAK", yytext()); }
+    "continue"  { return token("CONTINUE", yytext()); }
 
-        {MENOR}         { return token("MENOR", yytext()); }
-        {MAYOR}         { return token("MAYOR", yytext()); }
+    /* ===== SELECCIÓN ===== */
 
-        /* ===== PARÉNTESIS ===== */
+    "if"        { return token("IF", yytext()); }
+    "else"      { return token("ELSE", yytext()); }
+    "elif"      { return token("ELIF", yytext()); }
 
-        {PAREN_A}         { return token("PAREN_A", yytext()); }
-        {PAREN_C}         { return token("PAREN_C", yytext()); }
+    /* ===== TIPOS ===== */
 
-        /* ===== NÚMEROS ===== */
+    "boolean"        { return token("TIPO_BOOL", yytext()); }
+    "integer"        { return token("TIPO_INT", yytext()); }
+    "float"          { return token("TIPO_FLOAT", yytext()); }
+    "float_array"    { return token("TIPO_ARRAY", yytext()); }
 
-        {FLOAT}     { return token("FLOAT", yytext()); }
-        {ENTERO}    { return token("ENTERO", yytext()); }
+    /* ===== ENTRADA-SALIDA ===== */
 
-        /* ===== ARRAY ===== */
-        {FLOAT_ARRAY} { return token("FLOAT_ARRAY", yytext()); }
+    "print"         { return token("PRINT", yytext()); }
+    "read_int"      { return token("READ_INT", yytext()); }
+    "read_float"    { return token("READ_FLOAT", yytext()); }
+    "read_bool"     { return token("READ_BOOL", yytext()); }
 
+    /* ===== OTROS ===== */
 
-        /* ===== IDENTIFICADORES ===== */
+    "PROGRAM"   { return token("PROGRAM", yytext()); }
+    ","         { return token("COMA", yytext()); }
+    "."         { return token("PUNTO", yytext()); }
+    "FIN"       { return token("FIN", yytext()); }
 
-        {ID}        { return token("ID", yytext()); }
+    /* ===== CONSTANTES ===== */
 
-      /*========COMENTARIOS==========*/
-       {COMENTARIO_MULTILINEA_PARENTESIS}         { return token("COMENTARIO_MULTILINEA_PARENTESIS", yytext()); }
-      {COMENTARIO_MULTILINEA_CORCHETE}            { return token("COMENTARIO_MULTILINEA_CORCHETE", yytext()); }
-      {COMENTARIO_MULTILINEA_LLAVES}              { return token("COMENTARIO_MULTILINEA_LLAVES", yytext()); }
-      {COMENTARIO_SIMPLE_LLAVES}            { return token("COMENTARIO_SIMPLE_LLAVES", yytext()); }
-      {COMENTARIO_SIMPLE}              { return token("COMENTARIO_SIMPLE", yytext()); }
+    {FLOAT}       { return token("FLOAT", yytext()); }
+    {ENTERO}      { return token("ENTERO", yytext()); }
+    {FLOAT_ARRAY} { return token("FLOAT_ARRAY", yytext()); }
+    {BOOLEAN}     { return token("BOOLEAN", yytext()); }
+
+    /* ===== VARIABLES ===== */
+
+    {ID}        { return token("ID", yytext()); }
+
+    /*========COMENTARIOS==========*/
+    {COMENTARIO_MULTILINEA_PARENTESIS}    { return token("COMENTARIO_MULTILINEA_PARENTESIS", yytext()); }
+    {COMENTARIO_MULTILINEA_CORCHETE}      { return token("COMENTARIO_MULTILINEA_CORCHETE", yytext()); }
+    {COMENTARIO_MULTILINEA_LLAVES}        { return token("COMENTARIO_MULTILINEA_LLAVES", yytext()); }
+    {COMENTARIO_SIMPLE_LLAVES}            { return token("COMENTARIO_SIMPLE_LLAVES", yytext()); }
+    {COMENTARIO_SIMPLE}                   { return token("COMENTARIO_SIMPLE", yytext()); }
 
 
     {LineTerminator}   {

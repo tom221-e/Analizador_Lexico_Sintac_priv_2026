@@ -116,6 +116,9 @@ public class Parser extends java_cup.runtime.lr_parser {
 
 
 
+
+    SymbolTable tablaSimbolos = new SymbolTable();
+
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
         +s.value+"' . Simbolo n° "+s.sym+ " no reconocido." );
@@ -132,7 +135,10 @@ public class Parser extends java_cup.runtime.lr_parser {
 class CUP$Parser$actions {
 
 
-    Hashtable table = new Hashtable();
+   public void report_error(String message, Object info) {
+        System.err.println("ERROR: " + message);
+    }
+
 
   private final Parser parser;
 
