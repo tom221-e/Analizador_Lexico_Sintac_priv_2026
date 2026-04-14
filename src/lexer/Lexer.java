@@ -998,7 +998,7 @@ public class Lexer implements java_cup.runtime.Scanner {
             // fall through
           case 64: break;
           case 21:
-            { return token("OR", yytext());
+            { return token("AND", yytext());
             }
             // fall through
           case 65: break;
@@ -1033,7 +1033,7 @@ public class Lexer implements java_cup.runtime.Scanner {
             // fall through
           case 71: break;
           case 28:
-            { return token("AND", yytext());
+            { return token("OR", yytext());
             }
             // fall through
           case 72: break;

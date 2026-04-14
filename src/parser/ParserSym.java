@@ -8,29 +8,79 @@ package parser;
 /** CUP generated class containing symbol constants. */
 public class ParserSym {
   /* terminals */
-  public static final int MENOS = 3;
-  public static final int MULT = 4;
-  public static final int ENTERO = 10;
-  public static final int MENOS_UNARIO = 8;
-  public static final int PAR_CIERRA = 7;
+  public static final int ENTERO = 3;
+  public static final int CONTINUE = 18;
+  public static final int OP_MULTI = 21;
+  public static final int OP_DIV = 22;
+  public static final int NOT = 25;
+  public static final int MENORIGUAL = 31;
+  public static final int AND = 23;
+  public static final int IGUAL = 26;
+  public static final int IGUALDAD = 27;
+  public static final int OR = 24;
+  public static final int BEGIN = 14;
+  public static final int CODE = 8;
+  public static final int IF = 9;
+  public static final int ID = 2;
+  public static final int MAYORIGUAL = 30;
   public static final int EOF = 0;
-  public static final int MAS = 2;
-  public static final int PAR_ABRE = 6;
-  public static final int DIV = 5;
+  public static final int BOOLEAN = 6;
   public static final int error = 1;
-  public static final int IDENTIFICADOR = 9;
+  public static final int PROGRAM = 7;
+  public static final int FLOAT_ARRAY = 5;
+  public static final int MENOR = 29;
+  public static final int OP_RESTA = 20;
+  public static final int BREAK = 17;
+  public static final int ALT_WHILE = 13;
+  public static final int MAYOR = 28;
+  public static final int ELSE = 10;
+  public static final int WHILE = 12;
+  public static final int DEDENT = 35;
+  public static final int FLOAT = 4;
+  public static final int END = 15;
+  public static final int PAREN_C = 33;
+  public static final int PAREN_A = 32;
+  public static final int OP_SUMA = 19;
+  public static final int INDENT = 34;
+  public static final int ELIF = 11;
+  public static final int PRINT = 16;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
-  "MAS",
-  "MENOS",
-  "MULT",
-  "DIV",
-  "PAR_ABRE",
-  "PAR_CIERRA",
-  "MENOS_UNARIO",
-  "IDENTIFICADOR",
-  "ENTERO"
+  "ID",
+  "ENTERO",
+  "FLOAT",
+  "FLOAT_ARRAY",
+  "BOOLEAN",
+  "PROGRAM",
+  "CODE",
+  "IF",
+  "ELSE",
+  "ELIF",
+  "WHILE",
+  "ALT_WHILE",
+  "BEGIN",
+  "END",
+  "PRINT",
+  "BREAK",
+  "CONTINUE",
+  "OP_SUMA",
+  "OP_RESTA",
+  "OP_MULTI",
+  "OP_DIV",
+  "AND",
+  "OR",
+  "NOT",
+  "IGUAL",
+  "IGUALDAD",
+  "MAYOR",
+  "MENOR",
+  "MAYORIGUAL",
+  "MENORIGUAL",
+  "PAREN_A",
+  "PAREN_C",
+  "INDENT",
+  "DEDENT"
   };
 }
 

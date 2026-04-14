@@ -67,4 +67,4 @@ public class SymbolTable {
         st.print();
     }
     */
-} // AQUÍ TERMINA LA CLASE SYMBOLTABLE
+}
