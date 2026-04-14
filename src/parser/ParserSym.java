@@ -8,53 +8,54 @@ package parser;
 /** CUP generated class containing symbol constants. */
 public class ParserSym {
   /* terminals */
+  public static final int TYPE_ARRAY = 14;
   public static final int ENTERO = 3;
   public static final int DOS_PUNTOS = 8;
-  public static final int CONTINUE = 24;
-  public static final int OP_MULTI = 27;
-  public static final int OP_DIV = 28;
-  public static final int MENORIGUAL = 37;
-  public static final int NOT = 31;
-  public static final int AND = 29;
-  public static final int IGUAL = 32;
+  public static final int CONTINUE = 25;
+  public static final int OP_MULTI = 28;
+  public static final int OP_DIV = 29;
+  public static final int MENORIGUAL = 38;
+  public static final int NOT = 32;
+  public static final int AND = 30;
+  public static final int IGUAL = 33;
   public static final int TYPE_STR = 13;
-  public static final int IGUALDAD = 33;
-  public static final int OR = 30;
-  public static final int BEGIN = 20;
+  public static final int IGUALDAD = 34;
+  public static final int OR = 31;
+  public static final int BEGIN = 21;
   public static final int TYPE_INT = 10;
-  public static final int IF = 15;
+  public static final int IF = 16;
   public static final int ID = 2;
-  public static final int MAYORIGUAL = 36;
+  public static final int MAYORIGUAL = 37;
   public static final int EOF = 0;
   public static final int BOOLEAN = 6;
-  public static final int READ_FLOAT = 45;
+  public static final int READ_FLOAT = 46;
   public static final int error = 1;
-  public static final int PROGRAM = 14;
+  public static final int PROGRAM = 15;
   public static final int COMA = 9;
   public static final int FLOAT_ARRAY = 5;
-  public static final int MENOR = 35;
-  public static final int OP_RESTA = 26;
-  public static final int BREAK = 23;
+  public static final int MENOR = 36;
+  public static final int OP_RESTA = 27;
+  public static final int BREAK = 24;
   public static final int TYPE_FLOAT = 11;
-  public static final int ALT_WHILE = 19;
-  public static final int MAYOR = 34;
-  public static final int READ_INT = 44;
-  public static final int ELSE = 16;
-  public static final int WHILE = 18;
-  public static final int DEDENT = 43;
+  public static final int ALT_WHILE = 20;
+  public static final int MAYOR = 35;
+  public static final int READ_INT = 45;
+  public static final int ELSE = 17;
+  public static final int WHILE = 19;
+  public static final int DEDENT = 44;
   public static final int FLOAT = 4;
-  public static final int END = 21;
+  public static final int END = 22;
   public static final int STRING = 7;
-  public static final int PAREN_C = 39;
-  public static final int PAREN_A = 38;
-  public static final int OP_SUMA = 25;
-  public static final int INDENT = 42;
+  public static final int PAREN_C = 40;
+  public static final int PAREN_A = 39;
+  public static final int OP_SUMA = 26;
+  public static final int INDENT = 43;
   public static final int TYPE_BOOL = 12;
-  public static final int READ_BOOL = 46;
-  public static final int CORCH_C = 41;
-  public static final int CORCH_A = 40;
-  public static final int ELIF = 17;
-  public static final int PRINT = 22;
+  public static final int READ_BOOL = 47;
+  public static final int CORCH_C = 42;
+  public static final int CORCH_A = 41;
+  public static final int ELIF = 18;
+  public static final int PRINT = 23;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -70,6 +71,7 @@ public class ParserSym {
   "TYPE_FLOAT",
   "TYPE_BOOL",
   "TYPE_STR",
+  "TYPE_ARRAY",
   "PROGRAM",
   "IF",
   "ELSE",

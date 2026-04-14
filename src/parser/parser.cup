@@ -39,6 +39,7 @@ terminal TYPE_INT;
 terminal TYPE_FLOAT;
 terminal TYPE_BOOL;
 terminal TYPE_STR;
+terminal TYPE_ARRAY;
 
 terminal PROGRAM;
 terminal IF, ELSE, ELIF;
@@ -112,7 +113,7 @@ for (String id : nombres) {
         }
     }
 :}
-| FLOAT_ARRAY CORCH_A ENTERO CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
+| TYPE_ARRAY CORCH_A ENTERO CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
 String tipoEspecial = "FLOAT_ARRAY";
     for (String id : nombres) {
         if (tablaSimbolos.exists(id)) {

@@ -1,5 +1,6 @@
 INT: a
 FLOAT: b
+ARRAY[5]: f
 PROGRAM
 valor = 15
 if valor > 10
