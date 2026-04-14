@@ -27,13 +27,13 @@ parser code {:
 :};
 
 
-terminal MAS, MENOS, MULT, DIV, PAR_ABRE, PAR_CIERRA, MENOS_UNARIO;
+terminal OP_SUMA, OP_RESTA, OP_MULTI, OP_DIV, PARENTESIS_IZQ, PARENTESIS_DER, MENOS_UNARIO;
 terminal String IDENTIFICADOR, ENTERO;
 
 nonterminal String expression, expr;
 
-precedence left MAS, MENOS;
-precedence left MULT, DIV;
+precedence left OP_SUMA, OP_RESTA;
+precedence left OP_MULTI, OP_DIV;
 precedence left MENOS_UNARIO;
 
 start with expression;
@@ -44,31 +44,31 @@ expression ::= expr:e {:
             RESULT = e;
         :};
 
-expr ::= expr:e1 MAS expr:e2 {:
-            System.out.println("REGLA 1.1: expr -> expr MAS expr");
-            System.out.printf("REGLA 1.1: expr -> %s MAS %s%n%n", e1, e2);
+expr ::= expr:e1 OP_SUMA expr:e2 {:
+            System.out.println("REGLA 1.1: expr -> expr OP_SUMA expr");
+            System.out.printf("REGLA 1.1: expr -> %s OP_SUMA %s%n%n", e1, e2);
             RESULT = e1+"+"+e2;
         :};
 
-expr ::= expr:e1 MENOS expr:e2 {:
-            System.out.println("REGLA 1.2: expr -> expr MENOS expr");
-            System.out.printf("REGLA 1.2: expr -> %s MENOS %s%n%n", e1, e2);
+expr ::= expr:e1 OP_RESTA expr:e2 {:
+            System.out.println("REGLA 1.2: expr -> expr OP_RESTA expr");
+            System.out.printf("REGLA 1.2: expr -> %s OP_RESTA %s%n%n", e1, e2);
             RESULT = e1+"-"+e2;
         :};
 
-expr ::= expr:e1 MULT expr:e2 {:
-            System.out.println("REGLA 1.3: expr -> expr MULT expr");
-            System.out.printf("REGLA 1.3: expr -> %s MULT %s%n%n", e1, e2);
+expr ::= expr:e1 OP_MULTI expr:e2 {:
+            System.out.println("REGLA 1.3: expr -> expr OP_MULTI expr");
+            System.out.printf("REGLA 1.3: expr -> %s OP_MULTI %s%n%n", e1, e2);
             RESULT = e1+"*"+e2;
         :};
 
-expr ::= expr:e1 DIV expr:e2 {:
-            System.out.println("REGLA 1.4: expr -> expr DIV expr");
-            System.out.printf("REGLA 1.4: expr -> %s DIV %s%n%n", e1, e2);
+expr ::= expr:e1 OP_DIV expr:e2 {:
+            System.out.println("REGLA 1.4: expr -> expr OP_DIV expr");
+            System.out.printf("REGLA 1.4: expr -> %s OP_DIV %s%n%n", e1, e2);
             RESULT = e1+"/"+e2;
         :};
 
-expr ::= PAR_ABRE expr:e PAR_CIERRA {:
+expr ::= PARENTESIS_IZQ expr:e PARENTESIS_DER {:
             System.out.println("REGLA 1.5: expr -> ( expr )");
             System.out.printf("REGLA 1.5: expr -> ( %s )%n%n", e);
             RESULT = "("+e+")";
@@ -86,8 +86,8 @@ expr ::= ENTERO:ent {:
             RESULT = ent;
         :};
 
-expr ::= MENOS expr:e {:
-            System.out.println("REGLA 1.8: expr -> MENOS expr");
+expr ::= OP_RESTA expr:e {:
+            System.out.println("REGLA 1.8: expr -> OP_RESTA expr");
             System.out.printf("REGLA 1.8: expr -> - %s%n%n", e);
             RESULT = "-"+e;
         :} %prec MENOS_UNARIO;

@@ -131,7 +131,7 @@ BlankLine      = {HSpace}* {LineTerminator}
 
 /* ── Variables y constantes ────────────────────────────────────────────── */
 
-ID             = [a-zA-Z][a-zA-Z0-9_]*
+IDENTIFICADOR  = [a-zA-Z][a-zA-Z0-9_]*
 ENTERO         = [0-9]+
 FLOAT          = ([0-9]+\.[0-9]+)|([0-9]+\.)|(\.[0-9]+)
 BOOLEAN        = true|false
@@ -255,7 +255,7 @@ COMENTARIO_MULTILINEA_LLAVES = \{\*([^*]|\*+[^\}])*\*+\}
 
     /* ===== VARIABLES ===== */
 
-    {ID}        { return token("ID", yytext()); }
+    {IDENTIFICADOR}        { return token("ID", yytext()); }
 
     /*========COMENTARIOS==========*/
     {COMENTARIO_MULTILINEA_PARENTESIS}    { return token("COMENTARIO_MULTILINEA_PARENTESIS", yytext()); }
