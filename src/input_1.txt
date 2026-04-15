@@ -1,12 +1,13 @@
-INT: a
+INT: a, g
 FLOAT: b
-ARRAY[5]: f
+ARRAY[5]: f, r
+STRING: h
 PROGRAM
-valor = 15
+a = a + c[5]
 if valor > 10
     print 1
     if valor == 15
-        print 100
+        print (5.5 + aux)
 elif valor > 5
     print ("hola mundo")
 else

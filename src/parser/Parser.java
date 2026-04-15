@@ -336,7 +336,7 @@ public class Parser extends java_cup.runtime.lr_parser {
 
 
 
-    SymbolTable tablaSimbolos = new SymbolTable();
+    public SymbolTable tablaSimbolos = new SymbolTable();
 
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
@@ -480,7 +480,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         if (tablaSimbolos.exists(id)) {
             System.err.println("Error: Variable '" + id + "' ya declarada.");
         } else {
-            tablaSimbolos.add(id, tipoEspecial, null, null, null);
+            tablaSimbolos.add(tipoEspecial, id, null, null, null);
             System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
         }
     }
