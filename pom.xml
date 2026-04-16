@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>Compilador - Analizador Léxico + Sintáctico</name>
-    <description>Analizador léxico y sintáctico de ejemplo con JFlex y java-cup - UNNOBA 2026</description>
+    <description>Analizador léxico y sintáctico con JFlex y java-cup - UNNOBA 2026</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -20,21 +20,16 @@
     </properties>
 
     <dependencies>
-        <!-- JFlex runtime -->
         <dependency>
             <groupId>de.jflex</groupId>
             <artifactId>jflex</artifactId>
             <version>1.8.2</version>
         </dependency>
-
-        <!-- java-cup runtime -->
         <dependency>
             <groupId>com.github.vbmacher</groupId>
             <artifactId>java-cup</artifactId>
             <version>11b-20160615-3</version>
         </dependency>
-
-        <!-- JUnit 5 para testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -61,18 +56,30 @@
                     <target>21</target>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <!-- Cambiar a Main_lexer o Main_parser según lo que se quiera ejecutar -->
-                            <mainClass>ejemplo.jflex.Main_parser</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>gui.VentanaPrueba</mainClass>
+                    </manifest>
+                </archive>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
