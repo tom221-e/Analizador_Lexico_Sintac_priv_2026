@@ -1,9 +1,9 @@
 INT: a, g
-FLOAT: b
+FLOAT: año
 ARRAY[5]: f, r
 STRING: h
 PROGRAM
-a = a + c[5]
+a = a + -5
 if valor > 10
     print 1
     if valor == 15

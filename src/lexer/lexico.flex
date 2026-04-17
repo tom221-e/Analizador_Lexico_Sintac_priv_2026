@@ -126,7 +126,7 @@ import java.util.ArrayList;
 LineTerminator = \r\n | \r | \n
 HSpace         = [ \t]
 
-ID             = [a-zA-Z][a-zA-Z0-9]*
+ID             = [\p{L}][\p{L}0-9_]*
 ENTERO         = [0-9]+
 FLOAT          = ([0-9]+\.[0-9]+)|([0-9]+\.)|(\.[0-9]+)
 BOOLEAN        = true|false

@@ -70,6 +70,7 @@ non terminal variable;
 non terminal ArrayList<String> lista_de_variable;
 non terminal String tipo_datos;
 
+
 non terminal String sentencia_if;
 non terminal String sentencia_elif;
 non terminal String sentencia_while;
@@ -86,6 +87,7 @@ precedence right OR;
 precedence right AND;
 precedence right NOT;
 
+precedence right UMINUS;
 /* -------- START -------- */
 start with programa;
 
@@ -375,5 +377,12 @@ factor ::= ENTERO:e {:
     System.out.println("REGLA 14.6: factor -> PAREN_A expresion PAREN_C");
     System.out.printf("REGLA 14.6: factor -> (%s)%n%n", e);
     RESULT = "(" + e + ")";
+:}
+| OP_RESTA factor:y  {:
+    System.out.println("REGLA 14.X: factor -> - factor (unario)");
+    System.out.printf("REGLA 14.X: factor -> -%s%n%n", y);
+    RESULT = "-" + y;
 :};
+
+
 

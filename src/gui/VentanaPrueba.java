@@ -134,4 +134,5 @@ public class VentanaPrueba extends javax.swing.JFrame {
             new VentanaPrueba().setVisible(true);
         });
     }
+
 }
