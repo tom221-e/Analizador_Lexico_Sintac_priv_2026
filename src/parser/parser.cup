@@ -34,6 +34,7 @@ terminal String BOOLEAN;
 terminal String STRING;
 terminal String DOS_PUNTOS;
 terminal String COMA;
+terminal UMINUS;
 
 terminal TYPE_INT;
 terminal TYPE_FLOAT;
@@ -378,11 +379,11 @@ factor ::= ENTERO:e {:
     System.out.printf("REGLA 14.6: factor -> (%s)%n%n", e);
     RESULT = "(" + e + ")";
 :}
-| OP_RESTA factor:y  {:
+| OP_RESTA factor:y {:
     System.out.println("REGLA 14.X: factor -> - factor (unario)");
     System.out.printf("REGLA 14.X: factor -> -%s%n%n", y);
     RESULT = "-" + y;
-:};
+:}%prec UMINUS;
 
 
 
