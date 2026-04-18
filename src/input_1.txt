@@ -9,7 +9,7 @@ promedio = 0.0
 print ("Iniciando proceso")
 
 while c < aux
-    c = c + 1
+    c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
     if c == 5
         print ("Mitad de camino")
         print (c)

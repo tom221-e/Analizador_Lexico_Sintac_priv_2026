@@ -154,11 +154,7 @@ lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.printf("REGLA 1.1: lista_sentencias -> %s %s%n%n", l, s);
     RESULT = l + "\n" + s;
 :}
-| sentencia:s {:
-    System.out.println("REGLA 1.2: lista_sentencias -> lista_sentencias sentencia");
-    System.out.printf("REGLA 1.2: lista_sentencias -> %s %s%n%n", s);
-    RESULT = s;
-:};
+| ;
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
@@ -394,7 +390,8 @@ factor ::= ENTERO:e {:
 | VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:lista PAREN_C
 {:
     System.out.println("REGLA: Función especial VALOR_MAS_CERCANO detectada");
-    System.out.printf("Referencia: %s, Lista: %s%n", ref, lista);
+    System.out.println("Referencia: " + ref);
+    System.out.println("Lista: " + lista);
     RESULT = "valor_mas_cercano(" + ref + ", " + lista + ")";
 :}
 | OP_RESTA factor:y {:
