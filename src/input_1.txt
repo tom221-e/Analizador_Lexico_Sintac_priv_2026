@@ -10,7 +10,7 @@ print ("Iniciando proceso")
 
 while c < aux
     c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
-    if c == 5
+    if c == mediciones[4]
         print ("Mitad de camino")
         print (c)
     elif c > 8
