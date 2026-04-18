@@ -1,21 +1,27 @@
-INT: a, g
-FLOAT: año
-ARRAY[5]: f, r
-STRING: h
+INT: c, aux
+FLOAT: promedio
+ARRAY[10]: mediciones
 PROGRAM
-a = a + -5
-if valor > 10
-    print 1
-    if valor == 15
-        print (5.5 + aux)
-elif valor > 5
-    print ("hola mundo")
-else
-    print 0
+c = 0.3
+aux = 10 * 2 + (5 - 1)
+promedio = 0.0
 
-contador = 0
-while contador < 5
-    print contador
-    contador = contador + 1
+print ("Iniciando proceso")
+
+while c < aux
+    c = c + 1
+    if c == 5
+        print ("Mitad de camino")
+        print (c)
+    elif c > 8
+        print (999)
+    else
+        print 0
+alt_while promedio < 100.0
+    promedio = promedio + 10.5
+    print promedio
+
+if ! (c == 0)
+    print ("Fin del programa")
 
 
