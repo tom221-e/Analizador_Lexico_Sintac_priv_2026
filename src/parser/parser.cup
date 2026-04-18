@@ -78,10 +78,13 @@ non terminal String sentencia_while;
 non terminal String sentencia_alt;
 
 non terminal String expr_logica;
+non terminal String expr_and;
+non terminal String expr_not;
 non terminal String expr_relacional;
 non terminal String expr_arit;
 non terminal String termino;
 non terminal String factor;
+non terminal String asignacion;
 
 /* -------- PRECEDENCIA -------- (MAS ABAJO ES MAS PROIRIDAD MAS ARRIBA ES MENOS)*/
 precedence right OR;
@@ -150,6 +153,11 @@ lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.printf("REGLA 1.1: lista_sentencias -> %s %s%n%n", l, s);
     RESULT = l + "\n" + s;
 :}
+| sentencia:s {:
+    System.out.println("REGLA 1.2: lista_sentencias -> lista_sentencias sentencia");
+    System.out.printf("REGLA 1.2: lista_sentencias -> %s %s%n%n", s);
+    RESULT = s;
+:}
 | ;
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
@@ -168,8 +176,8 @@ sentencia ::= sentencia_if:s {:
     System.out.printf("REGLA 3.2: sentencia -> %s%n%n", s);
     RESULT = s;
 :}
-| sentencia_alt:s {:
-    System.out.println("REGLA 3.3: sentencia -> sentencia_alt");
+| asignacion:s {:
+    System.out.println("REGLA 3.3: sentencia -> asignacion");
     System.out.printf("REGLA 3.3: sentencia -> %s%n%n", s);
     RESULT = s;
 :}
@@ -198,8 +206,9 @@ sentencia ::= sentencia_if:s {:
     System.out.println("REGLA 3.6: sentencia -> CONTINUE");
     System.out.printf("REGLA 3.6: sentencia -> continue%n%n");
     RESULT = "continue";
-:}
-| ID:id IGUAL expr_logica:e {:
+:};
+
+asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 3.7: sentencia -> ID = expresion");
     System.out.printf("REGLA 3.7: sentencia -> %s = %s%n%n", id, e);
     RESULT = "asignacion " + id;
@@ -234,33 +243,36 @@ sentencia_elif ::= ELIF expr_logica:e bloque:b sentencia_elif:s
     RESULT = "";
 :};
 
-sentencia_while ::= WHILE expr_logica:e bloque:b
+sentencia_while ::=WHILE expr_logica:e bloque:b sentencia_alt:alt
 {:
     System.out.println("REGLA 6: sentencia_while -> WHILE expresion bloque");
     System.out.printf("REGLA 6: while %s do %s%n%n", e, b);
-    RESULT = "while";
+    RESULT = "while " + e + " do " + b + " " + alt;
 :};
 
-sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b
+sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b sentencia_alt:resto
 {:
     System.out.println("REGLA 7: sentencia_alt -> ALT_WHILE expresion bloque");
     System.out.printf("REGLA 7: alt_while %s do %s%n%n", e, b);
-    RESULT = "alt while";
-:};
+    RESULT = "alt_while " + e + " do " + b + " " + resto;
+:}
+| ;
 
 /* -------- EXPRESIONES -------- */
 
-expr_logica ::= expr_logica:e1 OR expr_relacional:e2 {:
+expr_logica ::= expr_and:e1 OR expr_logica:e2{:
     System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
     System.out.printf("REGLA 10.1: expr_logica -> %s OR %s%n%n", e1, e2);
     RESULT = e1 + " OR " + e2;
 :}
-| expr_logica:e1 AND expr_relacional:e2 {:
+| expr_and:e {: RESULT = e; :};
+expr_and    ::= expr_not:e1 AND expr_and:e2 {:
     System.out.println("REGLA 10.2: expr_logica -> expr_logica AND expr_relacional");
     System.out.printf("REGLA 10.2: expr_logica -> %s AND %s%n%n", e1, e2);
     RESULT = e1 + " AND " + e2;
 :}
-| NOT expr_relacional:e {:
+| expr_not:e                     {: RESULT = e; :};
+expr_not    ::= NOT expr_not:e {:
     System.out.println("REGLA 10.3: expr_logica -> NOT expr_relacional");
     System.out.printf("REGLA 10.3: expr_logica -> NOT %s%n%n", e);
     RESULT = "NOT " + e;
@@ -380,8 +392,8 @@ factor ::= ENTERO:e {:
     RESULT = "(" + e + ")";
 :}
 | OP_RESTA factor:y {:
-    System.out.println("REGLA 14.X: factor -> - factor (unario)");
-    System.out.printf("REGLA 14.X: factor -> -%s%n%n", y);
+    System.out.println("REGLA 14.7: factor -> - factor (unario)");
+    System.out.printf("REGLA 14.7: factor -> -%s%n%n", y);
     RESULT = "-" + y;
 :}%prec UMINUS;
 
