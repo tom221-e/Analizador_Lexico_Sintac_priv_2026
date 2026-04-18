@@ -48,6 +48,8 @@ terminal WHILE, ALT_WHILE;
 terminal BEGIN, END;
 terminal PRINT, BREAK, CONTINUE;
 
+terminal String VALOR_MAS_CERCANO;
+
 terminal OP_SUMA, OP_RESTA, OP_MULTI, OP_DIV;
 terminal AND, OR, NOT;
 terminal IGUAL, IGUALDAD;
@@ -70,7 +72,6 @@ non terminal lista_de_lineas;
 non terminal variable;
 non terminal ArrayList<String> lista_de_variable;
 non terminal String tipo_datos;
-
 
 non terminal String sentencia_if;
 non terminal String sentencia_elif;
@@ -157,8 +158,7 @@ lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.println("REGLA 1.2: lista_sentencias -> lista_sentencias sentencia");
     System.out.printf("REGLA 1.2: lista_sentencias -> %s %s%n%n", s);
     RESULT = s;
-:}
-| ;
+:};
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
@@ -390,6 +390,12 @@ factor ::= ENTERO:e {:
     System.out.println("REGLA 14.6: factor -> PAREN_A expresion PAREN_C");
     System.out.printf("REGLA 14.6: factor -> (%s)%n%n", e);
     RESULT = "(" + e + ")";
+:}
+| VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:lista PAREN_C
+{:
+    System.out.println("REGLA: Función especial VALOR_MAS_CERCANO detectada");
+    System.out.printf("Referencia: %s, Lista: %s%n", ref, lista);
+    RESULT = "valor_mas_cercano(" + ref + ", " + lista + ")";
 :}
 | OP_RESTA factor:y {:
     System.out.println("REGLA 14.7: factor -> - factor (unario)");

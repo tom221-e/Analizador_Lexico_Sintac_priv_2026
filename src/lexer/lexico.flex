@@ -224,6 +224,8 @@ BlankLine      = {HSpace}* {LineTerminator}
 
       {BOOLEAN}   { return token("BOOLEAN", yytext()); }
 
+      "valor_mas_cercano" { return token("VALOR_MAS_CERCANO", yytext()); }
+
 
         /* ===== OPERADORES ARITMÉTICOS ===== */
 
