@@ -39,7 +39,6 @@ terminal UMINUS;
 terminal TYPE_INT;
 terminal TYPE_FLOAT;
 terminal TYPE_BOOL;
-terminal TYPE_STR;
 terminal TYPE_ARRAY;
 
 terminal PROGRAM;
@@ -146,8 +145,7 @@ lista_de_variable ::= lista_de_variable:list COMA ID:e {:
 
 tipo_datos ::= TYPE_INT{: RESULT = "INT";  :}
 | TYPE_FLOAT  {: RESULT = "FLOAT";   :}
-| TYPE_BOOL   {: RESULT = "BOOLEAN"; :}
-| TYPE_STR    {: RESULT = "STRING";  :};
+| TYPE_BOOL   {: RESULT = "BOOLEAN"; :};
 
 lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.println("REGLA 1.1: lista_sentencias -> lista_sentencias sentencia");
