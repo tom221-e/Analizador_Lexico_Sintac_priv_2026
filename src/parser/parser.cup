@@ -114,7 +114,7 @@ for (String id : nombres) {
         if (tablaSimbolos.exists(id)) {
             System.err.println("Error: Variable '" + id + "' ya declarada.");
         } else {
-            tablaSimbolos.add(t, id, t, null, null);
+            tablaSimbolos.add("ID", id, t, null, null);
             System.out.println("Declarado: " + id + " de tipo " + t);
         }
     }
@@ -125,7 +125,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         if (tablaSimbolos.exists(id)) {
             System.err.println("Error: Variable '" + id + "' ya declarada.");
         } else {
-            tablaSimbolos.add(tipoEspecial, id, null, null, null);
+            tablaSimbolos.add("ID", id, tipoEspecial, null, null);
             System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
         }
     }
