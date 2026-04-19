@@ -1,7 +1,3 @@
-# Archivos de compilación de Maven
-target/
-*.class
-
 # Configuraciones de IntelliJ IDEA
 .idea/
 *.iml
