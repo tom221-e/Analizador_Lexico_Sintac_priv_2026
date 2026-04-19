@@ -103,13 +103,22 @@ programa ::= lista_variables PROGRAM lista_sentencias:l {:
     RESULT = l;
 :};
 
-lista_variables ::= lista_de_lineas | ;
+lista_variables ::= lista_de_lineas {:
+    System.out.println("REGLA 16: lista_variables -> lista_de_lineas");
+:}
+| /* vacío */ {:
+    System.out.println("REGLA 17: lista_variables -> vacio");
+:};
 
-lista_de_lineas ::= lista_de_lineas variable
-                  | variable;
-
+lista_de_lineas ::= lista_de_lineas variable {:
+    System.out.println("REGLA 18: lista_de_lineas -> lista_de_lineas variable");
+:}
+| variable {:
+    System.out.println("REGLA 19: lista_de_lineas -> variable");
+:};
 
 variable ::= tipo_datos:t DOS_PUNTOS lista_de_variable:nombres {:
+System.out.println("REGLA 20: variable -> tipo_datos DOS_PUNTOS lista_de_variable");
 for (String id : nombres) {
         if (tablaSimbolos.exists(id)) {
             System.err.println("Error: Variable '" + id + "' ya declarada.");
@@ -120,6 +129,7 @@ for (String id : nombres) {
     }
 :}
 | TYPE_ARRAY CORCH_A ENTERO CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
+System.out.println("REGLA 15: Creacion de array");
 String tipoEspecial = "FLOAT_ARRAY";
     for (String id : nombres) {
         if (tablaSimbolos.exists(id)) {
