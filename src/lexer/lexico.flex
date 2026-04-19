@@ -123,14 +123,16 @@ BOOLEAN        = true|false
 FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 
 /* --- Estados --- */
+%state COMMENT_LINE
 %state LINE_START
 %state STRING_STATE
 %state COMMENT_PAREN
 %state COMMENT_BRACKET
 %state COMMENT_BRACE
-%state COMMENT_PERCENT
+
 
 %%
+
 /* ════════════════════════════════════════════════════════════════════════
    LINE_START: Medición de indentación
    ════════════════════════════════════════════════════════════════════════ */
@@ -138,10 +140,13 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     {LineTerminator} { /* Línea vacía: ignorar */ }
     " "              { pendingIndent++; }
     "\t"             { pendingIndent += 4; }
-    
 
+    /* Inicio de comentario en inicio de línea: ignorar indentación y saltar */
+    "(*"             { yybegin(COMMENT_PAREN); }
+    "[*"             { yybegin(COMMENT_BRACKET); }
+    "{*"             { yybegin(COMMENT_BRACE); }
 
-    [^ \t\r\n]       { 
+    [^ \t\r\n]       {
                        yypushback(1);
                        yybegin(YYINITIAL);
                        processIndent(pendingIndent, yyline, yycolumn);
@@ -154,15 +159,23 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
    YYINITIAL: Análisis normal
    ════════════════════════════════════════════════════════════════════════ */
 <YYINITIAL> {
-    
+
     /* --- Manejo de Strings con estado --- */
-    "\""             { yybegin(STRING_STATE); stringBuffer.setLength(0); }
+
+    \" {
+          stringBuffer = new StringBuilder();
+          yybegin(STRING_STATE);
+    }
+
 
     /* --- Comentarios (No retornan token) --- */
     "(*"             { yybegin(COMMENT_PAREN); }
     "[*"             { yybegin(COMMENT_BRACKET); }
     "{*"             { yybegin(COMMENT_BRACE); }
-    "%"              { yybegin(COMMENT_PERCENT); }
+"%" { yybegin(COMMENT_LINE); }
+    /*        "%"[^%\r\n]*"%"  { /* ignorar comentario de una línea */ }        */
+
+
     /* --- Palabras Reservadas --- */
     "PROGRAM"        { return token("PROGRAM", yytext()); }
     "if"             { return token("IF", yytext()); }
@@ -236,8 +249,6 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 <COMMENT_PAREN> {
     "*)"             { yybegin(YYINITIAL); }
     [^]              { /* ignorar */ }
-    [^* \n\r]+       { /* ignorar */ }
-    \n | \r | \r\n   { /* ignorar y seguir */ }
     <<EOF>>          { throw new RuntimeException("Error: Comentario (* no cerrado"); }
 }
 
@@ -252,10 +263,23 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     [^]              { /* ignorar */ }
     <<EOF>>          { throw new RuntimeException("Error: Comentario {* no cerrado"); }
 }
-<COMMENT_PERCENT> {
-    "%"              { yybegin(YYINITIAL); } // Cierre con %
-    [^\%\r\n]+       { /* ignorar contenido */ }
-    <<EOF>>          { throw new RuntimeException("Error: Comentario  % no cerrado"); }
+
+<COMMENT_LINE> {
+    "%" {
+        yybegin(YYINITIAL);   // cierre correcto
+    }
+
+    \r|\n {
+        throw new RuntimeException("Error: comentario de línea no cerrado con %");
+    }
+
+    [^%\r\n]+ {
+        /* ignorar contenido */
+    }
+
+    <<EOF>> {
+        throw new RuntimeException("Error: comentario no cerrado (EOF)");
+    }
 }
 
 /* --- Fallback Error --- */
