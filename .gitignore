@@ -1,0 +1,17 @@
+# Archivos de compilación de Maven
+target/
+*.class
+
+# Configuraciones de IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Archivos de log
+*.log
+
+# Archivos temporales
+.DS_Store
+Thumbs.db
+
