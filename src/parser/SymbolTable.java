@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Representa la información de un símbolo en la tabla.
  */
-record SymbolInfo(String token, String type, String valor, String longitud) {}
+record SymbolInfo(String nombreOriginal, String token, String type, String valor, String longitud) {}
 
 public class SymbolTable {
     private HashMap<String, SymbolInfo> table;
@@ -23,19 +23,32 @@ public class SymbolTable {
         if (valor == null) {
             longitudFinal = (longitud == null) ? "-" : longitud;
         } else {
-            longitudFinal = (longitud == null) ? String.valueOf(valor.length()) : longitud;
+            longitudFinal = (longitud == null) ? String.valueOf(valorFinal.length()) : longitud;
         }
 
-        // --- MANEJO DE LLAVE (ID) ---
-        // Si el ID es nulo (como en un CTE_STR), usamos el valor como llave
-        // para que no se sobreescriban y aparezcan en el print.
-        String key = (id != null) ? id : "_" + valorFinal;
+        // --- MANEJO DE LLAVE (KEY) INTERNA ---
+        // Usamos una clave única interna para el HashMap basada en el valor si es constante.
+        // Esto evita duplicados y permite que convivan múltiples constantes con nombre "-".
+        String key;
+        if (id != null && !id.equals("-")) {
+            key = id; // Es una variable (ID real)
+        } else {
+            key = "_str_" + valorFinal; // Es una constante literal
+        }
 
-        table.put(key, new SymbolInfo(token, type, valorFinal, longitudFinal));
+        // Guardamos el 'id' original ("-" o el nombre de la variable) en el record
+        table.put(key, new SymbolInfo(id, token, type, valorFinal, longitudFinal));
     }
 
     public boolean exists(String id) {
         return table.containsKey(id);
+    }
+
+    /**
+     * Busca si el contenido del string ya existe en la tabla.
+     */
+    public boolean existsConstant(String valorBuscado) {
+        return table.containsKey("_str_" + valorBuscado);
     }
 
     public void print() {
@@ -44,12 +57,12 @@ public class SymbolTable {
                 "NOMBRE", "TOKEN", "TIPO", "VALOR", "LONGITUD");
         System.out.println("--------------------------------------------------------------------------------------");
 
-        for (Map.Entry<String, SymbolInfo> entry : table.entrySet()) {
-            String id = entry.getKey();
-            SymbolInfo info = entry.getValue();
+        for (SymbolInfo info : table.values()) {
+            // Usamos el nombreOriginal guardado en el record ("-" para constantes)
+            String nombreAMostrar = (info.nombreOriginal() == null) ? "-" : info.nombreOriginal();
 
             System.out.printf("%-15s | %-15s | %-15s | %-15s | %-10s %n",
-                    id,
+                    nombreAMostrar,
                     info.token(),
                     info.type(),
                     info.valor(),
@@ -58,20 +71,4 @@ public class SymbolTable {
 
         System.out.println("--------------------------------------------------------------------------------------");
     }
-/**
-    public static void main(String[] args) {
-        SymbolTable st = new SymbolTable();
-
-        st.add("var1", "int", "10", String.valueOf("10".length()));
-        st.add("msg", "string", "\"Hola\"", "20");
-        st.add("PI", "double", "3.1416", "8");
-        st.add("temp", "float", null, null); // Ejemplo de variable sin valor
-
-        if (st.exists("var1")) {
-            System.out.println("¡'var1' existe en la tabla!");
-        }
-
-        st.print();
-    }
-    */
 }

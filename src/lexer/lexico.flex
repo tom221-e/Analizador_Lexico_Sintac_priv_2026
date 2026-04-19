@@ -1,21 +1,11 @@
-/****************************************************************************
- * En esta sección se puede incluir todo código que se copiará textualmente
- * al comienzo del archivo JAVA que contendrá la definición de la clase del 
- * analizador léxico.
- ****************************************************************************/
 package lexer;
 import java.util.ArrayList;
 
 /****************************************************************************
- * Las siguientes directivas afectan el comportamiento del analizador léxico:
- *
- *  - %class Nombre --> Nombre de la clase generada.
- *  - %type Nombre  --> Tipo retornado por yylex().
- *  - %line         --> Número de línea (this.yyline)
- *  - %column       --> Número de columna (this.yycolumn)
- *
- * Existen otras directivas adicionales descriptas en la documentación.
+ * Analizador léxico con manejo de estados para Strings y Comentarios.
+ * Proyecto UNNOBA 2026. [cite: 1, 2]
  ****************************************************************************/
+
 %%
 
 %public
@@ -27,6 +17,7 @@ import java.util.ArrayList;
 %column
 
 %{
+    private StringBuilder stringBuffer = new StringBuilder();
     /* ─────────────────────────────────────────────────────────────────────
      * Variables de instancia
      * ───────────────────────────────────────────────────────────────────── */
@@ -122,181 +113,149 @@ import java.util.ArrayList;
 
 
 
-/* ── Espacios y terminadores ────────────────────────────────────────────── */
+/* --- Definiciones --- */
 LineTerminator = \r\n | \r | \n
 HSpace         = [ \t]
-
 ID             = [\p{L}][\p{L}0-9_]*
 ENTERO         = [0-9]+
 FLOAT          = ([0-9]+\.[0-9]+)|([0-9]+\.)|(\.[0-9]+)
 BOOLEAN        = true|false
-STRING_LITERAL = \"([^\"\\\n\r]|\\\"|\\\\|\\n|\\t)*\"
+FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 
-FLOAT_ARRAY=\[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
-
-
-OP_SUMA = \+
-OP_RESTA = -
-OP_MULTI = \*
-OP_DIV = \/
-
-IGUAL= "="
-OP_AND= "&&"
-OP_OR= "\|\|"
-OP_NOT= "!"
-
-IGUAL_IGUAL= "=="
-MAYOR= ">"
-MENOR= "<"
-MENOR_IGUAL="<="
-MAYOR_IGUAL= ">="
-
-PAREN_A= "("
-PAREN_C= ")"
-
-/*COMENTARIOS*/
-/*COMENTARIOS*/
-COMENTARIO_SIMPLE_LLAVES = \{.*\}
-COMENTARIO_SIMPLE = %.*\n
-COMENTARIO_MULTILINEA_PARENTESIS = \(\*([^*]|\*+[^)])*\*+\)
-COMENTARIO_MULTILINEA_CORCHETE = \[\*([^*]|\*+[^\]])*\*+\]
-COMENTARIO_MULTILINEA_LLAVES = \{\*([^*]|\*+[^\}])*\*+\}
-
-/* ── Línea en blanco (sólo espacios + fin de línea) ────────────────────── */
-BlankLine      = {HSpace}* {LineTerminator}
-
-/* ── Estados adicionales ────────────────────────────────────────────────── */
+/* --- Estados --- */
 %state LINE_START
-
+%state STRING_STATE
+%state COMMENT_PAREN
+%state COMMENT_BRACKET
+%state COMMENT_BRACE
 
 %%
 
 /* ════════════════════════════════════════════════════════════════════════
-   LINE_START
-   Mide la indentación al comienzo de una línea nueva.
-   Transiciona a YYINITIAL cuando encuentra el primer carácter real.
+   LINE_START: Medición de indentación
    ════════════════════════════════════════════════════════════════════════ */
 <LINE_START> {
+    {LineTerminator} { /* Línea vacía: ignorar */ }
+    " "              { pendingIndent++; }
+    "\t"             { pendingIndent += 4; }
+    
+    /* Inicio de comentario en inicio de línea: ignorar indentación y saltar */
+    "(*"             { yybegin(COMMENT_PAREN); }
+    "[*"             { yybegin(COMMENT_BRACKET); }
+    "{*"             { yybegin(COMMENT_BRACE); }
+    "%"              { /* Comentario simple: ignorar hasta fin de línea */ 
+                       int c; while ((c = (int) yychar) != '\n' && c != -1); }
 
-    /* Línea completamente en blanco → ignorar  */
-    {BlankLine}  {}
-
-    /* Espacio simple: un nivel                                            */
-    " "   { pendingIndent++; }
-
-    /* Tabulación: suma 4                    */
-    "\t"  { pendingIndent +=  4; }
-
-    /* Primer carácter real: procesar cambio de indentación               */
-    [^ \t\r\n] {
-                   yypushback(1);              // devolver el carácter para que sea leído por el YYINITIAL
-                   yybegin(YYINITIAL);
-                   processIndent(pendingIndent, yyline, yycolumn);
-                   pendingIndent = 0;
-                   if (!pendingTokens.isEmpty()) {
-                       return pendingTokens.poll();
-                   }
-               }
+    [^ \t\r\n]       { 
+                       yypushback(1);
+                       yybegin(YYINITIAL);
+                       processIndent(pendingIndent, yyline, yycolumn);
+                       pendingIndent = 0;
+                       if (!pendingTokens.isEmpty()) return pendingTokens.poll();
+                     }
 }
-
 
 /* ════════════════════════════════════════════════════════════════════════
-   YYINITIAL — análisis normal dentro de una línea
+   YYINITIAL: Análisis normal
    ════════════════════════════════════════════════════════════════════════ */
 <YYINITIAL> {
-      /* ===== PALABRAS RESERVADAS ===== */
-      "PROGRAM"   { return token("PROGRAM", yytext()); }
-      "if"        { return token("IF", yytext()); }
-      "else"      { return token("ELSE", yytext()); }
-      "while"     { return token("WHILE", yytext()); }
-      "alt_while"  { return token("ALT_WHILE", yytext()); }
-      "elif"       { return token("ELIF", yytext()); }
-      "begin"     { return token("BEGIN", yytext()); }
-      "end"       { return token("END", yytext()); }
-      "print"     { return token("PRINT", yytext()); }
-      "break"     { return token("BREAK", yytext()); }
-      "continue"  { return token("CONTINUE", yytext()); }
-      "INT"          { return token("TYPE_INT", yytext()); }
-      "FLOAT"        { return token("TYPE_FLOAT", yytext()); }
-      "BOOLEAN"      { return token("TYPE_BOOL", yytext()); }
-      "STRING"       { return token("TYPE_STR", yytext()); }
-      "ARRAY"        { return token("TYPE_ARRAY", yytext()); }
+    
+    /* --- Manejo de Strings con estado --- */
+    "\""             { yybegin(STRING_STATE); stringBuffer.setLength(0); }
 
-      {BOOLEAN}   { return token("BOOLEAN", yytext()); }
+    /* --- Comentarios (No retornan token) --- */
+    "(*"             { yybegin(COMMENT_PAREN); }
+    "[*"             { yybegin(COMMENT_BRACKET); }
+    "{*"             { yybegin(COMMENT_BRACE); }
+    "%"              { /* Ignorar hasta fin de línea */ }
 
-      "valor_mas_cercano" { return token("VALOR_MAS_CERCANO", yytext()); }
+    /* --- Palabras Reservadas --- */
+    "PROGRAM"        { return token("PROGRAM", yytext()); }
+    "if"             { return token("IF", yytext()); }
+    "else"           { return token("ELSE", yytext()); }
+    "while"          { return token("WHILE", yytext());}
+    "alt_while"      { return token("ALT_WHILE", yytext()); }
+    "elif"           { return token("ELIF", yytext()); }
+    "begin"          { return token("BEGIN", yytext());}
+    "end"            { return token("END", yytext()); }
+    "print"          { return token("PRINT", yytext()); }
+    "break"          { return token("BREAK", yytext()); }
+    "continue"       { return token("CONTINUE", yytext()); }
+    "INT"            { return token("TYPE_INT", yytext()); }
+    "FLOAT"          { return token("TYPE_FLOAT", yytext()); }
+    "BOOLEAN"        { return token("TYPE_BOOL", yytext()); }
+    "ARRAY"          { return token("TYPE_ARRAY", yytext()); }
+    "valor_mas_cercano" { return token("VALOR_MAS_CERCANO", yytext()); }
 
+    /* --- Operadores y Símbolos --- */
+    "+"              { return token("OP_SUMA", yytext()); }
+    "-"              { return token("OP_RESTA", yytext()); }
+    "*"              { return token("OP_MULTI", yytext()); }
+    "/"              { return token("OP_DIV", yytext()); }
+    "="              { return token("IGUAL", yytext()); }
+    "||"             { return token("OR", yytext()); }
+    "&&"             { return token("AND", yytext()); }
+    "!"              { return token("NOT", yytext()); }
+    "=="             { return token("IGUALDAD", yytext()); }
+    "<="             { return token("MENORIGUAL", yytext()); }
+    ">="             { return token("MAYORIGUAL", yytext()); }
+    "<"              { return token("MENOR", yytext()); }
+    ">"              { return token("MAYOR", yytext()); }
+    "("              { return token("PAREN_A", yytext()); }
+    ")"              { return token("PAREN_C", yytext()); }
+    "["              { return token("CORCH_A", yytext()); }
+    "]"              { return token("CORCH_C", yytext()); }
+    ":"              { return token("DOS_PUNTOS", yytext()); }
+    ","              { return token("COMA", yytext()); }
 
-        /* ===== OPERADORES ARITMÉTICOS ===== */
+    /* --- Tipos de Datos --- */
+    {BOOLEAN}        { return token("BOOLEAN", yytext()); }
+    {FLOAT}          { return token("FLOAT", yytext()); }
+    {ENTERO}         { return token("ENTERO", yytext()); }
+    {FLOAT_ARRAY}    { return token("FLOAT_ARRAY", yytext()); }
+    {ID}             { return token("ID", yytext()); }
 
-        {OP_SUMA}         { return token("OP_SUMA", yytext()); }
-        {OP_RESTA}         { return token("OP_RESTA", yytext()); }
-        {OP_MULTI}         { return token("OP_MULTI", yytext()); }
-        {OP_DIV}    { return token("OP_DIV", yytext()); }
+    /* --- Funciones de Lectura --- */
+    "READ_INT()"     { return token("READ_INT", yytext()); }
+    "READ_FLOAT()"   { return token("READ_FLOAT", yytext()); }
+    "READ_BOOL()"    { return token("READ_BOOL", yytext()); }
 
-        /* ===== OPERADORES LÓGICOS ===== */
-
-        {IGUAL}      { return token("IGUAL", yytext()); }
-        {OP_OR}        { return token("OR", yytext()); }
-        {OP_AND}      { return token("AND", yytext()); }
-        {OP_NOT}         { return token("NOT", yytext()); }
-
-        /* ===== OPERADORES DE COMPARACIÓN ===== */
-
-        {IGUAL_IGUAL}        { return token("IGUALDAD", yytext()); }
-        {MENOR_IGUAL}        { return token("MENORIGUAL", yytext()); }
-        {MAYOR_IGUAL}        { return token("MAYORIGUAL", yytext()); }
-
-        {MENOR}         { return token("MENOR", yytext()); }
-        {MAYOR}         { return token("MAYOR", yytext()); }
-
-        /* ===== PARÉNTESIS ===== */
-
-        {PAREN_A}         { return token("PAREN_A", yytext()); }
-        {PAREN_C}         { return token("PAREN_C", yytext()); }
-
-        /* ===== NÚMEROS ===== */
-
-        {FLOAT}     { return token("FLOAT", yytext()); }
-        {ENTERO}    { return token("ENTERO", yytext()); }
-
-        /* ===== ARRAY ===== */
-        {FLOAT_ARRAY} { return token("FLOAT_ARRAY", yytext()); }
-
-
-        /* ===== IDENTIFICADORES ===== */
-
-        {ID}        { return token("ID", yytext()); }
-
-        /* ===== STRING ===== */
-
-        {STRING_LITERAL} { return token("STRING", yytext()); }
-        ":"                     { return token("DOS_PUNTOS", yytext()); }
-        "["                     { return token("CORCH_A", yytext()); }
-        "]"                     { return token("CORCH_C", yytext()); }
-        ","                     { return token("COMA", yytext()); }
-
-      /* ===== READ ===== */
-
-      "READ_INT()"     { return token("READ_INT", yytext()); }
-      "READ_FLOAT()"   { return token("READ_FLOAT", yytext()); }
-      "READ_BOOL()"    { return token("READ_BOOL", yytext()); }
-
-      /*========COMENTARIOS==========*/
-       {COMENTARIO_MULTILINEA_PARENTESIS}         { return token("COMENTARIO_MULTILINEA_PARENTESIS", yytext()); }
-      {COMENTARIO_MULTILINEA_CORCHETE}            { return token("COMENTARIO_MULTILINEA_CORCHETE", yytext()); }
-      {COMENTARIO_MULTILINEA_LLAVES}              { return token("COMENTARIO_MULTILINEA_LLAVES", yytext()); }
-      {COMENTARIO_SIMPLE_LLAVES}            { return token("COMENTARIO_SIMPLE_LLAVES", yytext()); }
-      {COMENTARIO_SIMPLE}              { return token("COMENTARIO_SIMPLE", yytext()); }
-
-
-    {LineTerminator}   {
-                         yybegin(LINE_START);
-                       }
-    {HSpace}+ { /* ignorar */ }
-
+    {LineTerminator} { yybegin(LINE_START); }
+    {HSpace}+        { /* ignorar */ }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   ESTADOS DE STRING Y COMENTARIOS
+   ════════════════════════════════════════════════════════════════════════ */
 
-/* ── Carácter ilegal (fallback) ──────────────────────────────────────── */
+<STRING_STATE> {
+    "\""             { yybegin(YYINITIAL); return token("STRING", stringBuffer.toString()); }
+    "\\n"            { stringBuffer.append('\n'); }
+    "\\t"            { stringBuffer.append('\t'); }
+    "\\\""           { stringBuffer.append('\"'); }
+    "\\\\"           { stringBuffer.append('\\'); }
+    {LineTerminator} { throw new RuntimeException("Error: String literal no cerrado en línea " + (yyline+1)); }
+    [^\"\\\r\n]+     { stringBuffer.append(yytext()); }
+    <<EOF>>          { throw new RuntimeException("Error: Fin de archivo inesperado dentro de String"); }
+}
+
+<COMMENT_PAREN> {
+    "*)"             { yybegin(YYINITIAL); }
+    [^]              { /* ignorar */ }
+    <<EOF>>          { throw new RuntimeException("Error: Comentario (* no cerrado"); }
+}
+
+<COMMENT_BRACKET> {
+    "*]"             { yybegin(YYINITIAL); }
+    [^]              { /* ignorar */ }
+    <<EOF>>          { throw new RuntimeException("Error: Comentario [* no cerrado"); }
+}
+
+<COMMENT_BRACE> {
+    "*}"             { yybegin(YYINITIAL); }
+    [^]              { /* ignorar */ }
+    <<EOF>>          { throw new RuntimeException("Error: Comentario {* no cerrado"); }
+}
+
+/* --- Fallback Error --- */
 [^] { return token("ERROR", "Error: carácter ilegal <" + yytext() + ">"); }

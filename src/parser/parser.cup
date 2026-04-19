@@ -154,7 +154,7 @@ lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.printf("REGLA 1.1: lista_sentencias -> %s %s%n%n", l, s);
     RESULT = l + "\n" + s;
 :}
-| sentencia ;
+|  ;
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
@@ -184,14 +184,14 @@ sentencia ::= sentencia_if:s {:
 :}
 | PRINT PAREN_A STRING:str PAREN_C
 {:
-        String contenido = str.replace("\"", "");
-
-        // Según tu formato: ID (null o autogenerado), Tipo (CTE_STR), Valor (contenido)
-        tablaSimbolos.add("CTE_STR", "-", "STRING", contenido, null);
-
-        System.out.println("REGLA: PRINT -> cadena constante: " + contenido);
-        RESULT = "print(" + str + ");";
-
+           if (!tablaSimbolos.exists(str)) {
+               // Pasamos null en el ID para que tu método add() genere la llave "_contenido"
+               tablaSimbolos.add("CTE_STR", null, "STRING", str, null);
+               System.out.println("REGLA: PRINT -> Nueva cadena guardada: " + str);
+           } else {
+               System.out.println("REGLA: PRINT -> La cadena ya existe en la tabla: " + str);
+           }
+           RESULT = "print(" + str + ");";
 :}
 | BREAK {:
     System.out.println("REGLA 3.5: sentencia -> BREAK");

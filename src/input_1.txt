@@ -6,6 +6,8 @@ c = 0.3
 aux = 10 * 2 + (5 - 1)
 promedio = 0.0
 
+
+
 print ("Iniciando proceso")
 
 while c < aux
