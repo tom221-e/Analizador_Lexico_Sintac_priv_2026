@@ -44,13 +44,6 @@ public class SymbolTable {
         return table.containsKey(id);
     }
 
-    /**
-     * Busca si el contenido del string ya existe en la tabla.
-     */
-    public boolean existsConstant(String valorBuscado) {
-        return table.containsKey("_str_" + valorBuscado);
-    }
-
     public void print() {
         System.out.println("--------------------------------------------------------------------------------------");
         System.out.printf("%-15s | %-15s | %-15s | %-15s | %-10s %n",

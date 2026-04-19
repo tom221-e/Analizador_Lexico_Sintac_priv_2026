@@ -128,9 +128,9 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 %state COMMENT_PAREN
 %state COMMENT_BRACKET
 %state COMMENT_BRACE
+%state COMMENT_PERCENT
 
 %%
-
 /* ════════════════════════════════════════════════════════════════════════
    LINE_START: Medición de indentación
    ════════════════════════════════════════════════════════════════════════ */
@@ -139,12 +139,7 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     " "              { pendingIndent++; }
     "\t"             { pendingIndent += 4; }
     
-    /* Inicio de comentario en inicio de línea: ignorar indentación y saltar */
-    "(*"             { yybegin(COMMENT_PAREN); }
-    "[*"             { yybegin(COMMENT_BRACKET); }
-    "{*"             { yybegin(COMMENT_BRACE); }
-    "%"              { /* Comentario simple: ignorar hasta fin de línea */ 
-                       int c; while ((c = (int) yychar) != '\n' && c != -1); }
+
 
     [^ \t\r\n]       { 
                        yypushback(1);
@@ -167,8 +162,7 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     "(*"             { yybegin(COMMENT_PAREN); }
     "[*"             { yybegin(COMMENT_BRACKET); }
     "{*"             { yybegin(COMMENT_BRACE); }
-    "%"              { /* Ignorar hasta fin de línea */ }
-
+    "%"              { yybegin(COMMENT_PERCENT); }
     /* --- Palabras Reservadas --- */
     "PROGRAM"        { return token("PROGRAM", yytext()); }
     "if"             { return token("IF", yytext()); }
@@ -242,6 +236,8 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 <COMMENT_PAREN> {
     "*)"             { yybegin(YYINITIAL); }
     [^]              { /* ignorar */ }
+    [^* \n\r]+       { /* ignorar */ }
+    \n | \r | \r\n   { /* ignorar y seguir */ }
     <<EOF>>          { throw new RuntimeException("Error: Comentario (* no cerrado"); }
 }
 
@@ -255,6 +251,11 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     "*}"             { yybegin(YYINITIAL); }
     [^]              { /* ignorar */ }
     <<EOF>>          { throw new RuntimeException("Error: Comentario {* no cerrado"); }
+}
+<COMMENT_PERCENT> {
+    "%"              { yybegin(YYINITIAL); } // Cierre con %
+    [^\%\r\n]+       { /* ignorar contenido */ }
+    <<EOF>>          { throw new RuntimeException("Error: Comentario  % no cerrado"); }
 }
 
 /* --- Fallback Error --- */

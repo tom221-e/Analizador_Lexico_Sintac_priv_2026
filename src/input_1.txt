@@ -1,15 +1,26 @@
 INT: c, aux
+BOOLEAN: si, A, B, D
+INT: monto_total
 FLOAT: promedio
-ARRAY[10]: mediciones, e
+ARRAY[10]: mediciones
 PROGRAM
+% ESTO ES UN COMENTARI %
+(*ESTO ES
+OTRO COMENTARIO
+MULTILINEA
+*)
+si = A || B || D
+si = false
+print (! ! si)
 c = 0.3
 aux = 10 * 2 + (5 - 1)
 promedio = 0.0
-
-
+monto_total = 10 - 8
+c = 5 + id * -3
 
 print ("Iniciando proceso")
-
+c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
+print (c)
 while c < aux
     c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
     if c == mediciones[4]
@@ -25,5 +36,3 @@ alt_while promedio < 100.0
 
 if ! (c == 0)
     print ("Fin del programa")
-
-
