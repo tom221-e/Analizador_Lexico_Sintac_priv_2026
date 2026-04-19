@@ -1,6 +1,6 @@
 INT: c, aux
 FLOAT: promedio
-ARRAY[10]: mediciones
+ARRAY[10]: mediciones, e
 PROGRAM
 c = 0.3
 aux = 10 * 2 + (5 - 1)
