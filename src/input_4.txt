@@ -2,29 +2,29 @@ INT: a, b
 FLOAT: resultado
 ARRAY[3]: datos
 PROGRAM
-(* Este es un comentario multilínea
+{* Este es un comentario multilínea
    usando el formato de paréntesis.
    Aquí definimos las variables iniciales.
-*)
-a = 10
-b = 5
+*}
+    a = 10
+    b = 5
 
-print ("Inicio de prueba con comentarios")
+    print ("Inicio de prueba con comentarios")
 
-if a > b
-    resultado = a / b
-    print ("Calculando division...")
-else
-    print ("Esto no deberia ejecutarse")
+    if a > b
+        resultado = a / b
+        print ("Calculando division...")
+    else
+        print ("Esto no deberia ejecutarse")
 
-print ("Inicio de prueba con comentarios")
+    print ("Inicio de prueba con comentarios")
 
-while a > 0
-    a = a - 1
-    if a == 5
-        print ("Mitad del conteo")
-alt_while b < 10
-    b = b + 1
-    print ("Incrementando b")
+    while a > 0
+        a = a - 1
+        if a == 5
+            print ("Mitad del conteo")
+    alt_while b < 10
+        b = b + 1
+        print ("Incrementando b")
 
-print ("Fin de programa con exito")
+    print ("Fin de programa con exito")

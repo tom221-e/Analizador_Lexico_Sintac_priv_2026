@@ -87,9 +87,6 @@ non terminal String factor;
 non terminal String asignacion;
 
 /* -------- PRECEDENCIA -------- (MAS ABAJO ES MAS PROIRIDAD MAS ARRIBA ES MENOS)*/
-precedence right OR;
-precedence right AND;
-precedence right NOT;
 
 precedence right UMINUS;
 /* -------- START -------- */
@@ -97,11 +94,16 @@ start with programa;
 
 /* -------- GRAMÁTICA -------- */
 
-programa ::= lista_variables PROGRAM lista_sentencias:l {:
-    System.out.println("REGLA 0: programa -> PROGRAM lista_sentencias");
-    System.out.printf("REGLA 0: programa -> %s%n%n", l);
+programa ::= lista_variables PROGRAM bloque:l {:
+    System.out.println("REGLA 0.1: programa -> PROGRAM lista_sentencias");
+    System.out.printf("REGLA 0.1: programa -> %s%n%n", l);
     RESULT = l;
-:};
+:}
+| lista_variables PROGRAM{:
+    System.out.println("REGLA 0.2: programa -> PROGRAM vacio");
+:}
+;
+
 
 lista_variables ::= lista_de_lineas {:
     System.out.println("REGLA 16: lista_variables -> lista_de_lineas");
@@ -193,8 +195,11 @@ sentencia ::= sentencia_if:s {:
 | PRINT PAREN_A STRING:str PAREN_C
 {:
            if (!tablaSimbolos.exists(str)) {
+               String texto;
                // Pasamos null en el ID para que tu método add() genere la llave "_contenido"
-               tablaSimbolos.add("CTE_STR", null, "STRING", str, null);
+               texto = str.replace("\n", " ");
+               texto = texto.replace("\r", "");
+               tablaSimbolos.add("CTE_STR", null, "STRING", texto, null);
                System.out.println("REGLA: PRINT -> Nueva cadena guardada: " + str);
            } else {
                System.out.println("REGLA: PRINT -> La cadena ya existe en la tabla: " + str);
