@@ -30,3 +30,11 @@ jobs:
       with:
         name: analizador-jar
         path: target/*.jar
+    # NUEVO PASO: Crear una Release automática
+    - name: Crear Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/') # Solo se activará si creas una etiqueta (tag)
+      with:
+        files: target/*.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
