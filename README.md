@@ -12,20 +12,21 @@ Compiladores 2026 - Grupo 3
 ```
 Compilador_ejemplos/
 ├── pom.xml
-└── src/
-    ├── lexer/
-    │   ├── lexico.flex             ← Definición del léxico (fuente JFlex)
-    │   ├── Lexer.java              ← Léxico generado por JFlex
-    │   ├── Token.java              ← Clase token
-    │   └── Main_lexer.java         ← Punto de entrada: solo análisis léxico
-    ├── parser/
-    │    ├── parser.cup             ← Definición de la gramática (fuente java-cup)
-    │    ├── ParserSym.java         ← Constantes de terminales
-    │    ├── Parser.java            ← Parser generado por CUP 
-    │    ├── Main_parser.java       ← Punto de entrada: análisis léxico + sintáctico
-    │    └── SymbolTable.java       ← Tabla de símbolos
-    ├── Generador.java              ← Regenera Lexer.java + Parser.java desde las fuentes
-    └── input_files/                ← Archivos de prueba                        
+│── src/
+│    ├── lexer/
+│    │   ├── lexico.flex             ← Definición del léxico (fuente JFlex)
+│    │   ├── Lexer.java              ← Léxico generado por JFlex
+│    │   ├── Token.java              ← Clase token
+│    │   └── Main_lexer.java         ← Punto de entrada: solo análisis léxico
+│    ├── parser/
+│    │    ├── parser.cup             ← Definición de la gramática (fuente java-cup)
+│    │    ├── ParserSym.java         ← Constantes de terminales
+│    │    ├── Parser.java            ← Parser generado por CUP 
+│    │    ├── Main_parser.java       ← Punto de entrada: análisis léxico + sintáctico
+│    │    └── SymbolTable.java       ← Tabla de símbolos
+│    ├── Generador.java              ← Regenera Lexer.java + Parser.java desde las fuentes
+│    ├── input_files/                ← Archivos de prueba
+└── target/                			 ← Archivo compilado (.jar) con interfaz grafica	
 ```
 
 > **Nota:** `Lexer.java`, `Parser.java` y `ParserSym.java` son archivos
@@ -36,6 +37,8 @@ Compilador_ejemplos/
 
 - Java 21 o superior
 - Maven 3.6 o superior
+- JFlex
+- CUP
 
 ## Primer uso: regenerar el léxico y el parser
 
@@ -122,38 +125,30 @@ columna y valor léxico.
 se corta el análisis. En `Main_parser` no se usa `FIN`; el análisis termina
 naturalmente cuando el lexer retorna `null` al llegar al fin del archivo.
 
-<!---
-## Tokens reconocidos
+## Archivo Compilador
 
-| Token           | Descripción                      |
-|-----------------|----------------------------------|
-| `FIN`           | Corta la ejecución (solo léxico) |
-| `MAS`           | `+`                              |
-| `MENOS`         | `-`                              |
-| `MULT`          | `*`                              |
-| `DIV`           | `/`                              |
-| `PAR_ABRE`      | `(`                              |
-| `PAR_CIERRA`    | `)`                              |
-| `IDENTIFICADOR` | Variable (`abc`, `_x1`)          |
-| `ENTERO`        | Constante entera (`42`)          |
+El archivo ya compilado en formato .jar se puede encontrar dentro de la 
+carpeta "target" ya incluye las dependecias basicas pero sigue nesesitando
+el java 21 o superior para funcionar. Es muy intuitivo, el funcionamiento
+es directo y sigue un flujo lineal de tres pasos: Carga, Configuración y 
+Ejecución.
 
-## Gramática (`parser.cup`)
+* Preparación del Código: El usuario puede escribir directamente su código
+en el panel de Entrada o utilizar el botón Cargar Archivo para importar
+un documento de texto existente.
 
-La gramática reconoce expresiones aritméticas con las siguientes reglas
-y precedencias (de menor a mayor):
+* Selección del Análisis: Mediante los botones de opción, el usuario decide
+qué fase del compilador desea poner a prueba:
+	* Modo Léxico: Para verificar que las palabras y símbolos sean reconocidos
+	correctamente (Tokens).
+	* Modo Sintáctico: Para validar que la estructura y el orden de las
+	sentencias cumplan con las reglas de la gramática.
 
-```
-expression ::= expr
-expr ::= expr MAS expr
-       | expr MENOS expr
-       | expr MULT expr
-       | expr DIV expr
-       | PAR_ABRE expr PAR_CIERRA
-       | IDENTIFICADOR
-       | ENTERO
-       | MENOS expr          (%prec MENOS_UNARIO)
-```
+*Procesamiento y Resultados: Al presionar Ejecutar, el sistema procesa el
+texto y muestra instantáneamente en la Salida el resultado detallado (lista
+de tokens o tabla de símbolos). Si existe algún error en el código ingresado,
+el usuario lo verá resaltado en ese mismo panel de salida.
 
-Las precedencias están declaradas como `left` para `MAS`/`MENOS`, luego
-`MULT`/`DIV`, y finalmente `MENOS_UNARIO` para el menos unario.
---->
+* Exportación: Finalmente, si el resultado es satisfactorio o se necesita reporta
+ un error, el usuario utiliza el botón Guardar Salida para generar un reporte
+ en un archivo `.txt`.
