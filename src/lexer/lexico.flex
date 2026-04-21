@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 /****************************************************************************
  * Analizador léxico con manejo de estados para Strings y Comentarios.
- * Proyecto UNNOBA 2026. [cite: 1, 2]
+ * Proyecto UNNOBA 2026.
  ****************************************************************************/
 
 %%
