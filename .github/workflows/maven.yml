@@ -1,0 +1,32 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Configurar JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21' # O '22' según lo que estés usando en IntelliJ
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Compilar con Maven
+      # clean install ejecutará JFlex y CUP si están en el pom.xml
+      run: mvn -B clean install --file pom.xml
+
+    - name: Subir Artefacto (Opcional)
+      uses: actions/upload-artifact@v4
+      with:
+        name: analizador-jar
+        path: target/*.jar
