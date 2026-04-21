@@ -144,7 +144,7 @@ qué fase del compilador desea poner a prueba:
 	* Modo Sintáctico: Para validar que la estructura y el orden de las
 	sentencias cumplan con las reglas de la gramática.
 
-*Procesamiento y Resultados: Al presionar Ejecutar, el sistema procesa el
+* Procesamiento y Resultados: Al presionar Ejecutar, el sistema procesa el
 texto y muestra instantáneamente en la Salida el resultado detallado (lista
 de tokens o tabla de símbolos). Si existe algún error en el código ingresado,
 el usuario lo verá resaltado en ese mismo panel de salida.
