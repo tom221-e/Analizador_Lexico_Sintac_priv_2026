@@ -1,20 +1,20 @@
 INT: a, b
 FLOAT: resultado
 PROGRAM
-(* Comentario inicial *)
-a = 10
-b = 5
+    (* Comentario inicial *)
+    a = 10
+    b = 5
 
-print ("Inicio de prueba")
+    print ("Inicio de prueba")
 
-if a > b
-    print ("A es mayor")
-    resultado = 1.5
-else
-    print ("B es mayor")
+    if a > b
+        print ("A es mayor")
+       resultado = 1.5
+    else
+        print ("B es mayor")
 
-while a > 0
-    a = a - 1
-    print ("Contando")
+    while a > 0
+        a = a - 1
+        print ("Contando")
 
-print ("Fin del programa")
+    print ("Fin del programa")
