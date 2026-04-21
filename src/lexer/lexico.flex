@@ -277,9 +277,9 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     "\\t"            { stringBuffer.append('\t'); }
     "\\\""           { stringBuffer.append('\"'); }
     "\\\\"           { stringBuffer.append('\\'); }
-    {LineTerminator} { stringBuffer.append('\n'); }
-    [^\"\\\r\n]+     { stringBuffer.append(yytext()); }
     <<EOF>>          { throw new RuntimeException("Error: Fin de archivo inesperado dentro de String"); }
+    [^]              { stringBuffer.append(yytext()); }
+
 }
 
 <COMMENT_BRACE> {

@@ -1,7 +1,7 @@
 INT: a, b
 FLOAT: resultado
 PROGRAM
-    (* Comentario inicial *)
+    {* Comentario inicial *}
     a = 10
     b = 5
 
