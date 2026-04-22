@@ -6,6 +6,7 @@ PROGRAM
    usando el formato de paréntesis.
    Aquí definimos las variables iniciales.
 *}
+
     a = 10
     b = 5
 

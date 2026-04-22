@@ -193,6 +193,8 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 
     /* --- Palabras Reservadas --- */
 
+    "FIN" { return token("FIN", yytext()); }
+
     "PROGRAM" { return token("PROGRAM", yytext()); }
     "if" { return token("IF", yytext()); }
     "else" { return token("ELSE", yytext()); }

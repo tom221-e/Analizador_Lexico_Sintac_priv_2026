@@ -5,11 +5,13 @@ PROGRAM
     a = 10
     b = 5
 
+%Otro comentario
+
     print ("Inicio de prueba")
 
     if a > b
         print ("A es mayor")
-       resultado = 1.5
+        resultado = 1.5
     else
         print ("B es mayor")
 

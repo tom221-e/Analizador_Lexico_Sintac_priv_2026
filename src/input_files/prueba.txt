@@ -1,0 +1,56 @@
+INT: c, aux, monto_total
+BOOLEAN: si, A, B, D
+FLOAT: promedio, umbral, resultado
+ARRAY[10]: mediciones
+INT: sensor, estado, a, b
+ARRAY[3]: datos
+
+PROGRAM
+
+    % Comentario de una línea
+
+    {* Comentario multilínea
+       con formato de llaves *}
+
+    si = A || B || D
+    si = false
+    print (! ! si)
+
+    c = 0.3
+    aux = 10 * 2 + (5 - 1)
+    promedio = 0.0
+    monto_total = 10 - 8
+    a = 10
+    b = 5
+
+    c = 5 + id * -3
+
+    c = valor_mas_cercano(5, [1.0, 2.0, 5.0, 8.0, 10.0])
+    print (c)
+
+    sensor = 45
+    umbral = 50.5
+
+    if sensor > 100
+        print ("ALERTA: Peligro Crítico")
+    elif sensor > umbral
+        print ("Advertencia: Umbral superado")
+        if ! (estado == 0)
+            print ("Estado activo detectado")
+    else
+        print ("Sistema normal")
+        print ("Todo ok")
+
+    while a > 0
+        a = a - 1
+        if a == 5
+            print ("Mitad del conteo")
+    alt_while promedio < 100.0
+        promedio = promedio + 10.5
+        print promedio
+
+    if ! (c == 0)
+        print ("Fin del
+        programa")
+
+    print ("Fin de programa con exito")
