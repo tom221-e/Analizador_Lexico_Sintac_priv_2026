@@ -64,29 +64,29 @@ terminal READ_FLOAT;
 terminal READ_BOOL;
 
 /* -------- NO TERMINALES -------- */
-non terminal String programa;
-non terminal String lista_sentencias;
-non terminal String sentencia;
-non terminal String bloque;
+non terminal Programa programa;
+non terminal Expresion lista_sentencias;
+non terminal Expresion sentencia;
+non terminal Expresion bloque;
 non terminal lista_variables;
 non terminal lista_de_lineas;
 non terminal variable;
 non terminal ArrayList<String> lista_de_variable;
 non terminal String tipo_datos;
 
-non terminal String sentencia_if;
-non terminal String sentencia_elif;
-non terminal String sentencia_while;
-non terminal String sentencia_alt;
+non terminal Expresion sentencia_if;
+non terminal Expresion sentencia_elif;
+non terminal Expresion sentencia_while;
+non terminal Expresion sentencia_alt;
 
-non terminal String expr_logica;
-non terminal String expr_and;
-non terminal String expr_not;
-non terminal String expr_relacional;
-non terminal String expr_arit;
-non terminal String termino;
-non terminal String factor;
-non terminal String asignacion;
+non terminal Expresion expr_logica;
+non terminal Expresion expr_and;
+non terminal Expresion expr_not;
+non terminal Expresion expr_relacional;
+non terminal Expresion expr_arit;
+non terminal Expresion termino;
+non terminal Expresion factor;
+non terminal Expresion asignacion;
 
 /* -------- PRECEDENCIA -------- (MAS ABAJO ES MAS PROIRIDAD MAS ARRIBA ES MENOS)*/
 
