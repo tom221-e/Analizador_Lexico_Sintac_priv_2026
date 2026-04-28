@@ -226,7 +226,7 @@ asignacion::= ID:id IGUAL expr_logica:e {:
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
     System.out.println("REGLA 15.2: factor -> Asignacion ARRAY[" + exp + "]");
-    RESULT = i + "[" + exp + "]";
+    RESULT = i + "[" + exp + "]" + "=" + ex;
 :}
 ;
 
