@@ -57,6 +57,8 @@ terminal PAREN_A, PAREN_C;
 terminal CORCH_A, CORCH_C;
 terminal INDENT, DEDENT;
 
+terminal DESIGUAL;
+
 terminal READ_INT;
 terminal READ_FLOAT;
 terminal READ_BOOL;
@@ -130,14 +132,14 @@ for (String id : nombres) {
         }
     }
 :}
-| TYPE_ARRAY CORCH_A ENTERO CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
+| TYPE_ARRAY CORCH_A ENTERO:e CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
 System.out.println("REGLA 15: Creacion de array");
 String tipoEspecial = "FLOAT_ARRAY";
     for (String id : nombres) {
         if (tablaSimbolos.exists(id)) {
             System.err.println("Error: Variable '" + id + "' ya declarada.");
         } else {
-            tablaSimbolos.add("ID", id, tipoEspecial, null, null);
+            tablaSimbolos.add("ID", id, tipoEspecial, null, String.valueOf(e));
             System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
         }
     }
@@ -187,7 +189,7 @@ sentencia ::= sentencia_if:s {:
     System.out.printf("REGLA 3.3: sentencia -> %s%n%n", s);
     RESULT = s;
 :}
-| PRINT expr_logica:e {:
+| PRINT PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 3.4: sentencia -> PRINT expresion");
     System.out.printf("REGLA 3.4: sentencia -> %s%n%n", e);
     RESULT = "print " + e;
@@ -218,10 +220,15 @@ sentencia ::= sentencia_if:s {:
 :};
 
 asignacion::= ID:id IGUAL expr_logica:e {:
-    System.out.println("REGLA 3.7: sentencia -> ID = expresion");
-    System.out.printf("REGLA 3.7: sentencia -> %s = %s%n%n", id, e);
+    System.out.println("REGLA 15.1: sentencia -> ID = expresion");
+    System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
     RESULT = "asignacion " + id;
-:};
+:}
+| ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
+    System.out.println("REGLA 15.2: factor -> Asignacion ARRAY[" + exp + "]");
+    RESULT = i + "[" + exp + "]";
+:}
+;
 
 /* -------- IF -------- */
 
@@ -319,6 +326,11 @@ expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
     RESULT = e1 + " <= " + e2;
+:}
+| expr_arit:e1 DESIGUAL expr_arit:e2 {:
+    System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
+    System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
+    RESULT = e1 + " != " + e2;
 :}
 | expr_arit:e {:
     System.out.println("REGLA 11.6: expr_relacional -> expr_arit");

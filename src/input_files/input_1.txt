@@ -56,7 +56,7 @@ PROGRAM
 
             % comentario antes de print
 
-            print 0
+            print (0)
 
     % comentario entre bloques
 
@@ -66,7 +66,7 @@ PROGRAM
 
         {* comentario multilínea dentro del while *}
 
-        print promedio
+        print (promedio)
 
 
     if ! (c == 0)

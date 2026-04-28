@@ -219,6 +219,7 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
     "==" { return token("IGUALDAD", yytext()); }
     "<=" { return token("MENORIGUAL", yytext()); }
     ">=" { return token("MAYORIGUAL", yytext()); }
+    "!="  { return token("DESIGUAL", yytext()); }
 
     "+" { return token("OP_SUMA", yytext()); }
     "-" { return token("OP_RESTA", yytext()); }
