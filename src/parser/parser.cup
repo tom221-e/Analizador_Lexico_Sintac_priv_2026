@@ -2,6 +2,7 @@ package parser;
 import java_cup.runtime.*;
 import java.util.Hashtable;
 import java.util.ArrayList;
+import ast.*;
 
 class Parser;
 
@@ -65,19 +66,19 @@ terminal READ_BOOL;
 
 /* -------- NO TERMINALES -------- */
 non terminal Programa programa;
-non terminal Expresion lista_sentencias;
-non terminal Expresion sentencia;
-non terminal Expresion bloque;
-non terminal lista_variables;
-non terminal lista_de_lineas;
-non terminal variable;
+non terminal ArrayList<Sentencia> lista_sentencias;
+non terminal Sentencia sentencia;
+non terminal Bloque bloque;
+non terminal ArrayList<Declaracion> lista_variables;
+non terminal ArrayList<Declaracion> lista_de_lineas;
+non terminal Declaracion variable;
 non terminal ArrayList<String> lista_de_variable;
 non terminal String tipo_datos;
 
-non terminal Expresion sentencia_if;
-non terminal Expresion sentencia_elif;
-non terminal Expresion sentencia_while;
-non terminal Expresion sentencia_alt;
+non terminal Sentencia sentencia_if;
+non terminal Sentencia sentencia_elif;
+non terminal Sentencia sentencia_while;
+non terminal SentenciaAlt sentencia_alt;
 
 non terminal Expresion expr_logica;
 non terminal Expresion expr_and;
@@ -86,7 +87,7 @@ non terminal Expresion expr_relacional;
 non terminal Expresion expr_arit;
 non terminal Expresion termino;
 non terminal Expresion factor;
-non terminal Expresion asignacion;
+non terminal Sentencia asignacion;
 
 /* -------- PRECEDENCIA -------- (MAS ABAJO ES MAS PROIRIDAD MAS ARRIBA ES MENOS)*/
 
@@ -96,29 +97,36 @@ start with programa;
 
 /* -------- GRAMÁTICA -------- */
 
-programa ::= lista_variables PROGRAM bloque:l {:
+programa ::= lista_variables:v PROGRAM bloque:l {:
     System.out.println("REGLA 0.1: programa -> PROGRAM lista_sentencias");
     System.out.printf("REGLA 0.1: programa -> %s%n%n", l);
-    RESULT = l;
+    RESULT = new Programa("MiProyecto", v, l.getSentencias());;
 :}
-| lista_variables PROGRAM{:
-    System.out.println("REGLA 0.2: programa -> PROGRAM vacio");
+| lista_variables:v PROGRAM{:
+    RESULT = new Programa("MiProyecto", v, null);
 :}
 ;
 
 
-lista_variables ::= lista_de_lineas {:
+lista_variables ::= lista_de_lineas:l {:
     System.out.println("REGLA 16: lista_variables -> lista_de_lineas");
+    RESULT = l;
 :}
 | /* vacío */ {:
     System.out.println("REGLA 17: lista_variables -> vacio");
+    RESULT = new ArrayList<Declaracion>();
 :};
 
-lista_de_lineas ::= lista_de_lineas variable {:
+lista_de_lineas ::= lista_de_lineas:l variable:v {:
     System.out.println("REGLA 18: lista_de_lineas -> lista_de_lineas variable");
+    l.add(v); // Agrega la nueva declaración a la lista
+    RESULT = l;
 :}
-| variable {:
+| variable:v {:
     System.out.println("REGLA 19: lista_de_lineas -> variable");
+    ArrayList<Declaracion> lista = new ArrayList<>();
+    lista.add(v);
+    RESULT = lista;
 :};
 
 variable ::= tipo_datos:t DOS_PUNTOS lista_de_variable:nombres {:
@@ -131,6 +139,7 @@ for (String id : nombres) {
             System.out.println("Declarado: " + id + " de tipo " + t);
         }
     }
+    RESULT = new Declaracion(t, nombres);
 :}
 | TYPE_ARRAY CORCH_A ENTERO:e CORCH_C DOS_PUNTOS lista_de_variable:nombres{:
 System.out.println("REGLA 15: Creacion de array");
@@ -143,6 +152,7 @@ String tipoEspecial = "FLOAT_ARRAY";
             System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
         }
     }
+    RESULT = new Declaracion(tipoEspecial + "[" + e + "]", nombres);
 :};
 
 
@@ -164,14 +174,17 @@ tipo_datos ::= TYPE_INT{: RESULT = "INT";  :}
 lista_sentencias ::= lista_sentencias:l sentencia:s {:
     System.out.println("REGLA 1.1: lista_sentencias -> lista_sentencias sentencia");
     System.out.printf("REGLA 1.1: lista_sentencias -> %s %s%n%n", l, s);
-    RESULT = l + "\n" + s;
+    l.add(s);
+    RESULT = l;
 :}
-|  ;
+| {:
+      RESULT = new ArrayList<Sentencia>();
+  :} ;
 
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
     System.out.printf("REGLA 8: bloque -> %s%n%n", l);
-    RESULT = l;
+    RESULT = new Bloque(l);
 :};
 
 sentencia ::= sentencia_if:s {:
@@ -192,7 +205,7 @@ sentencia ::= sentencia_if:s {:
 | PRINT PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 3.4: sentencia -> PRINT expresion");
     System.out.printf("REGLA 3.4: sentencia -> %s%n%n", e);
-    RESULT = "print " + e;
+    RESULT = new SentenciaPrint(e);
 :}
 | PRINT PAREN_A STRING:str PAREN_C
 {:
@@ -206,27 +219,27 @@ sentencia ::= sentencia_if:s {:
            } else {
                System.out.println("REGLA: PRINT -> La cadena ya existe en la tabla: " + str);
            }
-           RESULT = "print(" + str + ");";
+           RESULT = RESULT = new SentenciaPrint(new StringLiteral(str));;
 :}
 | BREAK {:
     System.out.println("REGLA 3.5: sentencia -> BREAK");
     System.out.printf("REGLA 3.5: sentencia -> break%n%n");
-    RESULT = "break";
+    RESULT = new SentenciaBreak();
 :}
 | CONTINUE {:
     System.out.println("REGLA 3.6: sentencia -> CONTINUE");
     System.out.printf("REGLA 3.6: sentencia -> continue%n%n");
-    RESULT = "continue";
+    RESULT = new SentenciaContinue();
 :};
 
 asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 15.1: sentencia -> ID = expresion");
     System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
-    RESULT = "asignacion " + id;
+    RESULT = new Asignacion(id, e);
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
     System.out.println("REGLA 15.2: factor -> Asignacion ARRAY[" + exp + "]");
-    RESULT = i + "[" + exp + "]" + "=" + ex;
+    RESULT = new AsignacionArray(i, exp, ex);
 :}
 ;
 
@@ -236,7 +249,7 @@ sentencia_if ::= IF expr_logica:e bloque:b sentencia_elif:s_elif
 {:
     System.out.println("REGLA 4: sentencia_if -> IF expresion bloque sentencia_elif");
     System.out.printf("REGLA 4: if %s then %s %s%n%n", e, b, s_elif);
-    RESULT = "if";
+    RESULT = new SentenciaIf(e, b, s_elif);
 :};
 
 /* -------- ELIF / ELSE -------- */
@@ -245,47 +258,49 @@ sentencia_elif ::= ELIF expr_logica:e bloque:b sentencia_elif:s
 {:
     System.out.println("REGLA 5.1: sentencia_elif -> ELIF expresion bloque sentencia_elif");
     System.out.printf("REGLA 5.1: elif %s then %s %s%n%n", e, b, s);
-    RESULT = "elif";
+    RESULT = new SentenciaElif(e, b, s);
 :}
 | ELSE bloque:b
 {:
     System.out.println("REGLA 5.2: sentencia_elif -> ELSE bloque");
     System.out.printf("REGLA 5.2: else %s%n%n", b);
-    RESULT = "else";
+    RESULT = new SentenciaElse(b.getSentencias());
 :}
 | /* VACÍO */
 {:
     System.out.println("REGLA 5.3: sentencia_elif -> epsilon");
-    RESULT = "";
+    RESULT = null;
 :};
 
 sentencia_while ::=WHILE expr_logica:e bloque:b sentencia_alt:alt
 {:
     System.out.println("REGLA 6: sentencia_while -> WHILE expresion bloque");
     System.out.printf("REGLA 6: while %s do %s%n%n", e, b);
-    RESULT = "while " + e + " do " + b + " " + alt;
+    RESULT = new SentenciaWhile(e, b, alt);
 :};
 
 sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b sentencia_alt:resto
 {:
     System.out.println("REGLA 7: sentencia_alt -> ALT_WHILE expresion bloque");
     System.out.printf("REGLA 7: alt_while %s do %s%n%n", e, b);
-    RESULT = "alt_while " + e + " do " + b + " " + resto;
+    RESULT = new SentenciaAlt(e, b, resto);
 :}
-| ;
+| {:
+      RESULT = null;
+:};
 
 /* -------- EXPRESIONES -------- */
 
 expr_logica ::= expr_and:e1 OR expr_logica:e2{:
     System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
     System.out.printf("REGLA 10.1: expr_logica -> %s OR %s%n%n", e1, e2);
-    RESULT = e1 + " OR " + e2;
+    RESULT = new OperacionOr(e1, e2);
 :}
 | expr_and:e {: RESULT = e; :};
 expr_and    ::= expr_not:e1 AND expr_and:e2 {:
     System.out.println("REGLA 10.2: expr_logica -> expr_logica AND expr_relacional");
     System.out.printf("REGLA 10.2: expr_logica -> %s AND %s%n%n", e1, e2);
-    RESULT = e1 + " AND " + e2;
+    RESULT = new OperacionAnd(e1, e2);
 :}
 | expr_not:e  {:
     RESULT = e;
@@ -294,7 +309,7 @@ expr_and    ::= expr_not:e1 AND expr_and:e2 {:
 expr_not    ::= NOT expr_not:e {:
     System.out.println("REGLA 10.3: expr_logica -> NOT expr_relacional");
     System.out.printf("REGLA 10.3: expr_logica -> NOT %s%n%n", e);
-    RESULT = "NOT " + e;
+    RESULT = new NotLogico(e);
 :}
 | expr_relacional:e {:
     System.out.println("REGLA 10.4: expr_logica -> expr_relacional");
@@ -305,32 +320,32 @@ expr_not    ::= NOT expr_not:e {:
 expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = e1 + " == " + e2;
+    RESULT = new Igualdad(e1, e2);
 :}
 | expr_arit:e1 MAYOR expr_arit:e2 {:
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = e1 + " > " + e2;
+    RESULT = new Mayor(e1, e2);
 :}
 | expr_arit:e1 MENOR expr_arit:e2 {:
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = e1 + " < " + e2;
+    RESULT = new Menor(e1, e2);
 :}
 | expr_arit:e1 MAYORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = e1 + " >= " + e2;
+    RESULT = new MayorIgual(e1, e2);
 :}
 | expr_arit:e1 MENORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = e1 + " <= " + e2;
+    RESULT = new MenorIgual(e1, e2);
 :}
 | expr_arit:e1 DESIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = e1 + " != " + e2;
+    RESULT = new Desigual(e1, e2);
 :}
 | expr_arit:e {:
     System.out.println("REGLA 11.6: expr_relacional -> expr_arit");
@@ -341,12 +356,12 @@ expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
 expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
     System.out.printf("REGLA 12.1: expr_arit -> %s + %s%n%n", e1, e2);
-    RESULT = e1 + "+" + e2;
+    RESULT = new Suma(e1, e2);
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
     System.out.printf("REGLA 12.2: expr_arit -> %s - %s%n%n", e1, e2);
-    RESULT = e1 + "-" + e2;
+    RESULT = new Resta(e1, e2)
 :}
 | termino:e {:
     System.out.println("REGLA 12.3: expr_arit -> termino");
@@ -357,12 +372,12 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
 termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
     System.out.printf("REGLA 13.1: termino -> %s * %s%n%n", e1, e2);
-    RESULT = e1 + "*" + e2;
+    RESULT = new Multiplicacion(e1, e2);
 :}
 | termino:e1 OP_DIV factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
     System.out.printf("REGLA 13.2: termino -> %s / %s%n%n", e1, e2);
-    RESULT = e1 + "/" + e2;
+    RESULT = new Division(e1, e2);
 :}
 | factor:e {:
     System.out.println("REGLA 13.3: termino -> factor");
@@ -392,7 +407,7 @@ factor ::= ENTERO:e {:
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C {:
     System.out.println("REGLA 14.8: factor -> ARRAY[" + exp + "]");
-    RESULT = i + "[" + exp + "]";
+    RESULT = new AccesoArray(i, exp);
 :}
 | FLOAT_ARRAY:e {:
     System.out.println("REGLA 14.5: factor -> FLOAT_ARRAY");
@@ -421,12 +436,12 @@ factor ::= ENTERO:e {:
     System.out.println("REGLA: Función especial VALOR_MAS_CERCANO detectada");
     System.out.println("Referencia: " + ref);
     System.out.println("Lista: " + lista);
-    RESULT = "valor_mas_cercano(" + ref + ", " + lista + ")";
+    RESULT = new ValorMasCercano(ref, lista);
 :}
 | OP_RESTA factor:y {:
     System.out.println("REGLA 14.7: factor -> - factor (unario)");
     System.out.printf("REGLA 14.7: factor -> -%s%n%n", y);
-    RESULT = "-" + y;
+    RESULT = new MenosUnario(y);
 :}%prec UMINUS;
 
 

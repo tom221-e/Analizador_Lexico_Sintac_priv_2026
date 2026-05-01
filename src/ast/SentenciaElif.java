@@ -1,11 +1,11 @@
 package ast;
 
-public class SentenciaIf extends Sentencia {
+public class SentenciaElif extends Sentencia {
     private final Expresion condicion;
     private final Bloque cuerpoThen;
     private final Sentencia sentenciaElse; // Puede ser otro SentenciaIf (un elif) o un Bloque (else)
 
-    public SentenciaIf(Expresion condicion, Bloque cuerpoThen, Sentencia sentenciaElse) {
+    public SentenciaElif(Expresion condicion, Bloque cuerpoThen, Sentencia sentenciaElse) {
         this.condicion = condicion;
         this.cuerpoThen = cuerpoThen;
         this.sentenciaElse = sentenciaElse;
@@ -13,7 +13,7 @@ public class SentenciaIf extends Sentencia {
 
     @Override
     protected String getNombreSentencia() {
-        return "IF";
+        return "ELIF";
     }
 
     @Override
