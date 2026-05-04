@@ -26,7 +26,7 @@ public abstract class  Nodo {
         StringBuilder grafico = new StringBuilder();
         grafico.append(String.format("%1$s[label=\"%2$s\"]\n", this.getId(), this.getEtiqueta()));
         if(idPadre != null)
-            grafico.append(String.format("%1$s--%2$s\n", idPadre, this.getId()));
+            grafico.append(String.format("%1$s->%2$s\n", idPadre, this.getId()));
         return grafico.toString();
     }
 

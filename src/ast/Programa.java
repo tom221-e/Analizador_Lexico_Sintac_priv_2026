@@ -11,6 +11,17 @@ public class Programa extends Nodo {
         this.declaraciones = declaraciones;
         this.instrucciones = instrucciones;
     }
+    public String graficar() {
+        return "digraph AST {\n" +
+                "node [shape=circle];\n" +
+                this.graficar(null) + // Llama al método protegido iniciando la raíz
+                "\n}";
+    }
+
+    @Override
+    protected String getEtiqueta() {
+        return "PROGRAMA: " + nombre;
+    }
     @Override
     protected String graficar(String idPadre) {
         String miId = this.getId();
