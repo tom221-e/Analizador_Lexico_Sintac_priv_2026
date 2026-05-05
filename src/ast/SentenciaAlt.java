@@ -1,11 +1,13 @@
 package ast;
 
+import java.util.ArrayList;
+
 public class SentenciaAlt extends Sentencia {
     private final Expresion condicion;
-    private final Bloque cuerpo;
-    private final SentenciaAlt alternativa; // Aquí se usa la clase creada arriba
+    private final ArrayList<Sentencia> cuerpo; // Cambiado a ArrayList
+    private final SentenciaAlt alternativa;
 
-    public SentenciaAlt(Expresion condicion, Bloque cuerpo, SentenciaAlt alternativa) {
+    public SentenciaAlt(Expresion condicion, ArrayList<Sentencia> cuerpo, SentenciaAlt alternativa) {
         this.condicion = condicion;
         this.cuerpo = cuerpo;
         this.alternativa = alternativa;
@@ -19,14 +21,36 @@ public class SentenciaAlt extends Sentencia {
     @Override
     protected String graficar(String idPadre) {
         String miId = this.getId();
-        String dot = super.graficar(idPadre) +
-                condicion.graficar(miId) +
-                cuerpo.graficar(miId);
+        StringBuilder dot = new StringBuilder();
 
-        // Solo grafica la alternativa si no es nula
-        if (alternativa != null) {
-            dot += alternativa.graficar(miId);
+        // 1. Graficar el nodo ALT_WHILE y conectarlo al padre
+        dot.append(super.graficar(idPadre));
+
+        // 2. Graficar la condición de esta alternativa
+        if (condicion != null) {
+            dot.append(condicion.graficar(miId));
         }
-        return dot;
+
+        // 3. Crear el nodo intermedio "BODY" para las sentencias de la alternativa
+        if (cuerpo != null && !cuerpo.isEmpty()) {
+            String idBody = "body_alt_" + miId;
+
+            dot.append(String.format("%s [label=\"BODY\"];\n", idBody));
+            dot.append(String.format("%s -> %s;\n", miId, idBody));
+
+            // Graficar cada sentencia dentro del cuerpo de la alternativa
+            for (Sentencia s : cuerpo) {
+                if (s != null) {
+                    dot.append(s.graficar(idBody));
+                }
+            }
+        }
+
+        // 4. Graficar la siguiente alternativa (recursividad)
+        if (alternativa != null) {
+            dot.append(alternativa.graficar(miId));
+        }
+
+        return dot.toString();
     }
 }

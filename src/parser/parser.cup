@@ -3,6 +3,12 @@ import java_cup.runtime.*;
 import java.util.Hashtable;
 import java.util.ArrayList;
 import ast.*;
+import ast.aritmetica.*;
+import ast.logica.*;
+import ast.relacional.*;
+import ast.unario.*;
+import ast.read.*;
+import ast.literal.*;
 
 class Parser;
 
@@ -68,7 +74,7 @@ terminal READ_BOOL;
 non terminal Programa programa;
 non terminal ArrayList<Sentencia> lista_sentencias;
 non terminal Sentencia sentencia;
-non terminal Bloque bloque;
+non terminal ArrayList<Sentencia> bloque;
 non terminal ArrayList<Declaracion> lista_variables;
 non terminal ArrayList<Declaracion> lista_de_lineas;
 non terminal Declaracion variable;
@@ -76,7 +82,7 @@ non terminal ArrayList<String> lista_de_variable;
 non terminal String tipo_datos;
 
 non terminal Sentencia sentencia_if;
-non terminal Sentencia sentencia_elif;
+non terminal ArrayList<Sentencia> sentencia_elif;
 non terminal Sentencia sentencia_while;
 non terminal SentenciaAlt sentencia_alt;
 
@@ -100,7 +106,7 @@ start with programa;
 programa ::= lista_variables:v PROGRAM bloque:l {:
     System.out.println("REGLA 0.1: programa -> PROGRAM lista_sentencias");
     System.out.printf("REGLA 0.1: programa -> %s%n%n", l);
-    RESULT = new Programa("MiProyecto", v, l.getSentencias());;
+    RESULT = new Programa("MiProyecto", v, l);;
 :}
 | lista_variables:v PROGRAM{:
     RESULT = new Programa("MiProyecto", v, null);
@@ -184,7 +190,7 @@ lista_sentencias ::= lista_sentencias:l sentencia:s {:
 bloque ::= INDENT lista_sentencias:l DEDENT {:
     System.out.println("REGLA 8: bloque -> INDENT lista_sentencias DEDENT");
     System.out.printf("REGLA 8: bloque -> %s%n%n", l);
-    RESULT = new Bloque(l);
+    RESULT = l;
 :};
 
 sentencia ::= sentencia_if:s {:
@@ -258,13 +264,21 @@ sentencia_elif ::= ELIF expr_logica:e bloque:b sentencia_elif:s
 {:
     System.out.println("REGLA 5.1: sentencia_elif -> ELIF expresion bloque sentencia_elif");
     System.out.printf("REGLA 5.1: elif %s then %s %s%n%n", e, b, s);
-    RESULT = new SentenciaElif(e, b, s);
+    // Creamos una lista que contendrá el bloque del ELIF transformado en un IF
+        ArrayList<Sentencia> listaElif = new ArrayList<>();
+
+        // El ELIF se convierte en un objeto SentenciaIf
+        // (el cual a su vez recibe la lista 's' para sus propios elses)
+        SentenciaIf nodoElif = new SentenciaIf(e, b, s);
+
+        listaElif.add(nodoElif);
+        RESULT = listaElif;
 :}
 | ELSE bloque:b
 {:
     System.out.println("REGLA 5.2: sentencia_elif -> ELSE bloque");
     System.out.printf("REGLA 5.2: else %s%n%n", b);
-    RESULT = new SentenciaElse(b.getSentencias());
+    RESULT = b;
 :}
 | /* VACÍO */
 {:
@@ -361,7 +375,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
     System.out.printf("REGLA 12.2: expr_arit -> %s - %s%n%n", e1, e2);
-    RESULT = new Resta(e1, e2)
+    RESULT = new Resta(e1, e2);
 :}
 | termino:e {:
     System.out.println("REGLA 12.3: expr_arit -> termino");
@@ -388,22 +402,22 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
 factor ::= ENTERO:e {:
     System.out.println("REGLA 14.1: factor -> ENTERO");
     System.out.printf("REGLA 14.1: factor -> %s%n%n", e);
-    RESULT = e;
+    RESULT = new IntLiteral(e);
 :}
 | FLOAT:e {:
     System.out.println("REGLA 14.2: factor -> FLOAT");
     System.out.printf("REGLA 14.2: factor -> %s%n%n", e);
-    RESULT = e;
+    RESULT = new FloatLiteral(e);
 :}
 | BOOLEAN:e {:
     System.out.println("REGLA 14.3: factor -> BOOLEAN");
     System.out.printf("REGLA 14.3: factor -> %s%n%n", e);
-    RESULT = e;
+    RESULT = new BoolLiteral(e);
 :}
 | ID:e {:
     System.out.println("REGLA 14.4: factor -> ID");
     System.out.printf("REGLA 14.4: factor -> %s%n%n", e);
-    RESULT = e;
+    RESULT = new IdLiteral(e);
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C {:
     System.out.println("REGLA 14.8: factor -> ARRAY[" + exp + "]");
@@ -412,24 +426,27 @@ factor ::= ENTERO:e {:
 | FLOAT_ARRAY:e {:
     System.out.println("REGLA 14.5: factor -> FLOAT_ARRAY");
     System.out.printf("REGLA 14.5: factor -> %s%n%n", e);
-    RESULT = e;
+    RESULT = new ArrayLiteral(e);
 :}
 |READ_INT
 {:
     System.out.println("REGLA 14.5: factor -> READ_INT()");
+    RESULT = new ReadInt();
 :}
 |READ_FLOAT
 {:
     System.out.println("REGLA 14.5: factor -> READ_FLOAT()");
+    RESULT = new ReadFloat();
 :}
 |READ_BOOL
 {:
     System.out.println("REGLA 14.5: factor -> READ_FLOAT()");
+    RESULT = new ReadBoolean();
 :}
 | PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 14.6: factor -> PAREN_A expresion PAREN_C");
     System.out.printf("REGLA 14.6: factor -> (%s)%n%n", e);
-    RESULT = "(" + e + ")";
+    RESULT = e;
 :}
 | VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:lista PAREN_C
 {:
