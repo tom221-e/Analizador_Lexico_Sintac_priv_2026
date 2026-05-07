@@ -9,8 +9,13 @@ public class IdLiteral extends Expresion {
         this.valor = String.valueOf(valor);
     }
 
+    // CAMBIO AQUÍ: Renombrar para no sobreescribir al padre
+    public String getNombreVariable() {
+        return valor;
+    }
+
     @Override
     protected String getEtiqueta() {
-        return "ID: " + valor; // Etiqueta para el globo del grafo
+        return "ID: " + valor;
     }
 }

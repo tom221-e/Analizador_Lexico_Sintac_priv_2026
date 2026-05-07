@@ -15,6 +15,13 @@ public abstract class OperacionBinaria extends Expresion {
         return String.format("%s", this.getNombreOperacion());
     }
 
+    public Expresion getE1() {
+        return izquierda;
+    }
+    public Expresion getE2() {
+        return derecha;
+    }
+
     protected abstract String getNombreOperacion();
 
     @Override

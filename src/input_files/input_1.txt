@@ -1,7 +1,7 @@
-INT: c, aux
+INT: aux, id
 BOOLEAN: si, A, B, D
 INT: monto_total
-FLOAT: promedio
+FLOAT: promedio, c
 ARRAY[10]: mediciones
 
 PROGRAM
@@ -12,7 +12,6 @@ PROGRAM
     multilinea
     antes del programa *}
 
-    si = A || B || D
     si = false
     print (! ! si)
 

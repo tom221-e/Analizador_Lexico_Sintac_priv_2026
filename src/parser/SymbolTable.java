@@ -44,6 +44,33 @@ public class SymbolTable {
         return table.containsKey(id);
     }
 
+    public int getDimension(String id) {
+        // 1. Buscas el valor en tu Hashtable o estructura
+        String valorEnTabla = String.valueOf(table.get(id)); // O como obtengas el dato
+
+        // Supongamos que 'valorEnTabla' es el String que sacas de la columna de dimensión
+        if (valorEnTabla == null || valorEnTabla.equals("-") || valorEnTabla.trim().isEmpty()) {
+            return 0; // Si está vacío o tiene un guion, la dimensión es 0 (es un escalar)
+        }
+
+        try {
+            return Integer.parseInt(valorEnTabla);
+        } catch (NumberFormatException e) {
+            return 0; // Por seguridad, si hay basura, devolvemos 0
+        }
+    }
+
+
+    public String getTipo(String id) {
+        for (SymbolInfo info : table.values()) {
+            // CORRECCIÓN: Verificar que el nombre no sea null antes de comparar
+            if (info.nombreOriginal() != null && info.nombreOriginal().equals(id)) {
+                return info.type();
+            }
+        }
+        return null; // No se encontró
+    }
+
     public void print() {
         System.out.println("--------------------------------------------------------------------------------------");
         System.out.printf("%-15s | %-15s | %-15s | %-15s | %-10s %n",

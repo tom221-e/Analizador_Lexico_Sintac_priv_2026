@@ -9,6 +9,7 @@ import ast.relacional.*;
 import ast.unario.*;
 import ast.read.*;
 import ast.literal.*;
+import validator.ValidatorDataType;
 
 class Parser;
 
@@ -20,6 +21,8 @@ action code {:
 parser code {:
 
     public SymbolTable tablaSimbolos = new SymbolTable();
+
+    public ValidatorDataType validador = new ValidatorDataType();
 
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
@@ -241,11 +244,28 @@ sentencia ::= sentencia_if:s {:
 asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 15.1: sentencia -> ID = expresion");
     System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
-    RESULT = new Asignacion(id, e);
+    if (validador.validarAsignacion(id, e, tablaSimbolos)) {
+           System.out.println("Asignación válida.");
+           RESULT = new Asignacion(id, e);
+    } else {
+             // Detiene la ejecución si los tipos no son compatibles
+             throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles en la asignación de '" + id + "'");
+    }
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
     System.out.println("REGLA 15.2: factor -> Asignacion ARRAY[" + exp + "]");
-    RESULT = new AsignacionArray(i, exp, ex);
+    ValidatorDataType.InfoNodo infoIndice = validador.obtenerInfo(exp, tablaSimbolos);
+    // Validación del índice
+        if (!infoIndice.getTipo().equals("INT")) {
+            throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
+        }
+
+        // Validación de la asignación a la celda
+        if (validador.validarAsignacionCelda(i, ex, tablaSimbolos)) {
+            RESULT = new AsignacionArray(i, exp, ex);
+        } else {
+            throw new RuntimeException("ERROR SEMÁNTICO: Valor incompatible para el arreglo '" + i + "'");
+        }
 :}
 ;
 
@@ -370,12 +390,17 @@ expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
 expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
     System.out.printf("REGLA 12.1: expr_arit -> %s + %s%n%n", e1, e2);
-    RESULT = new Suma(e1, e2);
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo != null) {
+        RESULT = new Suma(e1, e2);
+    }
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
     System.out.printf("REGLA 12.2: expr_arit -> %s - %s%n%n", e1, e2);
-    RESULT = new Resta(e1, e2);
+    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
+            RESULT = new Resta(e1, e2);
+        }
 :}
 | termino:e {:
     System.out.println("REGLA 12.3: expr_arit -> termino");
@@ -386,12 +411,16 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
 termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
     System.out.printf("REGLA 13.1: termino -> %s * %s%n%n", e1, e2);
-    RESULT = new Multiplicacion(e1, e2);
+    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
+            RESULT = new Multiplicacion(e1, e2);
+        }
 :}
 | termino:e1 OP_DIV factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
     System.out.printf("REGLA 13.2: termino -> %s / %s%n%n", e1, e2);
-    RESULT = new Division(e1, e2);
+    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
+            RESULT = new Division(e1, e2);
+        }
 :}
 | factor:e {:
     System.out.println("REGLA 13.3: termino -> factor");

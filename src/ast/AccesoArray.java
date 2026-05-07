@@ -13,6 +13,9 @@ public class AccesoArray extends Expresion {
     protected String getEtiqueta() {
         return "ACCESO ARRAY: " + nombre;
     }
+    public String getId() {
+        return nombre;
+    }
 
     @Override
     protected String graficar(String idPadre) {
