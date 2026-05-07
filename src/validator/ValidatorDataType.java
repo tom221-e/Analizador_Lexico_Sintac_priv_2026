@@ -4,20 +4,31 @@ import parser.SymbolTable;
 import ast.*;
 import ast.literal.*;
 
+/**
+ * Clase encargada de la validación semántica de tipos.
+ * Asegura que las operaciones y asignaciones sean lógicamente coherentes.
+ */
 public class ValidatorDataType {
 
     // --- FUNCIÓN 1: VALIDAR ARITMÉTICA (+, -, *, /) ---
+    /**
+     * Determina si una operación entre dos expresiones es válida y qué tipo resulta.
+     * Ejemplo: INT + FLOAT resulta en FLOAT.
+     */
     public String validarAritmetica(Expresion e1, Expresion e2, SymbolTable tabla) {
+        // Extraemos la información (tipo y dimensión) de ambos operandos
         InfoNodo info1 = obtenerInfo(e1, tabla);
         InfoNodo info2 = obtenerInfo(e2, tabla);
 
-        // 1. Regla: Prohibido usar booleanos en aritmética
+        // 1. Regla: Restricción de tipos no numéricos
+        // No tiene sentido sumar "true + 5"
         if (info1.tipo.equals("BOOLEAN") || info2.tipo.equals("BOOLEAN")) {
             System.err.println("Error Semántico: No se puede realizar aritmética con BOOLEAN.");
-            return null;
+            return null; // El null indica que la operación no es válida
         }
 
-        // 2. Regla: Dimensiones y Broadcasting
+        // 2. Regla: Verificación de dimensiones para Arreglos
+        // Si ambos son arreglos, deben tener el mismo tamaño para poder operarse entre sí
         if (info1.dimension > 0 && info2.dimension > 0) {
             if (info1.dimension != info2.dimension) {
                 System.err.println("Error: Dimensiones incompatibles (" + info1.dimension + " vs " + info2.dimension + ").");
@@ -25,92 +36,115 @@ public class ValidatorDataType {
             }
         }
 
-        // 3. Regla: Interoperabilidad (Resultado siempre FLOAT si hay un FLOAT involucrado)
+        // 3. Regla: Promoción de tipos (Coerción)
+        // Si cualquiera de los dos es FLOAT, el resultado se "asciende" a FLOAT para no perder decimales
         if (info1.tipo.equals("FLOAT") || info2.tipo.equals("FLOAT")) {
             return "FLOAT";
         }
+
+        // Si ninguno es FLOAT y llegamos aquí, ambos son INT
         return "INT";
     }
 
-    // --- FUNCIÓN 2: VALIDAR ASIGNACIÓN (ID = EXPRESIÓN) ---
+    // --- FUNCIÓN 2: VALIDAR ASIGNACIÓN (Variable = Expresión) ---
+    /**
+     * Verifica si es legal guardar el valor de una expresión en una variable específica.
+     */
     public boolean validarAsignacion(String id, Expresion e, SymbolTable tabla) {
+        // Primero, verificamos que la variable en la que queremos guardar exista
         if (!tabla.exists(id)) {
             System.err.println("Error: Variable '" + id + "' no declarada.");
             return false;
         }
 
-        String tipoDestino = tabla.getTipo(id); // Ejemplo: "INT", "FLOAT", "FLOAT_ARRAY"
+        // Obtenemos los datos de la variable destino desde la tabla de símbolos
+        String tipoDestino = tabla.getTipo(id);
         int dimDestino = tabla.getDimension(id);
+
+        // Obtenemos los datos de la expresión que queremos asignar
         InfoNodo infoExp = obtenerInfo(e, tabla);
 
-        // Caso A: El destino es un Arreglo
+        // Caso A: El destino es un Arreglo (ej: float[] lista)
         if (tipoDestino.equals("FLOAT_ARRAY") || dimDestino > 0) {
-            // Regla: Broadcast (Asignar un número simple a todo el arreglo)
+            // Subcaso: "Broadcasting" (Asignar un número único a todas las celdas del arreglo)
             if (infoExp.dimension == 0) {
+                // Solo se permite si el número es INT o FLOAT
                 return infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT");
             }
-            // Regla: Arreglo a Arreglo (Deben tener misma dimensión)
+            // Subcaso: Asignar un arreglo a otro (Deben ser de la misma dimensión)
             return dimDestino == infoExp.dimension;
         }
 
-        // Caso B: El destino es un Escalar (INT, FLOAT, BOOLEAN)
+        // Caso B: El destino es una variable simple (Escalar: INT, FLOAT o BOOLEAN)
         if (infoExp.dimension > 0) {
+            // Error: No puedes meter una lista entera en una variable que solo guarda un número
             System.err.println("Error: No se puede asignar un arreglo a la variable escalar '" + id + "'");
             return false;
         }
 
-        // Regla: Interoperabilidad numérica en escalares
+        // Regla: Interoperabilidad numérica (Un FLOAT puede recibir un INT)
         if (tipoDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return true;
 
+        // Regla General: Los tipos deben ser idénticos (ej: BOOLEAN = BOOLEAN)
         return tipoDestino.equals(infoExp.tipo);
     }
 
+    /**
+     * Valida la asignación a una posición específica (ej: miArray[0] = valor).
+     */
     public boolean validarAsignacionCelda(String id, Expresion valor, SymbolTable tabla) {
-        String tipoArreglo = tabla.getTipo(id); // Ejemplo: "FLOAT_ARRAY"
-        String tipoBase = tipoArreglo.replace("_ARRAY", ""); // Lo volvemos "FLOAT"
+        String tipoArreglo = tabla.getTipo(id); // ej: "FLOAT_ARRAY"
+        // Convertimos el tipo del arreglo al tipo de sus elementos (FLOAT_ARRAY -> FLOAT)
+        String tipoBase = tipoArreglo.replace("_ARRAY", "");
 
         InfoNodo infoVal = obtenerInfo(valor, tabla);
 
-        // No se puede asignar un arreglo a una celda única
+        // Una celda individual solo acepta valores simples, no otros arreglos
         if (infoVal.dimension > 0) {
             System.err.println("Error: No se puede asignar un arreglo completo a una posición individual.");
             return false;
         }
 
-        // Interoperabilidad numérica
+        // Permitimos mezcla de INT y FLOAT en la celda
         if (tipoBase.equals("FLOAT") && infoVal.tipo.equals("INT")) return true;
         if (tipoBase.equals("INT") && infoVal.tipo.equals("FLOAT")) return true;
 
         return tipoBase.equals(infoVal.tipo);
     }
 
-    // --- HELPER: INSPECTOR DE NODOS (Sin tocar la clase Expresion) ---
+    // --- HELPER: INSPECTOR DE NODOS (Recursivo) ---
+    /**
+     * Analiza cualquier nodo del árbol (Expresion) y deduce su tipo y dimensión.
+     * Este es el "corazón" que recorre el árbol.
+     */
     public InfoNodo obtenerInfo(Expresion n, SymbolTable tabla) {
-        if (n == null) return new InfoNodo("ERROR", 0); // Protección contra nodos nulos
+        if (n == null) return new InfoNodo("ERROR", 0);
 
+        // 1. Si es un valor fijo (Literal)
         if (n instanceof IntLiteral) return new InfoNodo("INT", 0);
         if (n instanceof FloatLiteral) return new InfoNodo("FLOAT", 0);
         if (n instanceof BoolLiteral) return new InfoNodo("BOOLEAN", 0);
 
+        // 2. Si es una variable (IdLiteral)
         if (n instanceof IdLiteral) {
             String id = ((IdLiteral) n).getNombreVariable();
             String t = tabla.getTipo(id);
 
-            // CORRECCIÓN 1: Validar que la variable existe en la tabla
+            // Validar existencia en tiempo de inspección
             if (t == null) {
                 System.err.println("Error Semántico: Variable '" + id + "' no declarada.");
                 return new InfoNodo("ERROR", 0);
             }
 
             int d = tabla.getDimension(id);
-
-            // CORRECCIÓN 2: Comparación segura (evita el NPE si t fuera null)
+            // Normalizamos nombres de tipos internos de la tabla
             if ("FLOAT_ARRAY".equals(t)) return new InfoNodo("FLOAT", d);
-            if ("INT_ARRAY".equals(t)) return new InfoNodo("INT", d);
+            if ("INT".equals(t)) return new InfoNodo("INT", d);
 
             return new InfoNodo(t, d);
         }
 
+        // 3. Si es un acceso a una posición (ej: a[i])
         if (n instanceof AccesoArray) {
             String id = ((AccesoArray) n).getId();
             String t = tabla.getTipo(id);
@@ -120,42 +154,48 @@ public class ValidatorDataType {
                 return new InfoNodo("ERROR", 0);
             }
 
-            // Quitamos el sufijo _ARRAY para obtener el tipo base (ej: FLOAT_ARRAY -> FLOAT)
+            // Al acceder a una celda, la dimensión resultante es 0 (escalar)
             return new InfoNodo(t.replace("_ARRAY", ""), 0);
         }
 
+        // 4. Si es una operación (ej: x + y)
         if (n instanceof OperacionBinaria) {
-            // CORRECCIÓN 3: Manejo de errores en cascada
             Expresion e1 = ((OperacionBinaria)n).getE1();
             Expresion e2 = ((OperacionBinaria)n).getE2();
 
+            // Llamada recursiva para validar la aritmética de los hijos
             String tRes = validarAritmetica(e1, e2, tabla);
 
-            // Si la validación aritmética falló, propagamos el ERROR
             if (tRes == null) return new InfoNodo("ERROR", 0);
 
             InfoNodo i1 = obtenerInfo(e1, tabla);
             InfoNodo i2 = obtenerInfo(e2, tabla);
 
-            // El resultado tiene el tipo de la operación y la dimensión mayor (Broadcasting)
+            // El resultado hereda la dimensión mayor (por si hay un escalar operando con un arreglo)
             return new InfoNodo(tRes, Math.max(i1.dimension, i2.dimension));
         }
+
+        // 5. Casos especiales de funciones del lenguaje
         if (n instanceof ValorMasCercano) {
-            // Como devuelve un float extraído del array, es FLOAT y es Escalar (dim 0)
+            // Esta función específica siempre retorna un número flotante simple
             return new InfoNodo("FLOAT", 0);
         }
 
         return new InfoNodo("UNKNOWN", 0);
     }
 
-    // Clase interna para transportar datos
+    /**
+     * Estructura de datos interna para mover la info por el árbol.
+     */
     public static class InfoNodo {
-        String tipo;
-        int dimension;
-        InfoNodo(String t, int d) { this.tipo = t; this.dimension = d; }
+        String tipo;      // INT, FLOAT, BOOLEAN, ERROR
+        int dimension;    // 0 para escala, >0 para arreglos
 
-        public String getTipo() {
-            return tipo;
+        InfoNodo(String t, int d) {
+            this.tipo = t;
+            this.dimension = d;
         }
+
+        public String getTipo() { return tipo; }
     }
 }
