@@ -389,42 +389,93 @@ expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
 
 expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
-    System.out.printf("REGLA 12.1: expr_arit -> %s + %s%n%n", e1, e2);
+
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo != null) {
-        RESULT = new Suma(e1, e2);
+    if (tipo.equals("ERROR")) {
+        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Suma.");
     }
+
+    Expresion izq = e1;
+    Expresion der = e2;
+    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
+    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
+
+    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
+        izq = new ConversionFloat(e1);
+    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
+        der = new ConversionFloat(e2);
+    }
+
+    RESULT = new Suma(izq, der);
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
-    System.out.printf("REGLA 12.2: expr_arit -> %s - %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Resta(e1, e2);
-        }
+
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo.equals("ERROR")) {
+        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Resta.");
+    }
+
+    Expresion izq = e1;
+    Expresion der = e2;
+    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
+    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
+
+    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
+        izq = new ConversionFloat(e1);
+    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
+        der = new ConversionFloat(e2);
+    }
+
+    RESULT = new Resta(izq, der);
 :}
 | termino:e {:
-    System.out.println("REGLA 12.3: expr_arit -> termino");
-    System.out.printf("REGLA 12.3: expr_arit -> %s%n%n", e);
     RESULT = e;
 :};
 
 termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
-    System.out.printf("REGLA 13.1: termino -> %s * %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Multiplicacion(e1, e2);
-        }
+
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo.equals("ERROR")) {
+        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Multiplicación.");
+    }
+
+    Expresion izq = e1;
+    Expresion der = e2;
+    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
+    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
+
+    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
+        izq = new ConversionFloat(e1);
+    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
+        der = new ConversionFloat(e2);
+    }
+
+    RESULT = new Multiplicacion(izq, der);
 :}
 | termino:e1 OP_DIV factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
-    System.out.printf("REGLA 13.2: termino -> %s / %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Division(e1, e2);
-        }
+
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo.equals("ERROR")) {
+        throw new RuntimeException("Error Semántico: Tipos incompatibles en la División.");
+    }
+
+    Expresion izq = e1;
+    Expresion der = e2;
+    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
+    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
+
+    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
+        izq = new ConversionFloat(e1);
+    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
+        der = new ConversionFloat(e2);
+    }
+
+    RESULT = new Division(izq, der);
 :}
 | factor:e {:
-    System.out.println("REGLA 13.3: termino -> factor");
-    System.out.printf("REGLA 13.3: termino -> %s%n%n", e);
     RESULT = e;
 :};
 
