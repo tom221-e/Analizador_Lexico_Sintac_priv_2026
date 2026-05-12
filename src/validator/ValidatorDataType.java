@@ -89,6 +89,54 @@ public class ValidatorDataType {
         return tipoDestino.equals(infoExp.tipo);
     }
 
+
+
+
+
+    public String obtenerTipoResultante(String id, Expresion e, SymbolTable tabla) {
+        // 1. Verificamos existencia
+        if (!tabla.exists(id)) {
+            return "ERROR_NO_DECLARADO";
+        }
+
+        String tipoDestino = tabla.getTipo(id);
+        int dimDestino = tabla.getDimension(id);
+        InfoNodo infoExp = obtenerInfo(e, tabla);
+
+        // --- Lógica para Arreglos ---
+        if (tipoDestino.equals("FLOAT_ARRAY") || dimDestino > 0) {
+            // Broadcasting: un número a un arreglo resulta en el tipo del arreglo
+            if (infoExp.dimension == 0) {
+                if (infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT")) {
+                    return tipoDestino;
+                }
+                return "ERROR_TIPO_INCOMPATIBLE";
+            }
+            // Asignación de arreglo a arreglo
+            if (dimDestino == infoExp.dimension) {
+                return tipoDestino;
+            }
+            return "ERROR_DIMENSION_INCOMPATIBLE";
+        }
+
+        // --- Lógica para Escalares ---
+        if (infoExp.dimension > 0) {
+            return "ERROR_ASIGNAR_ARRAY_A_ESCALAR";
+        }
+
+        // Promoción automática: Si el destino es FLOAT y llega un INT, el resultado es FLOAT
+        if (tipoDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) {
+            return "FLOAT";
+        }
+
+        // Si los tipos son iguales (BOOLEAN con BOOLEAN, etc.)
+        if (tipoDestino.equals(infoExp.tipo)) {
+            return tipoDestino;
+        }
+
+        return "ERROR_TIPO_INCOMPATIBLE";
+    }
+
     /**
      * Valida la asignación a una posición específica (ej: miArray[0] = valor).
      */

@@ -11,7 +11,7 @@ public class AccesoArray extends Expresion {
 
     @Override
     protected String getEtiqueta() {
-        return "ACCESO ARRAY: " + nombre;
+        return "ACCESO ARRAY: " + nombre + "["+indice.getEtiqueta()+"]";
     }
     public String getId() {
         return nombre;
@@ -19,7 +19,17 @@ public class AccesoArray extends Expresion {
 
     @Override
     protected String graficar(String idPadre) {
-        String miId = this.getId();
-        return super.graficar(idPadre) + indice.graficar(miId);
+        // CREAMOS UN ID EXCLUSIVO PARA EL GRAFO
+        // Este ID muere cuando termina la función, no afecta a nadie más
+        String idVisual = "acceso_" + System.identityHashCode(this);
+
+        StringBuilder dot = new StringBuilder();
+
+        // 1. En lugar de usar super.graficar, escribimos la línea del DOT manualmente
+        // para usar nuestro idVisual único.
+        dot.append(String.format("%s [label=\"%s\"];\n", idVisual, getEtiqueta()));
+        dot.append(String.format("%s -> %s;\n", idPadre, idVisual));
+
+        return dot.toString();
     }
 }

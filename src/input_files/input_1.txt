@@ -17,14 +17,12 @@ PROGRAM
 
     % comentario entre sentencias
 
-    c = 0.3
+    c = mediciones[5]
     aux = 10 * 2 + (5 - 1)
     promedio = 0.0
     monto_total = 10 - 8
 
     % comentario con indentación que NO debe afectar
-
-    c = 5 + id * -3
 
     print ("Iniciando proceso")
 

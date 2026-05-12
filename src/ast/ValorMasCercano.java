@@ -1,26 +1,41 @@
 package ast;
 
-public class ValorMasCercano extends Expresion {
-    private final String lista; // Cambiado de Expresion a String
-    private final Expresion referencia;
+import java.util.ArrayList;
 
-    public ValorMasCercano(Expresion referencia, String lista) {
+public class ValorMasCercano extends Expresion {
+    private final Expresion referencia;
+    private final Object lista; // Cambiado de String a Object o el tipo de FLOAT_ARRAY
+    private final ArrayList<Sentencia> pasos;
+
+    public ValorMasCercano(Expresion referencia, Object lista, ArrayList<Sentencia> pasos) {
         this.referencia = referencia;
         this.lista = lista;
+        this.pasos = pasos;
     }
 
     @Override
     protected String getEtiqueta() {
-        // Incluimos el nombre de la lista en la etiqueta del nodo
-        return "VALOR_MAS_CERCANO (Lista: " + lista + ")";
+        // Evita usar el objeto directamente aquí si puede contener comas
+        return "VALOR_MAS_CERCANO";
     }
 
     @Override
-    protected String graficar(String idPadre) {
+    public String graficar(String idPadre) {
         String miId = this.getId();
-        // Solo graficamos la flecha hacia la referencia
-        // El nombre de la lista ya aparece en el texto del nodo actual
-        return super.graficar(idPadre) +
-                referencia.graficar(miId);
+        StringBuilder dot = new StringBuilder();
+
+        dot.append(super.graficar(idPadre));
+
+        // Graficar la lista (solo si es un Nodo del AST)
+        if (lista instanceof Nodo) {
+            dot.append(((Nodo) lista).graficar(miId));
+        }
+
+        // Graficar los pasos expandidos
+        for (Sentencia s : pasos) {
+            if (s != null) dot.append(s.graficar(miId));
+        }
+
+        return dot.toString();
     }
 }
