@@ -246,7 +246,7 @@ asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
     if (validador.validarAsignacion(id, e, tablaSimbolos)) {
            System.out.println("Asignación válida.");
-           RESULT = new Asignacion(id, e);
+           RESULT = new Asignacion(id, e, tablaSimbolos);
     } else {
              // Detiene la ejecución si los tipos no son compatibles
              throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles en la asignación de '" + id + "'");
@@ -328,13 +328,13 @@ sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b sentencia_alt:resto
 expr_logica ::= expr_and:e1 OR expr_logica:e2{:
     System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
     System.out.printf("REGLA 10.1: expr_logica -> %s OR %s%n%n", e1, e2);
-    RESULT = new OperacionOr(e1, e2);
+    RESULT = new OperacionOr(e1, e2, tablaSimbolos);
 :}
 | expr_and:e {: RESULT = e; :};
 expr_and    ::= expr_not:e1 AND expr_and:e2 {:
     System.out.println("REGLA 10.2: expr_logica -> expr_logica AND expr_relacional");
     System.out.printf("REGLA 10.2: expr_logica -> %s AND %s%n%n", e1, e2);
-    RESULT = new OperacionAnd(e1, e2);
+    RESULT = new OperacionAnd(e1, e2, tablaSimbolos);
 :}
 | expr_not:e  {:
     RESULT = e;
@@ -354,32 +354,32 @@ expr_not    ::= NOT expr_not:e {:
 expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = new Igualdad(e1, e2);
+    RESULT = new Igualdad(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e1 MAYOR expr_arit:e2 {:
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = new Mayor(e1, e2);
+    RESULT = new Mayor(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e1 MENOR expr_arit:e2 {:
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = new Menor(e1, e2);
+    RESULT = new Menor(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e1 MAYORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = new MayorIgual(e1, e2);
+    RESULT = new MayorIgual(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e1 MENORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new MenorIgual(e1, e2);
+    RESULT = new MenorIgual(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e1 DESIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new Desigual(e1, e2);
+    RESULT = new Desigual(e1, e2, tablaSimbolos);
 :}
 | expr_arit:e {:
     System.out.println("REGLA 11.6: expr_relacional -> expr_arit");
@@ -406,7 +406,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
         der = new ConversionFloat(e2);
     }
 
-    RESULT = new Suma(izq, der);
+    RESULT = new Suma(izq, der, tablaSimbolos);
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
@@ -427,7 +427,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
         der = new ConversionFloat(e2);
     }
 
-    RESULT = new Resta(izq, der);
+    RESULT = new Resta(izq, der, tablaSimbolos);
 :}
 | termino:e {:
     RESULT = e;
@@ -452,7 +452,7 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
         der = new ConversionFloat(e2);
     }
 
-    RESULT = new Multiplicacion(izq, der);
+    RESULT = new Multiplicacion(izq, der, tablaSimbolos);
 :}
 | termino:e1 OP_DIV factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
@@ -473,7 +473,7 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
         der = new ConversionFloat(e2);
     }
 
-    RESULT = new Division(izq, der);
+    RESULT = new Division(izq, der, tablaSimbolos);
 :}
 | factor:e {:
     RESULT = e;

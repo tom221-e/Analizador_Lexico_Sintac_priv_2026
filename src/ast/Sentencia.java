@@ -1,6 +1,6 @@
 package ast;
 
-public abstract class Sentencia extends Nodo {
+public abstract class Sentencia extends Expresion {
     @Override
     protected String getEtiqueta() {
         return getNombreSentencia();

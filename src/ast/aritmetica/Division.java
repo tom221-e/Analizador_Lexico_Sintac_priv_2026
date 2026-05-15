@@ -2,10 +2,11 @@ package ast.aritmetica;
 
 import ast.Expresion;
 import ast.OperacionBinaria;
+import parser.SymbolTable;
 
 public class Division extends OperacionBinaria {
-    public Division(Expresion izquierda, Expresion derecha) {
-        super(izquierda, derecha);
+    public Division(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
+        super(izquierda, derecha,tabla);
     }
 
     @Override
