@@ -1,6 +1,8 @@
 package ast;
 
-public class StringLiteral extends Nodo {
+import llvm.CodeGeneratorHelper;
+
+public class StringLiteral extends Expresion {
     private final String valor;
 
     public StringLiteral(String valor) {
@@ -20,5 +22,12 @@ public class StringLiteral extends Nodo {
     }
     public String getStr() {
         return valor;
+    }
+    @Override
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+        resultado.append(String.format("%1$s =  private constant [%2$s x i8] c%3$s\00", this.getIr_ref(), valor.length(), valor));
+        return resultado.toString();
     }
 }

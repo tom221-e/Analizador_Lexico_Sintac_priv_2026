@@ -34,7 +34,7 @@ public class AccesoArray extends Expresion {
 
         return dot.toString();
     }
-    @Override
+
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();

@@ -12,4 +12,8 @@ public class Suma extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "+"; // Corresponde a OP_SUMA
     }
+    @Override
+    public String get_llvm_op_code() {
+        return "add";
+    }
 }

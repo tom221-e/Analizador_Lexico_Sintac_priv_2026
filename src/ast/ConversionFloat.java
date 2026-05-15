@@ -1,5 +1,7 @@
 package ast;
 
+import llvm.CodeGeneratorHelper;
+
 public class ConversionFloat extends Expresion {
     private final Expresion hijo;
 
@@ -26,5 +28,12 @@ public class ConversionFloat extends Expresion {
         }
 
         return dot.toString();
+    }
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+        resultado.append(String.format("%1$s = sitofp i32 %2$s to float\n",
+                this.getIr_ref(), hijo.getIr_ref()));
+        return resultado.toString();
     }
 }

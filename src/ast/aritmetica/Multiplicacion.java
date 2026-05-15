@@ -12,4 +12,9 @@ public class Multiplicacion extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "*"; // Corresponde a OP_MULTI
     }
+    @Override
+    public String get_llvm_op_code() {
+        return "mul";
+    }
+
 }

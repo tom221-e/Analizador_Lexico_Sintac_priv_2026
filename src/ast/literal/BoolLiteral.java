@@ -20,7 +20,11 @@ public class BoolLiteral extends Expresion {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("%1$s = add i1 0, %2$s\n", this.getIr_ref(), getBool()));
+        if (this.getBool()){
+            resultado.append(String.format("%1$s = add i1 0, %2$s\n", this.getIr_ref(), 1));
+        }else {
+            resultado.append(String.format("%1$s = add i1 0, %2$s\n", this.getIr_ref(), 0));
+        }
         return resultado.toString();
     }
 }
