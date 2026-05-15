@@ -21,6 +21,7 @@ public abstract class  Nodo {
         final int pos = name.lastIndexOf('.') + 1;
         return name.substring(pos);
     }
+    public abstract String generarCodigo();
 
     protected String graficar(String idPadre){
         StringBuilder grafico = new StringBuilder();

@@ -1,6 +1,7 @@
 package ast.literal;
 
 import ast.Expresion;
+import llvm.CodeGeneratorHelper;
 
 public class IntLiteral extends Expresion {
     private final String valor;
@@ -17,6 +18,13 @@ public class IntLiteral extends Expresion {
     // Mantenemos este para tu lógica semántica (operaciones, tablas, etc.)
     public String getValor() {
         return valor;
+    }
+
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+        resultado.append(String.format("%1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(getValor())));
+        return resultado.toString();
     }
 
     @Override

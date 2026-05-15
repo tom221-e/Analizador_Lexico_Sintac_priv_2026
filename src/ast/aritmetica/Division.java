@@ -12,4 +12,8 @@ public class Division extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "/"; // Corresponde a OP_DIV
     }
+    @Override
+    public String get_llvm_op_code() {
+        return "sdiv";
+    }
 }

@@ -1,5 +1,7 @@
 package ast;
 
+import llvm.CodeGeneratorHelper;
+
 public class AccesoArray extends Expresion {
     private final String nombre;
     private final Expresion indice;
@@ -31,5 +33,28 @@ public class AccesoArray extends Expresion {
         dot.append(String.format("%s -> %s;\n", idPadre, idVisual));
 
         return dot.toString();
+    }
+    @Override
+    @Override
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+
+        // 1. Generamos el código del índice
+        resultado.append(this.indice.generarCodigo());
+
+        // 2. Puntero para la dirección calculada
+        String ptrDireccion = CodeGeneratorHelper.getNewPointer();
+
+        resultado.append(String.format("%1$s = getelementptr inbounds float, float* %2$s, i32 %3$s\n",
+                ptrDireccion, this.nombre, this.indice.getIr_ref()));
+
+        // 4. Registro final para el valor
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+        // 5. Cargar el valor
+        resultado.append(String.format("%1$s = load float, float* %2$s\n",
+                this.getIr_ref(), ptrDireccion));
+
+        return resultado.toString();
     }
 }

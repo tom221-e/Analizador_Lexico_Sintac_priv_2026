@@ -18,4 +18,7 @@ public class StringLiteral extends Nodo {
         // Llama a la lógica de Nodo para crear el círculo y la flecha
         return super.graficar(idPadre);
     }
+    public String getStr() {
+        return valor;
+    }
 }
