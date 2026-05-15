@@ -1,6 +1,7 @@
 package ast;
 
 import java.util.ArrayList;
+import llvm.*;
 
 public class SentenciaAlt extends Sentencia {
     private final Expresion condicion;
@@ -16,6 +17,55 @@ public class SentenciaAlt extends Sentencia {
     @Override
     protected String getNombreSentencia() {
         return "ALT_WHILE";
+    }
+
+    @Override
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+
+        // 1. Creamos las etiquetas locales para ESTA alternativa
+        String lblCondicion = CodeGeneratorHelper.getNewPointer();
+        String lblCuerpo = CodeGeneratorHelper.getNewPointer();
+        String lblSiguiente = CodeGeneratorHelper.getNewPointer(); // Para el siguiente "else if"
+        String lblFin = CodeGeneratorHelper.getNewPointer();       // El final de esta encapsulación
+
+        // Entramos ordenadamente a evaluar la condición
+        resultado.append(String.format("  br label %%%s\n", lblCondicion));
+
+        // --- BLOQUE 1: CONDICIÓN ---
+        resultado.append(String.format("\n%s:\n", lblCondicion));
+        resultado.append(this.condicion.generarCodigo());
+        // Saltamos al cuerpo si es true, o al "siguiente" si es false
+        resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n",
+                this.condicion.getIr_ref(), lblCuerpo, lblSiguiente));
+
+        // --- BLOQUE 2: CUERPO (Si la condición fue verdadera) ---
+        resultado.append(String.format("\n%s:\n", lblCuerpo));
+        if (this.cuerpo != null) {
+            // Iteramos el ArrayList como pediste
+            for (Sentencia s : this.cuerpo) {
+                if (s != null) {
+                    resultado.append(s.generarCodigo());
+                }
+            }
+        }
+        // Una vez que el cuerpo termina, saltamos a nuestro final local
+        resultado.append(String.format("  br label %%%s\n", lblFin));
+
+        // --- BLOQUE 3: SIGUIENTE ALTERNATIVA (Si la condición fue falsa) ---
+        resultado.append(String.format("\n%s:\n", lblSiguiente));
+        if (this.alternativa != null) {
+            // La recursividad se encarga del resto mágicamente
+            resultado.append(this.alternativa.generarCodigo());
+        }
+        // Después de que la(s) siguiente(s) alternativa(s) termine(n), salimos por nuestro final
+        resultado.append(String.format("  br label %%%s\n", lblFin));
+
+        // --- BLOQUE 4: ETIQUETA DE FIN LOCAL ---
+        // Aquí es donde converge el flujo antes de devolver el control al padre
+        resultado.append(String.format("\n%s:\n", lblFin));
+
+        return resultado.toString();
     }
 
     @Override
