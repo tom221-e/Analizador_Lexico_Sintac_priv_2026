@@ -580,7 +580,7 @@ factor ::= ENTERO:e {:
 | OP_RESTA factor:y {:
     System.out.println("REGLA 14.7: factor -> - factor (unario)");
     System.out.printf("REGLA 14.7: factor -> -%s%n%n", y);
-    RESULT = new MenosUnario(y);
+    RESULT = new MenosUnario(y, tablaSimbolos);
 :}%prec UMINUS;
 
 
