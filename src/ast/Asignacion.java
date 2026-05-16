@@ -29,7 +29,7 @@ public class Asignacion extends Sentencia {
 
         // 2. Graficamos el lado IZQUIERDO (el ID)
         // Creamos un IdLiteral temporal para que genere su propio globo
-        IdLiteral nodoId = new IdLiteral(id);
+        IdLiteral nodoId = new IdLiteral(id, tabla);
         grafico.append(nodoId.graficar(miId));
 
         // 3. Graficamos el lado DERECHO (el valor o expresión)
