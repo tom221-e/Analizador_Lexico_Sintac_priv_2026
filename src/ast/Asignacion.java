@@ -37,6 +37,9 @@ public class Asignacion extends Sentencia {
 
         return grafico.toString();
     }
+    protected String getNombreP() {
+        return "%"+id; // El globo del grafo mostrará el nombre de la variable
+    }
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
@@ -51,16 +54,16 @@ public class Asignacion extends Sentencia {
         if ("INT".equals(tipoDeMiVariable)) {
             // El %%%2$s genera un '%' seguido del nombre de la variable
             resultado.append(String.format("store i32 %1$s, i32* %2$s\n",
-                    this.valor.getIr_ref(), this.id));
+                    this.valor.getIr_ref(), this.getNombreP()));
 
         } else if ("FLOAT".equals(tipoDeMiVariable)) {
             resultado.append(String.format("store float %1$s, float* %2$s\n",
-                    this.valor.getIr_ref(), this.id));
+                    this.valor.getIr_ref(), this.getNombreP()));
 
         } else if ("BOOLEAN".equals(tipoDeMiVariable)) {
             // En LLVM los booleanos son i1
             resultado.append(String.format("store i1 %1$s, i1* %2$s\n",
-                    this.valor.getIr_ref(), this.id));
+                    this.valor.getIr_ref(), this.getNombreP()));
         }
 
         return resultado.toString();
