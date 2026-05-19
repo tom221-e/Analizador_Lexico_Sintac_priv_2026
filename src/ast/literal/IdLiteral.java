@@ -41,5 +41,3 @@ public class IdLiteral extends Expresion {
         return resultado.toString();
     }
 }
-
-}
