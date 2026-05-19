@@ -1,18 +1,18 @@
 package ast;
 import java.util.ArrayList;
 
-public class Declaracion extends Nodo {
-    private final String tipo;
+public class DeclaracionArray extends Nodo {
+    private final String tamano;
     private final ArrayList<String> variables;
 
-    public Declaracion(String tipo, ArrayList<String> variables) {
-        this.tipo = tipo;
+    public DeclaracionArray(String tamano, ArrayList<String> variables) {
+        this.tamano = tamano;
         this.variables = variables;
     }
 
     @Override
     protected String getEtiqueta() {
-        return "DECLARACION: " + tipo;
+        return "DECLARACION: Array[" + tamano + "]";
     }
 
     @Override
@@ -31,8 +31,8 @@ public class Declaracion extends Nodo {
         return dot.toString();
     }
 
-    public String getTipo() {
-        return tipo;
+    public String getTamano() {
+        return tamano;
     }
 
     public ArrayList<String> getVariables() {
@@ -42,28 +42,14 @@ public class Declaracion extends Nodo {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Mapeamos tu tipo de dato al tipo de LLVM
-        String tipoLLVM = "";
-        if ("INT".equals(this.tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(this.tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(this.tipo)) {
-            tipoLLVM = "i1";
-        } else {
-            return "; ERROR: Tipo de dato '" + this.tipo + "' no soportado en LLVM\n";
-        }
-
-        // 2. Generamos un 'alloca' para cada variable en la lista
+        // Como el array es específico para FLOAT, hardcodeamos el tipo en LLVM
         for (String var : variables) {
-            // En LLVM: %x = alloca i32
-            // Usamos % delante del nombre de la variable para identificar el puntero local
-            resultado.append(String.format("%1$s = alloca %2$s\n",
-                    "%"+ var,       // Nombre de la variable
-                    tipoLLVM   // Tipo (i32, float, i1)
+            // Genera directamente:  %nombreVariable = alloca [tamaño x float]
+            resultado.append(String.format("%1$s = alloca [ %2$s x float]\n",
+                    var,
+                    this.tamano
             ));
         }
-
         return resultado.toString();
     }
 }

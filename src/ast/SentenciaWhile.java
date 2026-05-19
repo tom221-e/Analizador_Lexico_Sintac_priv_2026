@@ -23,40 +23,55 @@ public class SentenciaWhile extends Sentencia {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Definimos las etiquetas necesarias para el ciclo
-        String lblCondicion = CodeGeneratorHelper.getNewPointer(); // Donde se evalúa si entra al loop
-        String lblCuerpo = CodeGeneratorHelper.getNewPointer();   // El bloque de instrucciones
-        String lblFin = CodeGeneratorHelper.getNewPointer();     // Salida del loop
+        // 1. CORRECCIÓN: Usar getNewTag() para las etiquetas de control del bloque
+        String lblCondicion = CodeGeneratorHelper.getNewTag(); // Destino del CONTINUE (ej: tag.1)
+        String lblCuerpo = CodeGeneratorHelper.getNewTag();    // El bloque de instrucciones (ej: tag.2)
+        String lblFin = CodeGeneratorHelper.getNewTag();       // Destino del BREAK y salida (ej: tag.3)
 
-        // 2. Salto inicial para entrar a la evaluación de la condición
-        resultado.append(String.format("br label %1$s\n", lblCondicion));
+        // =========================================================================
+        // SOPORTE PARA BREAK Y CONTINUE: Apilamos las etiquetas en el helper
+        // =========================================================================
+        CodeGeneratorHelper.pushContinueTag(lblCondicion); // El continue volverá a evaluar
+        CodeGeneratorHelper.pushBreakTag(lblFin);         // El break saltará inmediatamente afuera
+
+        // 2. Salto inicial para entrar a la evaluación de la condición (lleva % en LLVM)
+        resultado.append(String.format("  br label %%%1$s\n", lblCondicion));
 
         // --- BLOQUE 1: EVALUACIÓN DE LA CONDICIÓN ---
         resultado.append(String.format("\n%1$s:\n", lblCondicion));
-        // Generamos el código de la expresión (ej: i < 10)
         resultado.append(this.condicion.generarCodigo());
 
-        // Saltamos al cuerpo si es verdadero (i1 1) o al fin si es falso (i1 0)
-        resultado.append(String.format("br i1 %1$s, label %2$s, label %3$s\n",
+        // Saltamos al cuerpo si es verdadero o al fin si es falso (lleva % antes de las etiquetas)
+        resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n",
                 this.condicion.getIr_ref(), lblCuerpo, lblFin));
 
         // --- BLOQUE 2: CUERPO DEL CICLO ---
         resultado.append(String.format("\n%1$s:\n", lblCuerpo));
 
         if (this.cuerpo != null) {
-            // Ejecutamos todas las sentencias del ArrayList
             for (Sentencia s : this.cuerpo) {
                 if (s != null) {
                     resultado.append(s.generarCodigo());
+                    // Si alguna 's' interna es un SentenciaBreak o SentenciaContinue,
+                    // leerá del helper 'lblFin' o 'lblCondicion' automáticamente.
                 }
             }
         }
 
-        // CRUCIAL: Al terminar el cuerpo, saltamos de regreso a la condición
-        resultado.append(String.format("br label %1$s\n", lblCondicion));
+        // Al terminar el cuerpo, saltamos de regreso a la condición
+        resultado.append(String.format("  br label %%%1$s\n", lblCondicion));
+
+        // =========================================================================
+        // SOPORTE PARA BREAK Y CONTINUE: Desapilamos al salir de este contexto
+        // =========================================================================
+        CodeGeneratorHelper.popContinueTag();
+        CodeGeneratorHelper.popBreakTag();
 
         // --- BLOQUE 3: SALIDA DEL CICLO ---
         resultado.append(String.format("\n%1$s:\n", lblFin));
+
+        // NOTA: Si en un futuro necesitas que funcione tu 'alternativa' (SentenciaAlt)
+        // en la generación de código, se procesaría aquí abajo, justo en el bloque de salida.
 
         return resultado.toString();
     }

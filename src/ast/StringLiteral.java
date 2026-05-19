@@ -23,11 +23,15 @@ public class StringLiteral extends Expresion {
     public String getStr() {
         return valor;
     }
+    public Integer getLongitudStr() {
+        return valor.length() + 1;
+    }
+
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
-        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("%1$s =  private constant [%2$s x i8] c%3$s\00", this.getIr_ref(), valor.length(), valor));
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer().replace("%", ""));
+        resultado.append(String.format("%1$s =  private constant [%2$s x i8] c%3$s", "@"+ this.getIr_ref(), valor.length(), valor+"\00"));
         return resultado.toString();
     }
 }

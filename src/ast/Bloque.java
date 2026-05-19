@@ -32,4 +32,19 @@ public class Bloque extends Sentencia {
         }
         return dot.toString();
     }
+    public String generarCodigo() {
+        StringBuilder resultado = new StringBuilder();
+
+        // Recorremos secuencialmente todas las sentencias que componen este bloque
+        if (this.sentencias != null) {
+            for (Sentencia s : this.sentencias) {
+                if (s != null) {
+                    // Acumulamos el código LLVM de cada instrucción (ej: asignaciones, llamadas, ifs)
+                    resultado.append(s.generarCodigo());
+                }
+            }
+        }
+
+        return resultado.toString();
+    }
 }

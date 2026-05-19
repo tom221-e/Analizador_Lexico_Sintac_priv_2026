@@ -5,8 +5,8 @@ import ast.OperacionBinaria;
 import parser.SymbolTable;
 
 public class Division extends OperacionBinaria {
-    public Division(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha,tabla);
+    public Division(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

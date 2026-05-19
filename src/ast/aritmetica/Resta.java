@@ -6,8 +6,8 @@ import parser.SymbolTable;
 
 public class Resta extends OperacionBinaria {
 
-    public Resta(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha, tabla);
+    public Resta(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

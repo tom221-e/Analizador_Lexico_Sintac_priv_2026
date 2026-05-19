@@ -5,8 +5,8 @@ import ast.OperacionBinaria;
 import parser.SymbolTable;
 
 public class Multiplicacion extends OperacionBinaria {
-    public Multiplicacion(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha, tabla);
+    public Multiplicacion(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

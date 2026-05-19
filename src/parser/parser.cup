@@ -161,7 +161,7 @@ String tipoEspecial = "FLOAT_ARRAY";
             System.out.println("Declarado: " + id + " de tipo " + tipoEspecial);
         }
     }
-    RESULT = new Declaracion(tipoEspecial + "[" + e + "]", nombres);
+    RESULT = new DeclaracionArray(e, nombres);
 :};
 
 
@@ -214,7 +214,16 @@ sentencia ::= sentencia_if:s {:
 | PRINT PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 3.4: sentencia -> PRINT expresion");
     System.out.printf("REGLA 3.4: sentencia -> %s%n%n", e);
-    RESULT = new SentenciaPrint(e);
+        String tipo = validador.obtenerInfo(e, tablaSimbolos).getTipo();
+        String tipoLLVM = "";
+        if ("INT".equals(tipo)) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(tipo)) {
+            tipoLLVM = "float";
+        } else if ("BOOLEAN".equals(tipo)) {
+             tipoLLVM = "i1";
+        }
+    RESULT = new SentenciaPrint(e, tipoLLVM);
 :}
 | PRINT PAREN_A STRING:str PAREN_C
 {:
@@ -228,7 +237,7 @@ sentencia ::= sentencia_if:s {:
            } else {
                System.out.println("REGLA: PRINT -> La cadena ya existe en la tabla: " + str);
            }
-           RESULT = RESULT = new SentenciaPrint(new StringLiteral(str));;
+           RESULT = RESULT = new SentenciaPrint(new StringLiteral(str), "i8");;
 :}
 | BREAK {:
     System.out.println("REGLA 3.5: sentencia -> BREAK");
@@ -405,8 +414,15 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
-
-    RESULT = new Suma(izq, der, tablaSimbolos);
+    String tipoLLVM = "";
+    if ("INT".equals(tipo)) {
+        tipoLLVM = "i32";
+    } else if ("FLOAT".equals(tipo)) {
+        tipoLLVM = "float";
+    } else if ("BOOLEAN".equals(tipo)) {
+         tipoLLVM = "i1";
+    }
+    RESULT = new Suma(izq, der, tipoLLVM);
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
@@ -426,8 +442,15 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
-
-    RESULT = new Resta(izq, der, tablaSimbolos);
+    String tipoLLVM = "";
+    if ("INT".equals(tipo)) {
+        tipoLLVM = "i32";
+    } else if ("FLOAT".equals(tipo)) {
+        tipoLLVM = "float";
+    } else if ("BOOLEAN".equals(tipo)) {
+         tipoLLVM = "i1";
+    }
+    RESULT = new Resta(izq, der, tipoLLVM);
 :}
 | termino:e {:
     RESULT = e;
@@ -451,8 +474,16 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
+    String tipoLLVM = "";
+    if ("INT".equals(tipo)) {
+        tipoLLVM = "i32";
+    } else if ("FLOAT".equals(tipo)) {
+        tipoLLVM = "float";
+    } else if ("BOOLEAN".equals(tipo)) {
+         tipoLLVM = "i1";
+    }
 
-    RESULT = new Multiplicacion(izq, der, tablaSimbolos);
+    RESULT = new Multiplicacion(izq, der, tipoLLVM);
 :}
 | termino:e1 OP_DIV factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
@@ -472,8 +503,15 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
-
-    RESULT = new Division(izq, der, tablaSimbolos);
+    String tipoLLVM = "";
+    if ("INT".equals(tipo)) {
+        tipoLLVM = "i32";
+    } else if ("FLOAT".equals(tipo)) {
+        tipoLLVM = "float";
+    } else if ("BOOLEAN".equals(tipo)) {
+         tipoLLVM = "i1";
+    }
+    RESULT = new Division(izq, der, tipoLLVM);
 :}
 | factor:e {:
     RESULT = e;
@@ -497,11 +535,20 @@ factor ::= ENTERO:e {:
 | ID:e {:
     System.out.println("REGLA 14.4: factor -> ID");
     System.out.printf("REGLA 14.4: factor -> %s%n%n", e);
-    RESULT = new IdLiteral(e);
+    String tipoLLVM = "";
+    if ("INT".equals(tablaSimbolos.getTipo(e))) {
+                tipoLLVM = "i32";
+            } else if ("FLOAT".equals(tablaSimbolos.getTipo(e))) {
+                tipoLLVM = "float";
+            } else if ("BOOLEAN".equals(tablaSimbolos.getTipo(e))) {
+                tipoLLVM = "i1";
+            }
+
+    RESULT = new IdLiteral(e, tipoLLVM);
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C {:
     System.out.println("REGLA 14.8: factor -> ARRAY[" + exp + "]");
-    RESULT = new AccesoArray(i, exp);
+    RESULT = new AccesoArray(i, exp, tablaSimbolos.getTamano(i));
 :}
 | FLOAT_ARRAY:e {:
     System.out.println("REGLA 14.5: factor -> FLOAT_ARRAY");

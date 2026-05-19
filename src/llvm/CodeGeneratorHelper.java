@@ -1,16 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package llvm;
 
-/**
- *
- * @author Juan Pablo
- */
+import java.util.Stack;
+
 public class CodeGeneratorHelper {
 
     private static int nextID = 0;
+    private static final Stack<String> breakStack = new Stack<>();
+    private static final Stack<String> continueStack = new Stack<>();
 
     private CodeGeneratorHelper(){}
 
@@ -34,5 +30,34 @@ public class CodeGeneratorHelper {
         ret.append(String.format("tag.%s", nextID));
         return ret.toString();
     }
+    // MÉTODOS AGREGADOS PARA MANEJAR EL CONTINUE
 
+    public static void pushBreakTag(String tag) {
+        breakStack.push(tag);
+    }
+
+    public static void popBreakTag() {
+        if (!breakStack.isEmpty()) {
+            breakStack.pop();
+        }
+    }
+
+    public static String getCurrentBreakTag() {
+        return breakStack.isEmpty() ? null : breakStack.peek();
+    }
+
+    // MÉTODOS AGREGADOS PARA MANEJAR EL CONTINUE
+    public static void pushContinueTag(String tag) {
+        continueStack.push(tag);
+    }
+
+    public static void popContinueTag() {
+        if (!continueStack.isEmpty()) {
+            continueStack.pop();
+        }
+    }
+
+    public static String getCurrentContinueTag() {
+        return continueStack.isEmpty() ? null : continueStack.peek();
+    }
 }

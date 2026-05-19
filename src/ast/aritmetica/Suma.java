@@ -5,8 +5,8 @@ import ast.OperacionBinaria;
 import parser.SymbolTable;
 
 public class Suma extends OperacionBinaria {
-    public Suma(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha, tabla);
+    public Suma(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override
