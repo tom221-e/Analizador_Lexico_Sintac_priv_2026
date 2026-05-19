@@ -70,6 +70,15 @@ public class SymbolTable {
         }
         return null; // No se encontró
     }
+    public String getTamano(String id) {
+        for (SymbolInfo info : table.values()) {
+            // CORRECCIÓN: Verificar que el nombre no sea null antes de comparar
+            if (info.nombreOriginal() != null && info.nombreOriginal().equals(id)) {
+                return info.longitud();
+            }
+        }
+        return null; // No se encontró
+    }
 
     public void print() {
         System.out.println("--------------------------------------------------------------------------------------");
