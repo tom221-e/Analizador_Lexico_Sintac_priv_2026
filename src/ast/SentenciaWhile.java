@@ -35,14 +35,14 @@ public class SentenciaWhile extends Sentencia {
         CodeGeneratorHelper.pushBreakTag(lblFin);         // El break saltará inmediatamente afuera
 
         // 2. Salto inicial para entrar a la evaluación de la condición (lleva % en LLVM)
-        resultado.append(String.format("  br label %%%1$s\n", lblCondicion));
+        resultado.append(String.format("br label %1$s\n", lblCondicion));
 
         // --- BLOQUE 1: EVALUACIÓN DE LA CONDICIÓN ---
         resultado.append(String.format("\n%1$s:\n", lblCondicion));
         resultado.append(this.condicion.generarCodigo());
 
         // Saltamos al cuerpo si es verdadero o al fin si es falso (lleva % antes de las etiquetas)
-        resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n",
+        resultado.append(String.format("br i1 %1$s, label %1$s, label %1$s\n",
                 this.condicion.getIr_ref(), lblCuerpo, lblFin));
 
         // --- BLOQUE 2: CUERPO DEL CICLO ---
@@ -59,7 +59,7 @@ public class SentenciaWhile extends Sentencia {
         }
 
         // Al terminar el cuerpo, saltamos de regreso a la condición
-        resultado.append(String.format("  br label %%%1$s\n", lblCondicion));
+        resultado.append(String.format("br label %1$s\n", lblCondicion));
 
         // =========================================================================
         // SOPORTE PARA BREAK Y CONTINUE: Desapilamos al salir de este contexto

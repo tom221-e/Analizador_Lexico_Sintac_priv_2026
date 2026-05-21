@@ -43,7 +43,7 @@ public class ReadBoolean extends Expresion {
                 valorLeido, ptrDest));
 
         String valorBool = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("  %1$s = trunc i32 %2$s to i1\n",
+        resultado.append(String.format("%1$s = trunc i32 %2$s to i1\n",
                 valorBool, valorLeido));
 
         // 5. Guardamos el resultado final (tipo i1) en ir_ref para uso del AST
