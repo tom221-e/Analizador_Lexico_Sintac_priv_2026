@@ -9,4 +9,9 @@ public class Igual extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "="; // Corresponde a Igual
     }
+
+    @Override
+    public String get_llvm_op_code() {
+        throw new UnsupportedOperationException("igual");
+    }
 }
