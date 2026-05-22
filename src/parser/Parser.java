@@ -1241,7 +1241,7 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.printf("REGLA 12.1: expr_arit -> %s + %s%n%n", e1, e2);
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
     if (tipo != null) {
-        RESULT = new Suma(e1, e2);
+        RESULT = new Suma(e1, e2, tipo);
     }
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_arit",17, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1261,8 +1261,9 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
     System.out.printf("REGLA 12.2: expr_arit -> %s - %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Resta(e1, e2);
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo != null) {
+            RESULT = new Resta(e1, e2, tipo);
         }
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_arit",17, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1298,8 +1299,9 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
     System.out.printf("REGLA 13.1: termino -> %s * %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Multiplicacion(e1, e2);
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo != null) {
+            RESULT = new Multiplicacion(e1, e2, tipo);
         }
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("termino",18, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1319,8 +1321,9 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
     System.out.printf("REGLA 13.2: termino -> %s / %s%n%n", e1, e2);
-    if (validador.validarAritmetica(e1, e2, tablaSimbolos) != null) {
-            RESULT = new Division(e1, e2);
+    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
+    if (tipo != null) {
+            RESULT = new Division(e1, e2, tipo);
         }
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("termino",18, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);

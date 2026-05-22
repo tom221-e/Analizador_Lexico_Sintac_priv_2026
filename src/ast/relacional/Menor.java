@@ -6,8 +6,10 @@ import parser.SymbolTable;
 import validator.ValidatorDataType;
 
 public class Menor extends OperacionBinaria {
-    public Menor(Expresion izquierda, Expresion derecha, SymbolTable table) {
-        super(izquierda, derecha, table);
+
+    private SymbolTable tabla;
+    public Menor(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

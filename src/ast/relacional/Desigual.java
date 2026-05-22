@@ -6,8 +6,10 @@ import parser.SymbolTable;
 import validator.ValidatorDataType;
 
 public class Desigual extends OperacionBinaria {
-    public Desigual(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha, tabla);
+    private SymbolTable tabla;
+    
+    public Desigual(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override
@@ -17,9 +19,14 @@ public class Desigual extends OperacionBinaria {
     @Override
     public String get_llvm_op_code() {
         ValidatorDataType validator = new ValidatorDataType();
-        if ("FLOAT".equals(validator.obtenerInfo(this.izquierda, this.tabla).getTipo())) {
-            return "fcmp one"; // Ordered Not Equal
+
+        ValidatorDataType.InfoNodo info =
+                validator.obtenerInfo(this.izquierda, this.tabla);
+
+        if ("FLOAT".equals(info.getTipo())) {
+            return "fcmp one";
         }
-        return "icmp ne";      // Not Equal
+
+        return "icmp ne";
     }
 }

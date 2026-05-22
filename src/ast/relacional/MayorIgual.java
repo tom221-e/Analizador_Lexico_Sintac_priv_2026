@@ -6,8 +6,10 @@ import parser.SymbolTable;
 import validator.ValidatorDataType;
 
 public class MayorIgual extends OperacionBinaria {
-    public MayorIgual(Expresion izquierda, Expresion derecha, SymbolTable table) {
-        super(izquierda, derecha, table);
+
+    private SymbolTable tabla;
+    public MayorIgual(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

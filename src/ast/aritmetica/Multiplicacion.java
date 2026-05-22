@@ -8,7 +8,7 @@ public class Multiplicacion extends OperacionBinaria {
     public Multiplicacion(Expresion izquierda, Expresion derecha, String tipo) {
         super(izquierda, derecha, tipo);
     }
-
+ 
     @Override
     protected String getNombreOperacion() {
         return "*"; // Corresponde a OP_MULTI

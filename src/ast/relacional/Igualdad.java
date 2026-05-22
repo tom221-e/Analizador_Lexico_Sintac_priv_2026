@@ -6,8 +6,10 @@ import parser.SymbolTable;
 import validator.ValidatorDataType;
 
 public class Igualdad extends OperacionBinaria {
-    public Igualdad(Expresion izquierda, Expresion derecha, SymbolTable tabla) {
-        super(izquierda, derecha, tabla);
+
+    private SymbolTable tabla;
+    public Igualdad(Expresion izquierda, Expresion derecha, String tipo) {
+        super(izquierda, derecha, tipo);
     }
 
     @Override

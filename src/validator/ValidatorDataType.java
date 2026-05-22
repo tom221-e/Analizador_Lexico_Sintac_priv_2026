@@ -90,9 +90,6 @@ public class ValidatorDataType {
     }
 
 
-
-
-
     public String obtenerTipoResultante(String id, Expresion e, SymbolTable tabla) {
         // 1. Verificamos existencia
         if (!tabla.exists(id)) {
