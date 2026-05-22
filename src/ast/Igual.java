@@ -12,6 +12,6 @@ public class Igual extends OperacionBinaria {
 
     @Override
     public String get_llvm_op_code() {
-        throw new UnsupportedOperationException("igual");
+        return("igual");
     }
 }
