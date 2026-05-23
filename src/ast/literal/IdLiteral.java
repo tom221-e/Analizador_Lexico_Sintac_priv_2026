@@ -20,7 +20,7 @@ public class IdLiteral extends Expresion {
 
     @Override
     protected String getEtiqueta() {
-        return "ID: " + valor;
+        return "ID(" +tipo+"): " + valor;
     }
 
     public String getStringID() {

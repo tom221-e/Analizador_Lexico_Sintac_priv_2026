@@ -3,25 +3,38 @@ package ast;
 import java.util.ArrayList;
 
 public class ValorMasCercano extends Expresion {
-    private final Expresion referencia;
-    private final Object lista; // Cambiado de String a Object o el tipo de FLOAT_ARRAY
-    private final ArrayList<Sentencia> pasos;
+    private Expresion ref;
+    private String listaId;
+    private ArrayList<Declaracion> declaracionesTemporales;
+    private ArrayList<Sentencia> pasosCuerpo;
 
-    public ValorMasCercano(Expresion referencia, Object lista, ArrayList<Sentencia> pasos) {
-        this.referencia = referencia;
-        this.lista = lista;
-        this.pasos = pasos;
+    public ValorMasCercano(Expresion ref, String listaId, ArrayList<Declaracion> declaracionesTemporales, ArrayList<Sentencia> pasosCuerpo) {
+        this.ref = ref;
+        this.listaId = listaId;
+        this.declaracionesTemporales = declaracionesTemporales;
+        this.pasosCuerpo = pasosCuerpo;
     }
 
     @Override
     protected String getEtiqueta() {
-        // Evita usar el objeto directamente aquí si puede contener comas
         return "VALOR_MAS_CERCANO";
     }
 
     @Override
     public String generarCodigo() {
-        return "";
+        StringBuilder resultado = new StringBuilder();
+
+        // 1. Primero generamos los 'alloca' de las variables temporales de la macro
+        for (Declaracion dec : declaracionesTemporales) {
+            resultado.append(dec.generarCodigo());
+        }
+
+        // 2. Luego generamos el código de la lógica (asignaciones, while, ifs)
+        for (Sentencia sent : pasosCuerpo) {
+            resultado.append(sent.generarCodigo());
+        }
+
+        return resultado.toString();
     }
 
     @Override
@@ -29,16 +42,39 @@ public class ValorMasCercano extends Expresion {
         String miId = this.getId();
         StringBuilder dot = new StringBuilder();
 
+        // 1. Grafica este nodo y lo conecta a su padre
         dot.append(super.graficar(idPadre));
 
-        // Graficar la lista (solo si es un Nodo del AST)
-        if (lista instanceof Nodo) {
-            dot.append(((Nodo) lista).graficar(miId));
+        // 2. Graficar la expresión de referencia (ref) si existe
+        if (ref != null) {
+            dot.append(ref.graficar(miId));
         }
 
-        // Graficar los pasos expandidos
-        for (Sentencia s : pasos) {
-            if (s != null) dot.append(s.graficar(miId));
+        // 3. Graficar el identificador del arreglo de entrada (listaId)
+        if (listaId != null) {
+            // ENVOLVEMOS EL ID ENTRE COMILLAS DOBLES: \"
+            String idLista = "\"array_" + listaId + "_" + miId + "\"";
+
+            dot.append(idLista).append(" [label=\"Arreglo: ").append(listaId).append("\", color=\"purple\"];\n");
+            dot.append(miId).append(" -> ").append(idLista).append(";\n");
+        }
+
+        // 4. Graficar los nodos de las declaraciones temporales internas
+        if (declaracionesTemporales != null) {
+            for (Declaracion dec : declaracionesTemporales) {
+                if (dec != null) {
+                    dot.append(dec.graficar(miId));
+                }
+            }
+        }
+
+        // 5. Graficar los pasos expandidos de la lógica (Asignaciones, Whiles, Ifs)
+        if (pasosCuerpo != null) {
+            for (Sentencia s : pasosCuerpo) {
+                if (s != null) {
+                    dot.append(s.graficar(miId));
+                }
+            }
         }
 
         return dot.toString();

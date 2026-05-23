@@ -32,7 +32,7 @@ public class Asignacion extends Sentencia {
 
         // 2. Graficamos el lado IZQUIERDO (el ID)
         // Creamos un IdLiteral temporal para que genere su propio globo
-        String tipoLLVM = "";
+        String tipoLLVM="";
         if ("INT".equals(tabla.getTipo(id))) {
             tipoLLVM = "i32";
         } else if ("FLOAT".equals(tabla.getTipo(id))) {

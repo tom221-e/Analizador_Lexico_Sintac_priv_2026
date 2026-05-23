@@ -75,6 +75,22 @@ public class Main_parser {
                     }
 
                     System.out.println("AST generado exitosamente: arbol.dot y arbol.png");
+
+                    // =========================================================================
+                    // DESHABILITADO POR AHORA (COMENTADO)
+                    // =========================================================================
+                    /* System.out.println("Generando código LLVM IR...");
+
+                    // Creamos el archivo de salida
+                    PrintWriter codigoLLVM = new PrintWriter(new FileWriter("codigo_salida.ll"));
+
+                    // Invocamos el método maestro que dispara la recursividad en todo el AST
+                    codigoLLVM.println(astRoot.generarCodigo());
+                    codigoLLVM.close();
+
+                    System.out.println("Código LLVM IR generado exitosamente: codigo_salida.ll");
+                    */
+                    // =========================================================================
                 }
 
             } catch (Exception e) {
