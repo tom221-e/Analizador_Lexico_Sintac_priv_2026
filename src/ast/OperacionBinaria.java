@@ -51,7 +51,7 @@ public abstract class OperacionBinaria extends Expresion {
         resultado.append(String.format("%1$s = %2$s %3$s %4$s, %5$s\n",
                 this.getIr_ref(),           // %res
                 this.get_llvm_op_code(),    // add, fadd, etc.
-//                this.tipo,                   // i32, float, i1
+                this.tipo,                   // i32, float, i1
                 this.izquierda.getIr_ref(), // %op1
                 this.derecha.getIr_ref()    // %op2
         ));

@@ -1,11 +1,17 @@
 package ast;
 import java.util.ArrayList;
 
-public class DeclaracionArray extends Nodo {
+// 1. Cambiamos 'extends Nodo' por 'extends Declaracion'
+public class DeclaracionArray extends Declaracion {
     private final String tamano;
     private final ArrayList<String> variables;
 
     public DeclaracionArray(String tamano, ArrayList<String> variables) {
+        // 2. LLAMADA OBLIGATORIA AL PADRE (super):
+        // Como 'Declaracion' pide (tipo, variables) en su constructor,
+        // le pasamos "FLOAT_ARRAY" como tipo y la lista de variables.
+        super("FLOAT_ARRAY", variables);
+
         this.tamano = tamano;
         this.variables = variables;
     }
@@ -18,10 +24,8 @@ public class DeclaracionArray extends Nodo {
     @Override
     protected String graficar(String idPadre) {
         String miId = this.getId();
-        // 1. Grafica el nodo de la declaración (el "globo" con el tipo de dato)
         StringBuilder dot = new StringBuilder(super.graficar(idPadre));
 
-        // 2. Crea y conecta nodos para cada variable declarada
         for (String var : variables) {
             String idVar = "var_" + var + "_" + miId;
             dot.append(idVar).append(" [label=\"Variable: ").append(var).append("\", color=\"blue\"];\n");
@@ -35,18 +39,20 @@ public class DeclaracionArray extends Nodo {
         return tamano;
     }
 
+    @Override
     public ArrayList<String> getVariables() {
         return variables;
     }
+
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // Como el array es específico para FLOAT, hardcodeamos el tipo en LLVM
         for (String var : variables) {
             // Genera directamente:  %nombreVariable = alloca [tamaño x float]
+            // Agregamos el '%' antes del nombre para mantener consistencia con LLVM
             resultado.append(String.format("%1$s = alloca [ %2$s x float]\n",
-                    var,
+                    "%" + var,
                     this.tamano
             ));
         }

@@ -240,7 +240,25 @@ public class ValidatorDataType {
             this.tipo = t;
             this.dimension = d;
         }
-
+        public Integer getDim() { return dimension; }
         public String getTipo() { return tipo; }
+    }
+    public String obtenerTipoLLVM(Expresion e, SymbolTable tabla) {
+        InfoNodo info = obtenerInfo(e, tabla);
+
+        if (info == null || "ERROR".equals(info.getTipo())) {
+            return "unknown";
+        }
+
+        switch (info.getTipo()) {
+            case "INT":
+                return "i32";
+            case "FLOAT":
+                return "float";
+            case "BOOLEAN":
+                return "i1";
+            default:
+                return "unknown";
+        }
     }
 }

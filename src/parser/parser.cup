@@ -253,9 +253,19 @@ sentencia ::= sentencia_if:s {:
 asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 15.1: sentencia -> ID = expresion");
     System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
+
     if (validador.validarAsignacion(id, e, tablaSimbolos)) {
            System.out.println("Asignación válida.");
-           RESULT = new Asignacion(id, e, tablaSimbolos);
+               String tipoLLVM = "";
+               ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e, tablaSimbolos);
+               if ("INT".equals(i1.getTipo())) {
+                           tipoLLVM = "i32";
+                       } else if ("FLOAT".equals(i1.getTipo())) {
+                           tipoLLVM = "float";
+                       } else if ("BOOLEAN".equals(i1.getTipo())) {
+                           tipoLLVM = "i1";
+                       }
+           RESULT = new Asignacion(id, e, tablaSimbolos, tipoLLVM);
     } else {
              // Detiene la ejecución si los tipos no son compatibles
              throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles en la asignación de '" + id + "'");
@@ -271,7 +281,7 @@ asignacion::= ID:id IGUAL expr_logica:e {:
 
         // Validación de la asignación a la celda
         if (validador.validarAsignacionCelda(i, ex, tablaSimbolos)) {
-            RESULT = new AsignacionArray(i, exp, ex);
+            RESULT = new AsignacionArray(i, exp, ex, tablaSimbolos.getTamano(i));
         } else {
             throw new RuntimeException("ERROR SEMÁNTICO: Valor incompatible para el arreglo '" + i + "'");
         }
@@ -337,13 +347,23 @@ sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b sentencia_alt:resto
 expr_logica ::= expr_and:e1 OR expr_logica:e2{:
     System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
     System.out.printf("REGLA 10.1: expr_logica -> %s OR %s%n%n", e1, e2);
-    RESULT = new OperacionOr(e1, e2, tablaSimbolos);
+    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
+    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
+    String tipoLLVM = "";
+    if ("INT".equals(i1.getTipo())) {
+         tipoLLVM = "i32";
+    } else if ("FLOAT".equals(i1.getTipo())) {
+         tipoLLVM = "float";
+    } else if ("BOOLEAN".equals(i1.getTipo())) {
+         tipoLLVM = "i1";
+    }
+    RESULT = new OperacionOr(e1, e2, tipoLLVM);
 :}
 | expr_and:e {: RESULT = e; :};
 expr_and    ::= expr_not:e1 AND expr_and:e2 {:
     System.out.println("REGLA 10.2: expr_logica -> expr_logica AND expr_relacional");
     System.out.printf("REGLA 10.2: expr_logica -> %s AND %s%n%n", e1, e2);
-    RESULT = new OperacionAnd(e1, e2, tablaSimbolos);
+    RESULT = new OperacionAnd(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_not:e  {:
     RESULT = e;
@@ -363,32 +383,32 @@ expr_not    ::= NOT expr_not:e {:
 expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = new Igualdad(e1, e2, tablaSimbolos);
+    RESULT = new Igualdad(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e1 MAYOR expr_arit:e2 {:
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = new Mayor(e1, e2, tablaSimbolos);
+    RESULT = new Mayor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e1 MENOR expr_arit:e2 {:
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = new Menor(e1, e2, tablaSimbolos);
+    RESULT = new Menor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e1 MAYORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = new MayorIgual(e1, e2, tablaSimbolos);
+    RESULT = new MayorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e1 MENORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new MenorIgual(e1, e2, tablaSimbolos);
+    RESULT = new MenorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e1 DESIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new Desigual(e1, e2, tablaSimbolos);
+    RESULT = new Desigual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
 :}
 | expr_arit:e {:
     System.out.println("REGLA 11.6: expr_relacional -> expr_arit");
@@ -577,51 +597,107 @@ factor ::= ENTERO:e {:
 :}
 | VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:listaId PAREN_C
 {:
-    System.out.println("REGLA: Expandiendo VALOR_MAS_CERCANO (Desazucarado)");
+    System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Sincronizado con SentenciaAlt)");
 
-    // 1. Lista de pasos para el AST expandido
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
-    // 2. Inicialización: masCercano = listaId[0]
-    // Usamos el objeto listaId directamente como origen del acceso
-    pasos.add(new Asignacion("masCercano", new AccesoArray("listaId", new IntLiteral("0"))));
+    // =========================================================================
+    // 1. INICIALIZACIÓN DE VARIABLES
+    // =========================================================================
 
-    // 3. Inicialización: distMin = abs(ref - masCercano)
-    // Nota: Como no tenemos nodo ABS, usamos una resta simple o puedes crear Resta
-    pasos.add(new Asignacion("distMin", new Resta(ref, new IdLiteral("masCercano"))));
+    // masCercano = listaId[0]
+    Expresion primerElemento = new AccesoArray(listaId, new IntLiteral("0"), tablaSimbolos.getTamano(listaId));
+    pasos.add(new Asignacion("masCercano", primerElemento, tablaSimbolos, "float"));
 
-    // 4. Inicialización: i = 1
-    pasos.add(new Asignacion("i", new IntLiteral("1")));
+    // distMin = ref - masCercano
+    Expresion restaInicial = new Resta(ref, new IdLiteral("masCercano", "float"), "float");
+    pasos.add(new Asignacion("distMin", restaInicial, tablaSimbolos, "float"));
 
-    // 5. Construcción del cuerpo del WHILE
+    // IF (distMin < 0.0) { distMin = 0.0 - distMin; }
+    ArrayList<Sentencia> cuerpoAbsInicial = new ArrayList<>();
+
+    Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral("distMin", "float"), "float");
+    cuerpoAbsInicial.add(new Asignacion("distMin", inversionInicial, tablaSimbolos, "float"));
+
+    Expresion condicionAbsInicial = new Menor(new IdLiteral("distMin", "float"), new FloatLiteral("0.0"), "i1");
+
+    // CORRECCIÓN: Para el IF usas null en el else/alternativa ya que no lleva
+    pasos.add(new SentenciaIf(
+        condicionAbsInicial,
+        cuerpoAbsInicial,
+        null
+    ));
+
+    // i = 1
+    pasos.add(new Asignacion("i", new IntLiteral("1"), tablaSimbolos, "i32"));
+
+
+    // =========================================================================
+    // 2. CUERPO DEL BUCLE WHILE
+    // =========================================================================
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
     // actual = listaId[i]
-    cuerpoWhile.add(new Asignacion("actual", new AccesoArray("listaId", new IdLiteral("i"))));
+    Expresion elementoActual = new AccesoArray(listaId, new IdLiteral("i", "i32"), tablaSimbolos.getTamano(listaId));
+    cuerpoWhile.add(new Asignacion("actual", elementoActual, tablaSimbolos, "float"));
 
-    // IF ( (ref - actual) < distMin ) { masCercano = actual; }
-    ArrayList<Sentencia> cuerpoIf = new ArrayList<>();
-    cuerpoIf.add(new Asignacion("masCercano", new IdLiteral("actual")));
+    // distActual = ref - actual
+    Expresion restaActual = new Resta(ref, new IdLiteral("actual", "float"), "float");
+    cuerpoWhile.add(new Asignacion("distActual", restaActual, tablaSimbolos, "float"));
 
-    // Agregamos la lógica del IF al cuerpo del WHILE
+    // IF (distActual < 0.0) { distActual = 0.0 - distActual; }
+    ArrayList<Sentencia> cuerpoAbsActual = new ArrayList<>();
+
+    Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral("distActual", "float"), "float");
+    cuerpoAbsActual.add(new Asignacion("distActual", inversionActual, tablaSimbolos, "float"));
+
+    Expresion condicionAbsActual = new Menor(new IdLiteral("distActual", "float"), new FloatLiteral("0.0"), "i1");
     cuerpoWhile.add(new SentenciaIf(
-        new Menor(new IdLiteral("actual"), new IdLiteral("distMin")), // Simplificación lógica
-        cuerpoIf,
-        null // Sin rama ELSE
+        condicionAbsActual,
+        cuerpoAbsActual,
+        null
     ));
 
-    // i = i + 1
-    cuerpoWhile.add(new Asignacion("i", new Suma(new IdLiteral("i"), new IntLiteral("1"))));
 
-    // 6. Agregamos el WHILE a la lista de pasos
-    // Nota: El tamaño (5) es un ejemplo; idealmente usarías listaId.size() si tu AST lo soporta
+    // =========================================================================
+    // 3. COMPARACIÓN: ¿ES LA DISTANCIA ACTUAL MENOR QUE LA MÍNIMA?
+    // =========================================================================
+    // IF (distActual < distMin) { masCercano = actual; distMin = distActual; }
+    ArrayList<Sentencia> cuerpoComparacionIf = new ArrayList<>();
+    cuerpoComparacionIf.add(new Asignacion("masCercano", new IdLiteral("actual", "float"), tablaSimbolos, "float"));
+    cuerpoComparacionIf.add(new Asignacion("distMin", new IdLiteral("distActual", "float"), tablaSimbolos, "float"));
+
+    Expresion condicionComparacion = new Menor(new IdLiteral("distActual", "float"), new IdLiteral("distMin", "float"), "i1");
+    cuerpoWhile.add(new SentenciaIf(
+        condicionComparacion,
+        cuerpoComparacionIf,
+        null
+    ));
+
+    // Incrementar índice: i = i + 1
+    Expresion incrementoI = new Suma(new IdLiteral("i", "i32"), new IntLiteral("1"), "i32");
+    cuerpoWhile.add(new Asignacion("i", incrementoI, tablaSimbolos, "i32"));
+
+
+    // =========================================================================
+    // 4. ENSAMBLAR EL WHILE
+    // =========================================================================
+    int tamanoArreglo = tablaSimbolos.getDimension(listaId);
+    String strTamano = String.valueOf(tamanoArreglo > 0 ? tamanoArreglo : 5);
+
+    // WHILE ( i < tamanoArreglo )
+    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(strTamano), "i1");
+
+    // CORRECCIÓN: Usamos el nuevo constructor de tu SentenciaWhile pasando null en 'alternativa'
     pasos.add(new SentenciaWhile(
-        new Menor(new IdLiteral("i"), new IntLiteral("5")),
+        condicionWhile,
         cuerpoWhile,
         null
     ));
 
-    // 7. Retornamos el nodo contenedor con la estructura completa
+    // =========================================================================
+    // 5. RETORNO DEL NODO AL AST
+    // =========================================================================
     RESULT = new ValorMasCercano(ref, listaId, pasos);
 :}
 | OP_RESTA factor:y {:

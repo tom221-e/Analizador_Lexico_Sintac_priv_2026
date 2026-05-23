@@ -20,6 +20,11 @@ public class ValorMasCercano extends Expresion {
     }
 
     @Override
+    public String generarCodigo() {
+        return "";
+    }
+
+    @Override
     public String graficar(String idPadre) {
         String miId = this.getId();
         StringBuilder dot = new StringBuilder();

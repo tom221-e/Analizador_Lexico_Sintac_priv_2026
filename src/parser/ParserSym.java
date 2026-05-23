@@ -28,7 +28,7 @@ public class ParserSym {
   public static final int MAYORIGUAL = 38;
   public static final int EOF = 0;
   public static final int BOOLEAN = 6;
-  public static final int READ_FLOAT = 47;
+  public static final int READ_FLOAT = 48;
   public static final int error = 1;
   public static final int PROGRAM = 15;
   public static final int COMA = 9;
@@ -36,10 +36,11 @@ public class ParserSym {
   public static final int MENOR = 37;
   public static final int OP_RESTA = 28;
   public static final int BREAK = 24;
+  public static final int DESIGUAL = 46;
   public static final int TYPE_FLOAT = 12;
   public static final int ALT_WHILE = 20;
   public static final int MAYOR = 36;
-  public static final int READ_INT = 46;
+  public static final int READ_INT = 47;
   public static final int ELSE = 17;
   public static final int WHILE = 19;
   public static final int DEDENT = 45;
@@ -51,7 +52,7 @@ public class ParserSym {
   public static final int OP_SUMA = 27;
   public static final int INDENT = 44;
   public static final int TYPE_BOOL = 13;
-  public static final int READ_BOOL = 48;
+  public static final int READ_BOOL = 49;
   public static final int CORCH_C = 43;
   public static final int CORCH_A = 42;
   public static final int ELIF = 18;
@@ -104,6 +105,7 @@ public class ParserSym {
   "CORCH_C",
   "INDENT",
   "DEDENT",
+  "DESIGUAL",
   "READ_INT",
   "READ_FLOAT",
   "READ_BOOL"
