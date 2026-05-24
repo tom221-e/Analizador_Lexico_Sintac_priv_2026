@@ -1,5 +1,7 @@
 package llvm;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class CodeGeneratorHelper {
@@ -7,6 +9,7 @@ public class CodeGeneratorHelper {
     private static int nextID = 0;
     private static final Stack<String> breakStack = new Stack<>();
     private static final Stack<String> continueStack = new Stack<>();
+    private static List<String> constantesGlobales = new ArrayList<>();
 
     private CodeGeneratorHelper(){}
 
@@ -59,5 +62,17 @@ public class CodeGeneratorHelper {
 
     public static String getCurrentContinueTag() {
         return continueStack.isEmpty() ? null : continueStack.peek();
+    }
+    public static void agregarConstanteGlobal(String declaracion) {
+        constantesGlobales.add(declaracion);
+    }
+
+
+    public static String obtenerConstantesGlobales() {
+        StringBuilder sb = new StringBuilder();
+        for (String constante : constantesGlobales) {
+            sb.append(constante);
+        }
+        return sb.toString();
     }
 }

@@ -20,7 +20,7 @@ action code {:
 
 parser code {:
 
-    public SymbolTable tablaSimbolos = new SymbolTable();
+    public static SymbolTable tablaSimbolos = new SymbolTable();
 
     public ValidatorDataType validador = new ValidatorDataType();
 
@@ -677,6 +677,28 @@ factor ::= ENTERO:e {:
 {:
     System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Separación limpia de Declaraciones y Sentencias)");
 
+    String nombreArreglo = listaId;
+
+    // Si viene un arreglo implícito directo como [1.0, 2.0...] o no existe la variable en tu tabla:
+    if (listaId.startsWith("[") || !tablaSimbolos.exists(listaId)) {
+        // Generamos un identificador único libre de caracteres especiales
+        nombreArreglo = "arr_literal_" + Math.abs(listaId.hashCode());
+
+        // Calculamos la dimensión contando los elementos separados por comas
+        int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
+        String tamanoLLVM = "[ " + dimension + " x float ]";
+
+        if (!tablaSimbolos.exists(nombreArreglo)) {
+            // Guardamos en tu tabla respetando tus parámetros: token, id, type, valor, longitud
+            // Pasamos "FLOAT_ARRAY" como tipo exacto
+            tablaSimbolos.add("ID", nombreArreglo, "FLOAT_ARRAY", String.valueOf(dimension), tamanoLLVM);
+
+            // Registramos el espacio en la cabecera usando TU clase DeclaracionArray
+            ArrayList<String> varTemporal = new ArrayList<>();
+            varTemporal.add(nombreArreglo);
+            parser.declaracionesMacro.add(new DeclaracionArray(String.valueOf(dimension), varTemporal));
+        }
+    }
     // =========================================================================
     // 0. REGISTRO EN LA TABLA DE SÍMBOLOS
     // =========================================================================

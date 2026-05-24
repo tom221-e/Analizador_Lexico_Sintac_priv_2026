@@ -35,15 +35,19 @@ public class SentenciaPrint extends Sentencia {
             if (this.tipo.startsWith("i8") || this.contenido instanceof StringLiteral) {
                 StringLiteral strLit = (StringLiteral) this.contenido;
 
-                // 1. Añadimos la declaración global que genera tu StringLiteral al código
-                resultado.append(strLit.generarCodigo());
+                // 1. Generamos la declaración global estricta (del paso anterior)
+                String declaracionGlobal = strLit.generarCodigo();
 
-                // 2. Calculamos la longitud exacta para el getelementptr (+1 por el nulo)
+                // 2. LA ENVIAMOS AL ALMACÉN GLOBAL (Subirá automáticamente al inicio del archivo .ll)
+                llvm.CodeGeneratorHelper.agregarConstanteGlobal(declaracionGlobal);
+
+                // 3. Calculamos la longitud y el temporal del call
                 int longitud = strLit.getLongitudStr();
-                String tempCall = CodeGeneratorHelper.getNewPointer();
+                String tempCall = llvm.CodeGeneratorHelper.getNewPointer();
 
-                // 3. Imprimimos usando tu global y el formato exacto de tu guía
-                resultado.append(String.format("%1$s = call i32 (i8*, ...) @printf(i8* getelementptr ([%2$s x i8], [%2$s x i8]* %3$s, i32 0, i32 0))\n",
+                // 4. Imprimimos el call agregando "  " al inicio para que esté indentado dentro del main
+                // strLit.getIr_ref() inyectará de forma segura "@ptro.20"
+                resultado.append(String.format("  %1$s = call i32 (i8*, ...) @printf(i8* getelementptr ([%2$d x i8], [%2$d x i8]* %3$s, i32 0, i32 0))\n",
                         tempCall, longitud, strLit.getIr_ref()));
 
                 return resultado.toString();

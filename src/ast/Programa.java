@@ -1,4 +1,6 @@
 package ast;
+import llvm.CodeGeneratorHelper;
+
 import java.util.ArrayList;
 
 public class Programa extends Nodo {
@@ -47,6 +49,21 @@ public class Programa extends Nodo {
     }
     @Override
     public String generarCodigo() {
+        // =========================================================================
+        // 🌟 PASO CRÍTICO: PROCESAR INSTRUCCIONES PRIMERO
+        // =========================================================================
+        // Generamos el código de las sentencias en un buffer temporal.
+        // Esto llena automáticamente la lista de constantes globales en tu Helper.
+        StringBuilder cuerpoInstrucciones = new StringBuilder();
+        if (this.instrucciones != null) {
+            for (Sentencia s : instrucciones) {
+                if (s != null) {
+                    cuerpoInstrucciones.append(s.generarCodigo());
+                }
+            }
+        }
+
+        // Ahora sí, armamos el esqueleto del archivo .ll final en el orden estricto
         StringBuilder llvm = new StringBuilder();
 
         // =========================================================================
@@ -64,7 +81,18 @@ public class Programa extends Nodo {
         llvm.append("@float_read_format = unnamed_addr constant [3 x i8] c\"%f\\0A\\00\"\n\n");
 
         // =========================================================================
-        // 2. DECLARACIÓN DE VARIABLES GLOBALES (Si tu lenguaje las usa aquí)
+        // 2. 🌟 NUEVO: INYECTAR LAS CADENAS DE TEXTO DINÁMICAS DEL ALMACÉN
+        // =========================================================================
+        // Como ya procesamos las instrucciones arriba, el helper ya tiene los textos guardados.
+        String textosGlobales = CodeGeneratorHelper.obtenerConstantesGlobales();
+        if (textosGlobales != null && !textosGlobales.isEmpty()) {
+            llvm.append("; --- Cadenas de Texto Globales ---\n");
+            llvm.append(textosGlobales);
+            llvm.append("\n");
+        }
+
+        // =========================================================================
+        // 3. DECLARACIÓN DE VARIABLES GLOBALES
         // =========================================================================
         if (this.declaraciones != null) {
             llvm.append("; --- Declaraciones de Variables ---\n");
@@ -77,20 +105,14 @@ public class Programa extends Nodo {
         }
 
         // =========================================================================
-        // 3. CUERPO PRINCIPAL (Función @main)
+        // 4. CUERPO PRINCIPAL (Función @main)
         // =========================================================================
         llvm.append("; --- Función Principal ---\n");
         llvm.append("define i32 @main() {\n");
         llvm.append("entry:\n"); // Bloque de entrada obligatorio
 
-        // Generamos el código de cada instrucción/sentencia dentro del main
-        if (this.instrucciones != null) {
-            for (Sentencia s : instrucciones) {
-                if (s != null) {
-                    llvm.append(s.generarCodigo());
-                }
-            }
-        }
+        // Inyectamos el código de las instrucciones que guardamos al principio
+        llvm.append(cuerpoInstrucciones.toString());
 
         // Cierre obligatorio de la función main con retorno 0
         llvm.append("  ret i32 0\n");
