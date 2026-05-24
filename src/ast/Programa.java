@@ -71,6 +71,8 @@ public class Programa extends Nodo {
         // 2. CABECERA GLOBAL Y DECLARACIONES OBLIGATORIAS
         // =========================================================================
         llvm.append("; --- Cabecera del Programa ---\n");
+        llvm.append("target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
+        llvm.append("target triple = \"x86_64-pc-windows-msvc19.16.27038\"\n\n");
         llvm.append("declare i32 @printf(i8*, ...)\n");
         llvm.append("declare i32 @scanf(i8*, ...)\n\n");
         llvm.append("declare void @operar_arreglos(float*, float*, float*, i32, i32)\n\n");
