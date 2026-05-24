@@ -725,8 +725,8 @@ factor ::= ENTERO:e {:
     // =========================================================================
     // 2. INICIALIZACIÓN DE VARIABLES
     // =========================================================================
-    // masCercano = listaId[0]
-    Expresion primerElemento = new AccesoArray(listaId, new IntLiteral("0"), tablaSimbolos.getTamano(listaId));
+    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' para jalar el tamaño y la variable correcta
+    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), tablaSimbolos.getTamano(nombreArreglo));
     pasos.add(new Asignacion("masCercano", primerElemento, tablaSimbolos, "float"));
 
     // distMin = ref - masCercano
@@ -738,7 +738,6 @@ factor ::= ENTERO:e {:
     Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral("distMin", "float"), "float");
     cuerpoAbsInicial.add(new Asignacion("distMin", inversionInicial, tablaSimbolos, "float"));
 
-    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float" (tipo de los operandos)
     Expresion condicionAbsInicial = new Menor(new IdLiteral("distMin", "float"), new FloatLiteral("0.0"), "float");
     pasos.add(new SentenciaIf(condicionAbsInicial, cuerpoAbsInicial, null));
 
@@ -750,8 +749,8 @@ factor ::= ENTERO:e {:
     // =========================================================================
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
-    // actual = listaId[i]
-    Expresion elementoActual = new AccesoArray(listaId, new IdLiteral("i", "i32"), tablaSimbolos.getTamano(listaId));
+    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' aquí también
+    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral("i", "i32"), tablaSimbolos.getTamano(nombreArreglo));
     cuerpoWhile.add(new Asignacion("actual", elementoActual, tablaSimbolos, "float"));
 
     // distActual = ref - actual
@@ -763,7 +762,6 @@ factor ::= ENTERO:e {:
     Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral("distActual", "float"), "float");
     cuerpoAbsActual.add(new Asignacion("distActual", inversionActual, tablaSimbolos, "float"));
 
-    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float"
     Expresion condicionAbsActual = new Menor(new IdLiteral("distActual", "float"), new FloatLiteral("0.0"), "float");
     cuerpoWhile.add(new SentenciaIf(condicionAbsActual, cuerpoAbsActual, null));
 
@@ -775,7 +773,6 @@ factor ::= ENTERO:e {:
     cuerpoComparacionIf.add(new Asignacion("masCercano", new IdLiteral("actual", "float"), tablaSimbolos, "float"));
     cuerpoComparacionIf.add(new Asignacion("distMin", new IdLiteral("distActual", "float"), tablaSimbolos, "float"));
 
-    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float"
     Expresion condicionComparacion = new Menor(new IdLiteral("distActual", "float"), new IdLiteral("distMin", "float"), "float");
     cuerpoWhile.add(new SentenciaIf(condicionComparacion, cuerpoComparacionIf, null));
 
@@ -786,16 +783,15 @@ factor ::= ENTERO:e {:
     // =========================================================================
     // 5. ENSAMBLAR EL WHILE Y RETORNAR
     // =========================================================================
-    int tamanoArreglo = tablaSimbolos.getDimension(listaId);
+    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' para obtener la dimensión numérica real
+    int tamanoArreglo = tablaSimbolos.getDimension(nombreArreglo);
     String strTamano = String.valueOf(tamanoArreglo > 0 ? tamanoArreglo : 5);
 
-    // CORRECCIÓN AQUÍ: Cambiado "i1" por "i32" (estamos comparando enteros)
     Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(strTamano), "i32");
     pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
 
-    // Retornamos el nodo pasando un ArrayList vacío en las declaraciones locales
-    // para evitar que vuelva a escribir allocas dentro de las etiquetas de salto
-    RESULT = new ValorMasCercano(ref, listaId, new ArrayList<Declaracion>(), pasos);
+    // REPARADO: Se pasa 'nombreArreglo' al constructor del nodo del AST
+    RESULT = new ValorMasCercano(ref, nombreArreglo, new ArrayList<Declaracion>(), pasos);
 :}
 | OP_RESTA factor:y {:
     System.out.println("REGLA 14.7: factor -> - factor (unario)");
