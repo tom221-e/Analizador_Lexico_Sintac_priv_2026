@@ -1,12 +1,12 @@
 package ast;
 
 import llvm.*;
+import ast.literal.IdLiteral; // <--- Importamos tu clase de variables
 
 public abstract class OperacionBinaria extends Expresion {
     protected final Expresion izquierda;
     protected final Expresion derecha;
     protected final String tipo;
-
 
     public OperacionBinaria(Expresion izquierda, Expresion derecha, String tipo) {
         this.izquierda = izquierda;
@@ -42,14 +42,14 @@ public abstract class OperacionBinaria extends Expresion {
         StringBuilder resultado = new StringBuilder();
 
         // 1. Generamos recursivamente el código de los hijos
-        resultado.append(this.izquierda.generarCodigo());
-        resultado.append(this.derecha.generarCodigo());
+        if (this.izquierda != null) resultado.append(this.izquierda.generarCodigo());
+        if (this.derecha != null) resultado.append(this.derecha.generarCodigo());
 
-        boolean esOperacionDeArreglo = this.tipo.matches("\\d+");
+        boolean esOperacionDeArreglo = this.tipo != null && this.tipo.matches("\\d+");
 
         if (esOperacionDeArreglo) {
             // =================================================================
-            // CASO VECTORIAL / ARREGLOS (Mantiene intacta tu lógica)
+            // CASO VECTORIAL / ARREGLOS (Mantiene intacta tu lógica de Broadcasting)
             // =================================================================
             String tamanoArreglo = this.tipo;
             String tipoEstructuraLLVM = "[" + tamanoArreglo + " x float]";
@@ -69,125 +69,155 @@ public abstract class OperacionBinaria extends Expresion {
             if (izqEsEscalar) {
                 String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
                 resultado.append("; --- Broadcasting Izquierdo ---\n");
-                resultado.append(String.format("%1$s = alloca %2$s\n", arrayTempIzq, tipoEstructuraLLVM));
+                resultado.append(String.format("  %1$s = alloca %2$s\n", arrayTempIzq, tipoEstructuraLLVM));
                 String idx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = alloca i32\n", idx));
-                resultado.append(String.format("store i32 0, i32* %1$s\n", idx));
+                resultado.append(String.format("  %1$s = alloca i32\n", idx));
+                resultado.append(String.format("  store i32 0, i32* %1$s\n", idx));
                 String labelCond = CodeGeneratorHelper.getNewTag();
                 String labelBody = CodeGeneratorHelper.getNewTag();
                 String labelEnd  = CodeGeneratorHelper.getNewTag();
-                resultado.append("br label %" + labelCond + "\n");
+                resultado.append("  br label %" + labelCond + "\n");
                 resultado.append(labelCond + ":\n");
                 String tIdx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = load i32, i32* %2$s\n", tIdx, idx));
+                resultado.append(String.format("  %1$s = load i32, i32* %2$s\n", tIdx, idx));
                 String cmp = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamanoArreglo));
-                resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
+                resultado.append(String.format("  %1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamanoArreglo));
+                resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
                 resultado.append(labelBody + ":\n");
                 String ptrPos = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructuraLLVM, arrayTempIzq, tIdx));
-                resultado.append(String.format("store float %1$s, float* %2$s\n", this.izquierda.getIr_ref(), ptrPos));
+                resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructuraLLVM, arrayTempIzq, tIdx));
+                resultado.append(String.format("  store float %1$s, float* %2$s\n", this.izquierda.getIr_ref(), ptrPos));
                 String nIdx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = add i32 %2$s, 1\n", nIdx, tIdx));
-                resultado.append(String.format("store i32 %1$s, i32* %2$s\n", nIdx, idx));
-                resultado.append("br label %" + labelCond + "\n");
+                resultado.append(String.format("  %1$s = add i32 %2$s, 1\n", nIdx, tIdx));
+                resultado.append(String.format("  store i32 %1$s, i32* %2$s\n", nIdx, idx));
+                resultado.append("  br label %" + labelCond + "\n");
                 resultado.append(labelEnd + ":\n");
                 ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
+                resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
             }
 
             if (derEsEscalar) {
                 String arrayTempDer = CodeGeneratorHelper.getNewPointer();
                 resultado.append("; --- Broadcasting Derecho ---\n");
-                resultado.append(String.format("%1$s = alloca %2$s\n", arrayTempDer, tipoEstructuraLLVM));
+                resultado.append(String.format("  %1$s = alloca %2$s\n", arrayTempDer, tipoEstructuraLLVM));
                 String idx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = alloca i32\n", idx));
-                resultado.append(String.format("store i32 0, i32* %1$s\n", idx));
+                resultado.append(String.format("  %1$s = alloca i32\n", idx));
+                resultado.append(String.format("  store i32 0, i32* %1$s\n", idx));
                 String labelCond = CodeGeneratorHelper.getNewTag();
                 String labelBody = CodeGeneratorHelper.getNewTag();
                 String labelEnd  = CodeGeneratorHelper.getNewTag();
-                resultado.append("br label %" + labelCond + "\n");
+                resultado.append("  br label %" + labelCond + "\n");
                 resultado.append(labelCond + ":\n");
                 String tIdx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = load i32, i32* %2$s\n", tIdx, idx));
+                resultado.append(String.format("  %1$s = load i32, i32* %2$s\n", tIdx, idx));
                 String cmp = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamanoArreglo));
-                resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
+                resultado.append(String.format("  %1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamanoArreglo));
+                resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
                 resultado.append(labelBody + ":\n");
                 String ptrPos = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructuraLLVM, arrayTempDer, tIdx));
-                resultado.append(String.format("store float %1$s, float* %2$s\n", this.derecha.getIr_ref(), ptrPos));
+                resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructuraLLVM, arrayTempDer, tIdx));
+                resultado.append(String.format("  store float %1$s, float* %2$s\n", this.derecha.getIr_ref(), ptrPos));
                 String nIdx = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = add i32 %2$s, 1\n", nIdx, tIdx));
-                resultado.append(String.format("store i32 %1$s, i32* %2$s\n", nIdx, idx));
-                resultado.append("br label %" + labelCond + "\n");
+                resultado.append(String.format("  %1$s = add i32 %2$s, 1\n", nIdx, tIdx));
+                resultado.append(String.format("  store i32 %1$s, i32* %2$s\n", nIdx, idx));
+                resultado.append("  br label %" + labelCond + "\n");
                 resultado.append(labelEnd + ":\n");
                 ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("%1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
+                resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
             }
 
             String temporalResultado = CodeGeneratorHelper.getNewPointer();
             this.setIr_ref(temporalResultado);
             resultado.append("; --- Llamada final a la función ALU ---\n");
-            resultado.append(String.format("%1$s = alloca %2$s\n", temporalResultado, tipoEstructuraLLVM));
+            resultado.append(String.format("  %1$s = alloca %2$s\n", temporalResultado, tipoEstructuraLLVM));
             String ptrResultadoPlano = CodeGeneratorHelper.getNewPointer();
-            resultado.append(String.format("%1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
-            resultado.append(String.format("call void @operar_arreglos(float* %1$s, float* %2$s, float* %3$s, i32 %4$s, i32 %5$s)\n",
+            resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
+            resultado.append(String.format("  call void @operar_arreglos(float* %1$s, float* %2$s, float* %3$s, i32 %4$s, i32 %5$s)\n",
                     ptrArrayIzq, ptrArrayDer, ptrResultadoPlano, tamanoArreglo, codigoOperacion));
 
         } else {
             // =================================================================
-            // === CASO ESCALAR NORMAL (CON TU REGLA DE OMISIÓN DE TIPO) ===
+            // === CASO ESCALAR NORMAL (EXTRAYENDO TIPO DE IDLITERAL) ===
             // =================================================================
             this.setIr_ref(CodeGeneratorHelper.getNewPointer());
 
-            String opCodeLLVM = this.get_llvm_op_code(); // Ej: "fcmp ogt float", "icmp sgt i32", o "add"
+            String opCodeLLVM = this.get_llvm_op_code();
             String refIzq = this.izquierda.getIr_ref();
             String refDer = this.derecha.getIr_ref();
 
-            // DETECCIÓN: ¿El opcode devuelto por la clase hija ya contiene 'icmp' o 'fcmp'?
-            boolean esComparacion = opCodeLLVM.contains("icmp") || opCodeLLVM.contains("fcmp");
+            // 1. Extraemos los tipos reales validando si los hijos son instancias de IdLiteral
+            String tipoIzq = "";
+            String tipoDer = "";
 
-            if (esComparacion) {
-                // === TU PROPUESTA EN ACCIÓN ===
-                // Omitimos completamente 'this.tipo' de la plantilla.
-                // Usamos un formato de solo 4 argumentos: receptor = instruccion_completa operando1, operando2
-
-                // [Opcional pero altamente recomendado para evitar errores de tipo mixto en LLVM]:
-                // Si tu validador detectó FLOAT (fcmp) pero el operando izquierdo resultó ser un entero (como %aux o un entero crudo),
-                // inyectamos un 'sitofp' rápido para nivelarlo y que LLVM compile perfectamente.
-                boolean esFloat = opCodeLLVM.contains("fcmp") || opCodeLLVM.contains("float");
-                boolean izqEsFloat = this.izquierda.toString().contains("float") || refIzq.contains("float");
-                boolean derEsFloat = this.derecha.toString().contains("float") || refDer.contains("float");
-
-                if (esFloat) {
-                    if (!izqEsFloat && !refIzq.contains(".")) {
-                        String tempCast = CodeGeneratorHelper.getNewPointer();
-                        resultado.append(String.format("%s = sitofp i32 %s to float\n", tempCast, refIzq));
-                        refIzq = tempCast;
-                    }
-                    if (!derEsFloat && !refDer.contains(".")) {
-                        String tempCast = CodeGeneratorHelper.getNewPointer();
-                        resultado.append(String.format("%s = sitofp i32 %s to float\n", tempCast, refDer));
-                        refDer = tempCast;
-                    }
+            if (this.izquierda instanceof IdLiteral) {
+                // Usamos la reflexión de Java para leer el campo privado 'tipo' sin romper tu encapsulamiento
+                try {
+                    java.lang.reflect.Field field = IdLiteral.class.getDeclaredField("tipo");
+                    field.setAccessible(true);
+                    tipoIzq = (String) field.get(this.izquierda);
+                } catch (Exception e) {
+                    tipoIzq = "";
                 }
+            }
+            if (this.derecha instanceof IdLiteral) {
+                try {
+                    java.lang.reflect.Field field = IdLiteral.class.getDeclaredField("tipo");
+                    field.setAccessible(true);
+                    tipoDer = (String) field.get(this.derecha);
+                } catch (Exception e) {
+                    tipoDer = "";
+                }
+            }
 
-                // Impresión final limpia aplicando tu omisión de tipo:
-                resultado.append(String.format("%1$s = %2$s %3$s, %4$s\n",
+            if (tipoIzq == null) tipoIzq = "";
+            if (tipoDer == null) tipoDer = "";
+            tipoIzq = tipoIzq.toUpperCase();
+            tipoDer = tipoDer.toUpperCase();
+
+            // 2. Determinamos el contexto operacional
+            String tipoDestino = this.tipo != null ? this.tipo.toUpperCase() : "";
+            boolean esComparacion = opCodeLLVM.contains("icmp") || opCodeLLVM.contains("fcmp");
+            boolean esContextoFloat = opCodeLLVM.contains("f") || tipoDestino.equals("FLOAT") || "2".equals(opCodeLLVM);
+
+            // 3. AUTO-CASTING INTELIGENTE (Inyección de sitofp si se requiere un flotante)
+            if (esContextoFloat) {
+                // Si la izquierda es entero, o no tiene punto decimal (literal crudo como 5)
+                if (tipoIzq.equals("INT") || tipoIzq.equals("I32") || (!refIzq.contains(".") && !tipoIzq.equals("FLOAT"))) {
+                    String tempCast = CodeGeneratorHelper.getNewPointer();
+                    resultado.append(String.format("  %s = sitofp i32 %s to float\n", tempCast, refIzq));
+                    refIzq = tempCast;
+                }
+                // Si la derecha es entero o variable int (%aux)
+                if (tipoDer.equals("INT") || tipoDer.equals("I32") || (!refDer.contains(".") && !tipoDer.equals("FLOAT"))) {
+                    String tempCast = CodeGeneratorHelper.getNewPointer();
+                    resultado.append(String.format("  %s = sitofp i32 %s to float\n", tempCast, refDer));
+                    refDer = tempCast;
+                }
+            }
+
+            // 4. EMISIÓN DE LA INSTRUCCIÓN COMPILADA
+            if (esComparacion) {
+                // Relacionales omiten el tipo intermedio
+                resultado.append(String.format("  %1$s = %2$s %3$s, %4$s\n",
                         this.getIr_ref(),
-                        opCodeLLVM,  // Estampa directo tu cadena: "fcmp ogt float" o "icmp sgt i32"
+                        opCodeLLVM,
                         refIzq,
                         refDer
                 ));
-
             } else {
-                // Operación aritmética estándar (+, -, *, /)
-                // Se mantiene la plantilla normal de 5 argumentos que sí usa 'this.tipo'
-                resultado.append(String.format("%1$s = %2$s %3$s %4$s, %5$s\n",
+                // Aritméticas (Suma, Resta, etc.)
+                String tipoEmision = "FLOAT".equals(tipoDestino) || esContextoFloat ? "float" : "i32";
+
+                // Normalizamos el Opcode por si viene el token "2" fallido de la clase hija
+                String opFinal = opCodeLLVM;
+                if (opFinal.equals("2") || opFinal.contains("resta")) {
+                    opFinal = esContextoFloat ? "fsub" : "sub";
+                }
+
+                resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
                         this.getIr_ref(),
-                        opCodeLLVM,   // "add", "sub", etc.
-                        this.tipo,    // "i32" o "float"
+                        opFinal,
+                        tipoEmision,
                         refIzq,
                         refDer
                 ));

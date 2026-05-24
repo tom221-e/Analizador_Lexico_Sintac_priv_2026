@@ -1,7 +1,6 @@
 package ast;
 
 import ast.literal.IdLiteral;
-import llvm.CodeGeneratorHelper;
 import parser.SymbolTable;
 
 public class Asignacion extends Sentencia {
@@ -73,17 +72,22 @@ public class Asignacion extends Sentencia {
         }
 
         // 2. Generamos el store correspondiente evaluando las variantes comunes
-        if (tipoNormalizado.equals("INT") || tipoNormalizado.equals("I32")) {
-            resultado.append(String.format("  store i32 %1$s, i32* %2$s\n",
-                    this.valor.getIr_ref(), nombreVar));
-
-        } else if (tipoNormalizado.equals("FLOAT") || tipoNormalizado.equals("FLOAT_ARRAY")) {
-            resultado.append(String.format("  store float %1$s, float* %2$s\n",
-                    this.valor.getIr_ref(), nombreVar));
-
-        } else if (tipoNormalizado.equals("BOOLEAN") || tipoNormalizado.equals("I1") || tipoNormalizado.equals("BOOL")) {
-            resultado.append(String.format("  store i1 %1$s, i1* %2$s\n",
-                    this.valor.getIr_ref(), nombreVar));
+        switch (tipoNormalizado) {
+            case "INT", "I32" -> {
+                assert this.valor != null;
+                resultado.append(String.format("  store i32 %1$s, i32* %2$s\n",
+                        this.valor.getIr_ref(), nombreVar));
+            }
+            case "FLOAT", "FLOAT_ARRAY" -> {
+                assert this.valor != null;
+                resultado.append(String.format("  store float %1$s, float* %2$s\n",
+                        this.valor.getIr_ref(), nombreVar));
+            }
+            case "BOOLEAN", "I1", "BOOL" -> {
+                assert this.valor != null;
+                resultado.append(String.format("  store i1 %1$s, i1* %2$s\n",
+                        this.valor.getIr_ref(), nombreVar));
+            }
         }
 
         return resultado.toString();
