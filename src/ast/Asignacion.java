@@ -40,6 +40,9 @@ public class Asignacion extends Sentencia {
         } else if ("BOOLEAN".equals(tabla.getTipo(id))) {
             tipoLLVM = "i1";
         }
+        else if ("FLOAT_ARRAY".equals(tabla.getTipo(id))) {
+            tipoLLVM = tabla.getTamano(id);
+        }
         IdLiteral nodoId = new IdLiteral(id, tipoLLVM);
         grafico.append(nodoId.graficar(miId));
 

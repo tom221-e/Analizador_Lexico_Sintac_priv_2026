@@ -52,26 +52,24 @@ public class SentenciaIf extends Sentencia {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. CORRECCIÓN: Usamos el método getNewTag() para las etiquetas de control
         String labelThen = CodeGeneratorHelper.getNewTag();
         String labelElse = CodeGeneratorHelper.getNewTag();
         String labelEnd  = CodeGeneratorHelper.getNewTag();
 
-        // 2. Evaluamos la expresión condicional
+        // Evaluamos la expresión condicional
         resultado.append(this.condicion.generarCodigo());
 
-        // 3. Verificamos si existe el bloque ELSE para definir el destino falso
         String destinoElse = (sentenciaElse != null && !sentenciaElse.isEmpty()) ? labelElse : labelEnd;
 
-        // CORRECCIÓN: En LLVM las etiquetas de salto llevan '%' adelante de su nombre (ej: br label %tag.1)
-        resultado.append(String.format("br i1 %1$s, label %2$s, label %3$s\n\n",
-                this.condicion.getIr_ref(), // Registro que trae la condición (ej: %ptro.X)
-                labelThen,                  // tag.X
-                destinoElse                 // tag.Y o tag.Z
+        // CORRECCIÓN: Añadido '%%' antes de %2$s y %3$s para generar el '%' requerido por LLVM
+        resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n\n",
+                this.condicion.getIr_ref(),
+                labelThen,
+                destinoElse
         ));
 
         // ==========================================
-        // 4. BLOQUE THEN
+        // BLOQUE THEN
         // ==========================================
         resultado.append(labelThen).append(":\n");
         if (cuerpoThen != null) {
@@ -81,11 +79,11 @@ public class SentenciaIf extends Sentencia {
                 }
             }
         }
-        // Salto incondicional al final de la estructura
-        resultado.append(String.format("br label %1s\n\n", labelEnd));
+        // CORRECCIÓN: Añadido '%%' para el salto incondicional (br label %tag.X)
+        resultado.append(String.format("br label %%%1$s\n\n", labelEnd));
 
         // ==========================================
-        // 5. BLOQUE ELSE
+        // BLOQUE ELSE
         // ==========================================
         if (sentenciaElse != null && !sentenciaElse.isEmpty()) {
             resultado.append(labelElse).append(":\n");
@@ -94,11 +92,12 @@ public class SentenciaIf extends Sentencia {
                     resultado.append(s.generarCodigo());
                 }
             }
-            resultado.append(String.format("br label %1s\n\n", labelEnd));
+            // CORRECCIÓN: Añadido '%%' para el salto incondicional
+            resultado.append(String.format("br label %%%1$s\n\n", labelEnd));
         }
 
         // ==========================================
-        // 6. ETIQUETA DE SALIDA
+        // ETIQUETA DE SALIDA
         // ==========================================
         resultado.append(labelEnd).append(":\n");
 

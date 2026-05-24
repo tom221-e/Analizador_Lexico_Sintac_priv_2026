@@ -1,5 +1,6 @@
 package validator;
 
+import ast.relacional.Menor;
 import parser.SymbolTable;
 import ast.*;
 import ast.literal.*;
@@ -65,14 +66,20 @@ public class ValidatorDataType {
         InfoNodo infoExp = obtenerInfo(e, tabla);
 
         // Caso A: El destino es un Arreglo (ej: float[] lista)
-        if (tipoDestino.equals("FLOAT_ARRAY") || dimDestino > 0) {
+        if (tipoDestino.equals("FLOAT_ARRAY") || tipoDestino.equals("INT_ARRAY") || dimDestino > 0) {
             // Subcaso: "Broadcasting" (Asignar un número único a todas las celdas del arreglo)
             if (infoExp.dimension == 0) {
                 // Solo se permite si el número es INT o FLOAT
                 return infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT");
             }
-            // Subcaso: Asignar un arreglo a otro (Deben ser de la misma dimensión)
-            return dimDestino == infoExp.dimension;
+            // Subcaso: Asignar un arreglo a otro (Deben ser de la misma dimensión Y tipos base compatibles)
+            // REPARADO: Ahora no solo chequea dimensiones, también extrae y valida el tipo base
+            if (dimDestino == infoExp.dimension) {
+                String tipoBaseDestino = tipoDestino.replace("_ARRAY", "");
+                if (tipoBaseDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return true;
+                return tipoBaseDestino.equals(infoExp.tipo);
+            }
+            return false;
         }
 
         // Caso B: El destino es una variable simple (Escalar: INT, FLOAT o BOOLEAN)
@@ -101,7 +108,7 @@ public class ValidatorDataType {
         InfoNodo infoExp = obtenerInfo(e, tabla);
 
         // --- Lógica para Arreglos ---
-        if (tipoDestino.equals("FLOAT_ARRAY") || dimDestino > 0) {
+        if (tipoDestino.equals("FLOAT_ARRAY") || tipoDestino.equals("INT_ARRAY") || dimDestino > 0) {
             // Broadcasting: un número a un arreglo resulta en el tipo del arreglo
             if (infoExp.dimension == 0) {
                 if (infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT")) {
@@ -110,10 +117,13 @@ public class ValidatorDataType {
                 return "ERROR_TIPO_INCOMPATIBLE";
             }
             // Asignación de arreglo a arreglo
+            // REPARADO: Se agregó la validación de compatibilidad de tipo base además del tamaño
             if (dimDestino == infoExp.dimension) {
-                return tipoDestino;
+                String tipoBaseDestino = tipoDestino.replace("_ARRAY", "");
+                if (tipoBaseDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return tipoDestino;
+                if (tipoBaseDestino.equals(infoExp.tipo)) return tipoDestino;
             }
-            return "ERROR_DIMENSION_INCOMPATIBLE";
+            return "ERROR_DIMENSION_O_TIPO_INCOMPATIBLE";
         }
 
         // --- Lógica para Escalares ---
@@ -173,6 +183,10 @@ public class ValidatorDataType {
         // 2. Si es una variable (IdLiteral)
         if (n instanceof IdLiteral) {
             String id = ((IdLiteral) n).getNombreVariable();
+            if (tabla == null) {
+                // Si viene null, la rescatas del entorno global de tu Parser
+                tabla = parser.Parser.tablaSimbolos;
+            }
             String t = tabla.getTipo(id);
 
             // Validar existencia en tiempo de inspección
@@ -184,6 +198,7 @@ public class ValidatorDataType {
             int d = tabla.getDimension(id);
             // Normalizamos nombres de tipos internos de la tabla
             if ("FLOAT_ARRAY".equals(t)) return new InfoNodo("FLOAT", d);
+            if ("INT_ARRAY".equals(t)) return new InfoNodo("INT", d); // REPARADO: Soporte para tu INT_ARRAY interno
             if ("INT".equals(t)) return new InfoNodo("INT", d);
 
             return new InfoNodo(t, d);
@@ -216,6 +231,16 @@ public class ValidatorDataType {
             InfoNodo i1 = obtenerInfo(e1, tabla);
             InfoNodo i2 = obtenerInfo(e2, tabla);
 
+            // REPARADO: Si la operación binaria es en realidad una comparación relacional (como Menor, Mayor, etc.)
+            // según tu regla debe retornar BOOLEAN y dimensión escalar 0 si ambas dimensiones coinciden.
+            if (n instanceof Menor || n.getClass().getSimpleName().contains("Mayor") || n.getClass().getSimpleName().contains("Igual")) {
+                if (i1.dimension != i2.dimension) {
+                    System.err.println("Error Semántico: Dimensiones incompatibles en la comparación.");
+                    return new InfoNodo("ERROR", 0);
+                }
+                return new InfoNodo("BOOLEAN", 0);
+            }
+
             // El resultado hereda la dimensión mayor (por si hay un escalar operando con un arreglo)
             return new InfoNodo(tRes, Math.max(i1.dimension, i2.dimension));
         }
@@ -243,6 +268,7 @@ public class ValidatorDataType {
         public Integer getDim() { return dimension; }
         public String getTipo() { return tipo; }
     }
+
     public String obtenerTipoLLVM(Expresion e, SymbolTable tabla) {
         InfoNodo info = obtenerInfo(e, tabla);
 

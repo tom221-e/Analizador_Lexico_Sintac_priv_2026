@@ -15,6 +15,20 @@ public class Resta extends OperacionBinaria {
     }
     @Override
     public String get_llvm_op_code() {
-        return "sub";
+        // Verificamos por seguridad que el tipo no sea nulo
+        if (this.tipo == null) {
+            return "; ERROR: Tipo de dato nulo en la operación\n";
+        }
+
+        switch (this.tipo) {
+            case "i32":
+                return "sub"; // Operación nativa para enteros de 32 bits
+
+            case "float":
+                return "fsub"; // Operación nativa para flotantes de precisión simple
+
+            default:
+                return "2";
+        }
     }
 }

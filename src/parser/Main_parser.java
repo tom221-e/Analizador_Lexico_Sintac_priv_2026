@@ -79,7 +79,7 @@ public class Main_parser {
                     // =========================================================================
                     // DESHABILITADO POR AHORA (COMENTADO)
                     // =========================================================================
-                    /* System.out.println("Generando código LLVM IR...");
+                    System.out.println("Generando código LLVM IR...");
 
                     // Creamos el archivo de salida
                     PrintWriter codigoLLVM = new PrintWriter(new FileWriter("codigo_salida.ll"));
@@ -89,7 +89,6 @@ public class Main_parser {
                     codigoLLVM.close();
 
                     System.out.println("Código LLVM IR generado exitosamente: codigo_salida.ll");
-                    */
                     // =========================================================================
                 }
 

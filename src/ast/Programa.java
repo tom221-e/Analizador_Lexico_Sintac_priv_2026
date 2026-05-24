@@ -55,6 +55,7 @@ public class Programa extends Nodo {
         llvm.append("; --- Cabecera del Programa ---\n");
         llvm.append("declare i32 @printf(i8*, ...)\n");
         llvm.append("declare i32 @scanf(i8*, ...)\n\n");
+        llvm.append("declare void @operar_arreglos(float*, float*, float*, i32, i32)\n\n");
 
         // Formatos fijos para Print y Read (Obligatorios)
         llvm.append("@.integer = private constant [4 x i8] c\"%d\\0A\\00\"\n");

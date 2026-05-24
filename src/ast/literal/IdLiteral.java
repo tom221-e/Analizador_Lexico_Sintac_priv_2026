@@ -30,13 +30,30 @@ public class IdLiteral extends Expresion {
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
-        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        // Ejemplo: %1 = load i32, i32* %x
-        resultado.append(String.format("%1$s = load %2$s, %2$s* %3$s\n",
-                this.getIr_ref(),   // El nuevo temporal (%1)
-                this.tipo,           // El tipo (i32, float, i1)
-                this.getStringID()  // El nombre de la variable original (%x)
-        ));
+
+        // Identificamos si es un tipo escalar conocido
+        boolean esEscalar = "i32".equals(this.tipo) || "float".equals(this.tipo) || "i1".equals(this.tipo);
+
+        if (esEscalar) {
+            // === CASO ESCALAR ===
+            // Necesitamos extraer el valor guardado en el puntero, generamos un temporal
+            this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+            resultado.append(String.format("%1$s = load %2$s, %2$s* %3$s\n",
+                    this.getIr_ref(),   // El nuevo temporal (%1)
+                    this.tipo,          // El tipo (i32, float, i1)
+                    this.getStringID()  // El nombre de la variable original (%x)
+            ));
+        } else {
+            // === CASO ARREGLO (Pasar el puntero directo) ===
+            // Como el arreglo declarado por alloca ya es un puntero en sí mismo (%miArray),
+            // su referencia IR es directamente el identificador de la variable.
+            this.setIr_ref(this.getStringID());
+
+            // No se genera ninguna línea de código de carga en el archivo .ll,
+            // porque el puntero ya está disponible para usarse directamente.
+            return "";
+        }
 
         return resultado.toString();
     }

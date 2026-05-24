@@ -24,6 +24,8 @@ parser code {:
 
     public ValidatorDataType validador = new ValidatorDataType();
 
+    public ArrayList<Declaracion> declaracionesMacro = new ArrayList<>();
+
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
         +s.value+"' . Simbolo n° "+s.sym+ " no reconocido." );
@@ -109,12 +111,16 @@ start with programa;
 programa ::= lista_variables:v PROGRAM bloque:l {:
     System.out.println("REGLA 0.1: programa -> PROGRAM lista_sentencias");
     System.out.printf("REGLA 0.1: programa -> %s%n%n", l);
-    RESULT = new Programa("MiProyecto", v, l);;
+    if (v == null) {
+            v = new ArrayList<Declaracion>();
+        }
+        v.addAll(parser.declaracionesMacro);
+    RESULT = new Programa("MiProyecto", v, l);
+
 :}
 | lista_variables:v PROGRAM{:
     RESULT = new Programa("MiProyecto", v, null);
-:}
-;
+:};
 
 
 lista_variables ::= lista_de_lineas:l {:
@@ -420,7 +426,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR")) {
+    if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la Suma.");
     }
 
@@ -434,13 +440,29 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
+
     String tipoLLVM = "";
-    if ("INT".equals(tipo)) {
-        tipoLLVM = "i32";
-    } else if ("FLOAT".equals(tipo)) {
-        tipoLLVM = "float";
-    } else if ("BOOLEAN".equals(tipo)) {
-         tipoLLVM = "i1";
+    if (i1.getDim() > 0 || i2.getDim() > 0) {
+        String idVar = "";
+        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e1).getNombreVariable();
+        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e2).getNombreVariable();
+        }
+
+        if (!idVar.isEmpty()) {
+            tipoLLVM = tablaSimbolos.getTamano(idVar);
+        } else {
+            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
+        }
+    } else {
+        if ("INT".equals(tipo)) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(tipo)) {
+            tipoLLVM = "float";
+        } else if ("BOOLEAN".equals(tipo)) {
+             tipoLLVM = "i1";
+        }
     }
     RESULT = new Suma(izq, der, tipoLLVM);
 :}
@@ -448,7 +470,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR")) {
+    if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la Resta.");
     }
 
@@ -462,13 +484,29 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
+
     String tipoLLVM = "";
-    if ("INT".equals(tipo)) {
-        tipoLLVM = "i32";
-    } else if ("FLOAT".equals(tipo)) {
-        tipoLLVM = "float";
-    } else if ("BOOLEAN".equals(tipo)) {
-         tipoLLVM = "i1";
+    if (i1.getDim() > 0 || i2.getDim() > 0) {
+        String idVar = "";
+        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e1).getNombreVariable();
+        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e2).getNombreVariable();
+        }
+
+        if (!idVar.isEmpty()) {
+            tipoLLVM = tablaSimbolos.getTamano(idVar);
+        } else {
+            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
+        }
+    } else {
+        if ("INT".equals(tipo)) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(tipo)) {
+            tipoLLVM = "float";
+        } else if ("BOOLEAN".equals(tipo)) {
+             tipoLLVM = "i1";
+        }
     }
     RESULT = new Resta(izq, der, tipoLLVM);
 :}
@@ -480,7 +518,7 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR")) {
+    if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la Multiplicación.");
     }
 
@@ -494,13 +532,29 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
+
     String tipoLLVM = "";
-    if ("INT".equals(tipo)) {
-        tipoLLVM = "i32";
-    } else if ("FLOAT".equals(tipo)) {
-        tipoLLVM = "float";
-    } else if ("BOOLEAN".equals(tipo)) {
-         tipoLLVM = "i1";
+    if (i1.getDim() > 0 || i2.getDim() > 0) {
+        String idVar = "";
+        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e1).getNombreVariable();
+        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e2).getNombreVariable();
+        }
+
+        if (!idVar.isEmpty()) {
+            tipoLLVM = tablaSimbolos.getTamano(idVar);
+        } else {
+            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
+        }
+    } else {
+        if ("INT".equals(tipo)) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(tipo)) {
+            tipoLLVM = "float";
+        } else if ("BOOLEAN".equals(tipo)) {
+             tipoLLVM = "i1";
+        }
     }
 
     RESULT = new Multiplicacion(izq, der, tipoLLVM);
@@ -509,7 +563,7 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR")) {
+    if (tipo.equals("ERROR") || tipo == null) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la División.");
     }
 
@@ -523,14 +577,38 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
+
     String tipoLLVM = "";
-    if ("INT".equals(tipo)) {
-        tipoLLVM = "i32";
-    } else if ("FLOAT".equals(tipo)) {
-        tipoLLVM = "float";
-    } else if ("BOOLEAN".equals(tipo)) {
-         tipoLLVM = "i1";
+
+    // 1. Evaluamos si la operación involucra un arreglo usando las dimensiones del validador
+    if (i1.getDim() > 0 || i2.getDim() > 0) {
+        // Buscamos cuál de los dos operandos es el arreglo para extraer su tamaño desde la tabla
+        String idVar = "";
+        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e1).getNombreVariable();
+        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
+            idVar = ((IdLiteral) e2).getNombreVariable();
+        }
+
+        // Si logramos recuperar el identificador, le pedimos la dimensión como String a tu tabla
+        if (!idVar.isEmpty()) {
+            tipoLLVM = tablaSimbolos.getTamano(idVar);
+        } else {
+            // Un respaldo seguro: hereda el entero de la dimensión máxima detectada en el árbol
+            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
+        }
+
+    } else {
+        // 2. Si no es un arreglo, se procesa como un tipo escalar normal
+        if ("INT".equals(tipo)) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(tipo)) {
+            tipoLLVM = "float";
+        } else if ("BOOLEAN".equals(tipo)) {
+             tipoLLVM = "i1";
+        }
     }
+
     RESULT = new Division(izq, der, tipoLLVM);
 :}
 | factor:e {:
@@ -600,7 +678,7 @@ factor ::= ENTERO:e {:
     System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Separación limpia de Declaraciones y Sentencias)");
 
     // =========================================================================
-    // 0. REGISTRO EN LA TABLA DE SÍMBOLOS (Para Análisis Semántico)
+    // 0. REGISTRO EN LA TABLA DE SÍMBOLOS
     // =========================================================================
     if (!tablaSimbolos.exists("masCercano")) tablaSimbolos.add("ID", "masCercano", "FLOAT", "-", "-");
     if (!tablaSimbolos.exists("distMin"))    tablaSimbolos.add("ID", "distMin", "FLOAT", "-", "-");
@@ -608,28 +686,23 @@ factor ::= ENTERO:e {:
     if (!tablaSimbolos.exists("actual"))     tablaSimbolos.add("ID", "actual", "FLOAT", "-", "-");
     if (!tablaSimbolos.exists("distActual")) tablaSimbolos.add("ID", "distActual", "FLOAT", "-", "-");
 
-    // LISTA 1: Para los nodos de Declaración (alloca)
-    ArrayList<Declaracion> declsMacro = new ArrayList<>();
-
+    // =========================================================================
+    // 1. REGISTRO EN LA LISTA GLOBAL DEL PARSER (Soluciona el bug de ALLOCA)
+    // =========================================================================
     ArrayList<String> varsFloat = new ArrayList<>();
-    varsFloat.add("masCercano");
-    varsFloat.add("distMin");
-    varsFloat.add("actual");
-    varsFloat.add("distActual");
-    declsMacro.add(new Declaracion("FLOAT", varsFloat));
+    varsFloat.add("masCercano"); varsFloat.add("distMin"); varsFloat.add("actual"); varsFloat.add("distActual");
+    parser.declaracionesMacro.add(new Declaracion("FLOAT", varsFloat));
 
     ArrayList<String> varsInt = new ArrayList<>();
     varsInt.add("i");
-    declsMacro.add(new Declaracion("INT", varsInt));
+    parser.declaracionesMacro.add(new Declaracion("INT", varsInt));
 
-
-    // LISTA 2: Para los pasos lógicos de ejecución
+    // LISTA DE PASOS DE EJECUCIÓN
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
     // =========================================================================
-    // 1. INICIALIZACIÓN DE VARIABLES
+    // 2. INICIALIZACIÓN DE VARIABLES
     // =========================================================================
-
     // masCercano = listaId[0]
     Expresion primerElemento = new AccesoArray(listaId, new IntLiteral("0"), tablaSimbolos.getTamano(listaId));
     pasos.add(new Asignacion("masCercano", primerElemento, tablaSimbolos, "float"));
@@ -640,23 +713,18 @@ factor ::= ENTERO:e {:
 
     // IF (distMin < 0.0) { distMin = 0.0 - distMin; }
     ArrayList<Sentencia> cuerpoAbsInicial = new ArrayList<>();
-
     Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral("distMin", "float"), "float");
     cuerpoAbsInicial.add(new Asignacion("distMin", inversionInicial, tablaSimbolos, "float"));
 
-    Expresion condicionAbsInicial = new Menor(new IdLiteral("distMin", "float"), new FloatLiteral("0.0"), "i1");
-    pasos.add(new SentenciaIf(
-        condicionAbsInicial,
-        cuerpoAbsInicial,
-        null
-    ));
+    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float" (tipo de los operandos)
+    Expresion condicionAbsInicial = new Menor(new IdLiteral("distMin", "float"), new FloatLiteral("0.0"), "float");
+    pasos.add(new SentenciaIf(condicionAbsInicial, cuerpoAbsInicial, null));
 
     // i = 1
     pasos.add(new Asignacion("i", new IntLiteral("1"), tablaSimbolos, "i32"));
 
-
     // =========================================================================
-    // 2. CUERPO DEL BUCLE WHILE
+    // 3. CUERPO DEL BUCLE WHILE
     // =========================================================================
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
@@ -670,57 +738,42 @@ factor ::= ENTERO:e {:
 
     // IF (distActual < 0.0) { distActual = 0.0 - distActual; }
     ArrayList<Sentencia> cuerpoAbsActual = new ArrayList<>();
-
     Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral("distActual", "float"), "float");
     cuerpoAbsActual.add(new Asignacion("distActual", inversionActual, tablaSimbolos, "float"));
 
-    Expresion condicionAbsActual = new Menor(new IdLiteral("distActual", "float"), new FloatLiteral("0.0"), "i1");
-    cuerpoWhile.add(new SentenciaIf(
-        condicionAbsActual,
-        cuerpoAbsActual,
-        null
-    ));
-
+    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float"
+    Expresion condicionAbsActual = new Menor(new IdLiteral("distActual", "float"), new FloatLiteral("0.0"), "float");
+    cuerpoWhile.add(new SentenciaIf(condicionAbsActual, cuerpoAbsActual, null));
 
     // =========================================================================
-    // 3. COMPARACIÓN: ¿ES LA DISTANCIA ACTUAL MENOR QUE LA MÍNIMA?
+    // 4. COMPARACIÓN DE DISTANCIAS
     // =========================================================================
     // IF (distActual < distMin) { masCercano = actual; distMin = distActual; }
     ArrayList<Sentencia> cuerpoComparacionIf = new ArrayList<>();
     cuerpoComparacionIf.add(new Asignacion("masCercano", new IdLiteral("actual", "float"), tablaSimbolos, "float"));
     cuerpoComparacionIf.add(new Asignacion("distMin", new IdLiteral("distActual", "float"), tablaSimbolos, "float"));
 
-    Expresion condicionComparacion = new Menor(new IdLiteral("distActual", "float"), new IdLiteral("distMin", "float"), "i1");
-    cuerpoWhile.add(new SentenciaIf(
-        condicionComparacion,
-        cuerpoComparacionIf,
-        null
-    ));
+    // CORRECCIÓN AQUÍ: Cambiado "i1" por "float"
+    Expresion condicionComparacion = new Menor(new IdLiteral("distActual", "float"), new IdLiteral("distMin", "float"), "float");
+    cuerpoWhile.add(new SentenciaIf(condicionComparacion, cuerpoComparacionIf, null));
 
     // Incrementar índice: i = i + 1
     Expresion incrementoI = new Suma(new IdLiteral("i", "i32"), new IntLiteral("1"), "i32");
     cuerpoWhile.add(new Asignacion("i", incrementoI, tablaSimbolos, "i32"));
 
-
     // =========================================================================
-    // 4. ENSAMBLAR EL WHILE
+    // 5. ENSAMBLAR EL WHILE Y RETORNAR
     // =========================================================================
     int tamanoArreglo = tablaSimbolos.getDimension(listaId);
     String strTamano = String.valueOf(tamanoArreglo > 0 ? tamanoArreglo : 5);
 
-    // WHILE ( i < tamanoArreglo )
-    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(strTamano), "i1");
-    pasos.add(new SentenciaWhile(
-        condicionWhile,
-        cuerpoWhile,
-        null
-    ));
+    // CORRECCIÓN AQUÍ: Cambiado "i1" por "i32" (estamos comparando enteros)
+    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(strTamano), "i32");
+    pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
 
-    // =========================================================================
-    // 5. RETORNO DEL NODO AL AST
-    // =========================================================================
-    // Pasamos ambas listas por separado al constructor modificado
-    RESULT = new ValorMasCercano(ref, listaId, declsMacro, pasos);
+    // Retornamos el nodo pasando un ArrayList vacío en las declaraciones locales
+    // para evitar que vuelva a escribir allocas dentro de las etiquetas de salto
+    RESULT = new ValorMasCercano(ref, listaId, new ArrayList<Declaracion>(), pasos);
 :}
 | OP_RESTA factor:y {:
     System.out.println("REGLA 14.7: factor -> - factor (unario)");
