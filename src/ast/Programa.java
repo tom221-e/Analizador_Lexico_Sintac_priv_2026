@@ -1,5 +1,6 @@
 package ast;
 import llvm.CodeGeneratorHelper;
+import parser.Parser;
 
 import java.util.ArrayList;
 
@@ -13,6 +14,7 @@ public class Programa extends Nodo {
         this.declaraciones = declaraciones;
         this.instrucciones = instrucciones;
     }
+
     public String graficar() {
         return "digraph AST {\n" +
                 "node [shape=circle];\n" +
@@ -24,6 +26,7 @@ public class Programa extends Nodo {
     protected String getEtiqueta() {
         return "PROGRAMA: " + nombre;
     }
+
     @Override
     protected String graficar(String idPadre) {
         String miId = this.getId();
@@ -47,13 +50,12 @@ public class Programa extends Nodo {
         }
         return dot.toString();
     }
+
     @Override
     public String generarCodigo() {
         // =========================================================================
-        // 🌟 PASO CRÍTICO: PROCESAR INSTRUCCIONES PRIMERO
+        // 1. PROCESAR INSTRUCCIONES PRIMERO (Llena el almacén de textos globales)
         // =========================================================================
-        // Generamos el código de las sentencias en un buffer temporal.
-        // Esto llena automáticamente la lista de constantes globales en tu Helper.
         StringBuilder cuerpoInstrucciones = new StringBuilder();
         if (this.instrucciones != null) {
             for (Sentencia s : instrucciones) {
@@ -63,11 +65,10 @@ public class Programa extends Nodo {
             }
         }
 
-        // Ahora sí, armamos el esqueleto del archivo .ll final en el orden estricto
         StringBuilder llvm = new StringBuilder();
 
         // =========================================================================
-        // 1. CABECERA GLOBAL Y DECLARACIONES OBLIGATORIAS
+        // 2. CABECERA GLOBAL Y DECLARACIONES OBLIGATORIAS
         // =========================================================================
         llvm.append("; --- Cabecera del Programa ---\n");
         llvm.append("declare i32 @printf(i8*, ...)\n");
@@ -81,9 +82,8 @@ public class Programa extends Nodo {
         llvm.append("@float_read_format = unnamed_addr constant [3 x i8] c\"%f\\0A\\00\"\n\n");
 
         // =========================================================================
-        // 2. 🌟 NUEVO: INYECTAR LAS CADENAS DE TEXTO DINÁMICAS DEL ALMACÉN
+        // 3. CADENAS DE TEXTO DINÁMICAS (ALMACÉN GLOBAL)
         // =========================================================================
-        // Como ya procesamos las instrucciones arriba, el helper ya tiene los textos guardados.
         String textosGlobales = CodeGeneratorHelper.obtenerConstantesGlobales();
         if (textosGlobales != null && !textosGlobales.isEmpty()) {
             llvm.append("; --- Cadenas de Texto Globales ---\n");
@@ -92,29 +92,47 @@ public class Programa extends Nodo {
         }
 
         // =========================================================================
-        // 3. DECLARACIÓN DE VARIABLES GLOBALES
-        // =========================================================================
-        if (this.declaraciones != null) {
-            llvm.append("; --- Declaraciones de Variables ---\n");
-            for (Declaracion d : declaraciones) {
-                if (d != null) {
-                    llvm.append(d.generarCodigo());
-                }
-            }
-            llvm.append("\n");
-        }
-
-        // =========================================================================
-        // 4. CUERPO PRINCIPAL (Función @main)
+        // 4. FUNCIÓN PRINCIPAL Y ENTRADA DE PILA (entry:)
         // =========================================================================
         llvm.append("; --- Función Principal ---\n");
         llvm.append("define i32 @main() {\n");
-        llvm.append("entry:\n"); // Bloque de entrada obligatorio
+        llvm.append("entry:\n");
 
-        // Inyectamos el código de las instrucciones que guardamos al principio
+        llvm.append("  ; --- Declaraciones de Variables Locales (Pila de Main) ---\n");
+
+        // LinkedHashSet filtra automáticamente líneas idénticas y mantiene el orden físico
+        java.util.LinkedHashSet<String> lineasDeclaracion = new java.util.LinkedHashSet<>();
+
+        // Procesamos la lista unificada (variables nativas + variables de la macro agregadas en CUP)
+        if (this.declaraciones != null) {
+            for (Declaracion d : declaraciones) {
+                if (d != null) {
+                    // Separamos por saltos de línea el código generado por cada Declaración
+                    String[] lineas = d.generarCodigo().split("\n");
+                    for (String l : lineas) {
+                        // Limpiamos los retornos de carro (\r) y espacios extras
+                        String lineaLimpia = l.replace("\r", "").trim();
+                        if (!lineaLimpia.isEmpty()) {
+                            lineasDeclaracion.add(lineaLimpia); // Si está repetida, el Set la ignora
+                        }
+                    }
+                }
+            }
+        }
+
+        // Escribimos todas las instrucciones 'alloca' y 'store' iniciales una sola vez
+        for (String linea : lineasDeclaracion) {
+            llvm.append("  ").append(linea).append("\n");
+        }
+        llvm.append("\n");
+
+        // =========================================================================
+        // 5. CUERPO DE EJECUCIÓN
+        // =========================================================================
+        llvm.append("  ; --- Cuerpo de Ejecución ---\n");
         llvm.append(cuerpoInstrucciones.toString());
 
-        // Cierre obligatorio de la función main con retorno 0
+        // Cierre formal de la función @main
         llvm.append("  ret i32 0\n");
         llvm.append("}\n");
 

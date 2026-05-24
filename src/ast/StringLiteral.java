@@ -32,12 +32,15 @@ public class StringLiteral extends Expresion {
         // 1. Reemplazamos el '%' por '@' para que la referencia se guarde como una global válida de LLVM (Ej: @ptro.134)
         String refGlobal = CodeGeneratorHelper.getNewPointer().replace("%", "@");
         this.setIr_ref(refGlobal);
+        String valorEscapado = this.valor.replace("\r\n", "\\0A")
+                .replace("\n", "\\0A")
+                .replace("\r", "\\0D");
 
         // 2. Retornamos directamente la cadena formateada con comillas escapadas y el tipo de longitud correcto (%2$d)
         return String.format("%1$s = private unnamed_addr constant [%2$d x i8] c\"%3$s\\00\"\n",
                 this.getIr_ref(),          // %1$s -> @ptro.134
-                this.getLongitudStr(),     // %2$d -> Longitud del string (usa %d si es un entero)
-                this.valor                 // %3$s -> El texto de la cadena
+                valorEscapado.length() + 1,     // %2$d -> Longitud del string (usa %d si es un entero)
+                valorEscapado                 // %3$s -> El texto de la cadena
         );
     }
 }

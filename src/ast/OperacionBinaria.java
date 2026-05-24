@@ -194,15 +194,14 @@ public abstract class OperacionBinaria extends Expresion {
                     refDer = tempCast;
                 }
             }
-
             // 4. EMISIÓN DE LA INSTRUCCIÓN COMPILADA
             if (esComparacion) {
                 // Relacionales omiten el tipo intermedio
                 resultado.append(String.format("  %1$s = %2$s %3$s, %4$s\n",
                         this.getIr_ref(),
-                        opCodeLLVM,
-                        refIzq,
-                        refDer
+                        opCodeLLVM.replace("\n", "").replace("\r", "").trim(),
+                        refIzq.replace("\n", "").replace("\r", "").trim(),
+                        refDer.replace("\n", "").replace("\r", "").trim()
                 ));
             } else {
                 // Aritméticas (Suma, Resta, etc.)
@@ -216,10 +215,10 @@ public abstract class OperacionBinaria extends Expresion {
 
                 resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
                         this.getIr_ref(),
-                        opFinal,
-                        tipoEmision,
-                        refIzq,
-                        refDer
+                        opFinal.replace("\n", "").replace("\r", "").trim(),
+                        tipoEmision.replace("\n", "").replace("\r", "").trim(),
+                        refIzq.replace("\n", "").replace("\r", "").trim(),
+                        refDer.replace("\n", "").replace("\r", "").trim()
                 ));
             }
         }

@@ -17,6 +17,8 @@ PROGRAM
 
     % comentario entre sentencias
 
+    mediciones[5] = 7.7
+
     c = mediciones[5]
     aux = 10 * 2 + (5 - 1)
     promedio = 0.0
