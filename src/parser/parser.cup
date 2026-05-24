@@ -675,58 +675,63 @@ factor ::= ENTERO:e {:
 :}
 | VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:listaId PAREN_C
 {:
-    System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Separación limpia de Declaraciones y Sentencias)");
+    System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Alineado con getTamano() numérico)");
 
     String nombreArreglo = listaId;
 
     // Si viene un arreglo implícito directo como [1.0, 2.0...] o no existe la variable en tu tabla:
     if (listaId.startsWith("[") || !tablaSimbolos.exists(listaId)) {
-        // Generamos un identificador único libre de caracteres especiales
         nombreArreglo = "arr_literal_" + Math.abs(listaId.hashCode());
-
-        // Calculamos la dimensión contando los elementos separados por comas
         int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
-        String tamanoLLVM = "[ " + dimension + " x float ]";
 
         if (!tablaSimbolos.exists(nombreArreglo)) {
-            // Guardamos en tu tabla respetando tus parámetros: token, id, type, valor, longitud
-            // Pasamos "FLOAT_ARRAY" como tipo exacto
-            tablaSimbolos.add("ID", nombreArreglo, "FLOAT_ARRAY", String.valueOf(dimension), tamanoLLVM);
+            // Guardamos directamente el número como tamaño/longitud en la tabla
+            tablaSimbolos.add("ID", nombreArreglo, "FLOAT_ARRAY", String.valueOf(dimension), String.valueOf(dimension));
 
-            // Registramos el espacio en la cabecera usando TU clase DeclaracionArray
             ArrayList<String> varTemporal = new ArrayList<>();
             varTemporal.add(nombreArreglo);
             parser.declaracionesMacro.add(new DeclaracionArray(String.valueOf(dimension), varTemporal));
         }
     }
-    // =========================================================================
-    // 0. REGISTRO EN LA TABLA DE SÍMBOLOS
-    // =========================================================================
-    if (!tablaSimbolos.exists("masCercano")) tablaSimbolos.add("ID", "masCercano", "FLOAT", "-", "-");
-    if (!tablaSimbolos.exists("distMin"))    tablaSimbolos.add("ID", "distMin", "FLOAT", "-", "-");
-    if (!tablaSimbolos.exists("i"))          tablaSimbolos.add("ID", "i", "INT", "-", "-");
-    if (!tablaSimbolos.exists("actual"))     tablaSimbolos.add("ID", "actual", "FLOAT", "-", "-");
-    if (!tablaSimbolos.exists("distActual")) tablaSimbolos.add("ID", "distActual", "FLOAT", "-", "-");
 
     // =========================================================================
-    // 1. REGISTRO EN LA LISTA GLOBAL DEL PARSER (Soluciona el bug de ALLOCA)
+    // 0. REGISTRO EN LA TABLA DE SÍMBOLOS (CONTROL DE EXISTENCIA ÚNICA)
     // =========================================================================
-    ArrayList<String> varsFloat = new ArrayList<>();
-    varsFloat.add("masCercano"); varsFloat.add("distMin"); varsFloat.add("actual"); varsFloat.add("distActual");
-    parser.declaracionesMacro.add(new Declaracion("FLOAT", varsFloat));
+    boolean yaDeclarado = tablaSimbolos.exists("masCercano");
 
-    ArrayList<String> varsInt = new ArrayList<>();
-    varsInt.add("i");
-    parser.declaracionesMacro.add(new Declaracion("INT", varsInt));
+    if (!yaDeclarado) {
+        tablaSimbolos.add("ID", "masCercano", "FLOAT", "-", "-");
+        tablaSimbolos.add("ID", "distMin", "FLOAT", "-", "-");
+        tablaSimbolos.add("ID", "i", "INT", "-", "-");
+        tablaSimbolos.add("ID", "actual", "FLOAT", "-", "-");
+        tablaSimbolos.add("ID", "distActual", "FLOAT", "-", "-");
+    }
+
+    // =========================================================================
+    // 1. REGISTRO GLOBAL ÚNICO (Evita la duplicación de Allocas en la cabecera)
+    // =========================================================================
+    if (!yaDeclarado) {
+        ArrayList<String> varsFloat = new ArrayList<>();
+        varsFloat.add("masCercano"); varsFloat.add("distMin"); varsFloat.add("actual"); varsFloat.add("distActual");
+        parser.declaracionesMacro.add(new Declaracion("FLOAT", varsFloat));
+
+        ArrayList<String> varsInt = new ArrayList<>();
+        varsInt.add("i");
+        parser.declaracionesMacro.add(new Declaracion("INT", varsInt));
+    }
 
     // LISTA DE PASOS DE EJECUCIÓN
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
     // =========================================================================
+    // CORRECCIÓN: Recuperamos directamente el String con el número limpio ("5")
+    // =========================================================================
+    String formatoDimension = tablaSimbolos.getTamano(nombreArreglo);
+
+    // =========================================================================
     // 2. INICIALIZACIÓN DE VARIABLES
     // =========================================================================
-    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' para jalar el tamaño y la variable correcta
-    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), tablaSimbolos.getTamano(nombreArreglo));
+    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), formatoDimension);
     pasos.add(new Asignacion("masCercano", primerElemento, tablaSimbolos, "float"));
 
     // distMin = ref - masCercano
@@ -749,8 +754,7 @@ factor ::= ENTERO:e {:
     // =========================================================================
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
-    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' aquí también
-    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral("i", "i32"), tablaSimbolos.getTamano(nombreArreglo));
+    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral("i", "i32"), formatoDimension);
     cuerpoWhile.add(new Asignacion("actual", elementoActual, tablaSimbolos, "float"));
 
     // distActual = ref - actual
@@ -783,14 +787,9 @@ factor ::= ENTERO:e {:
     // =========================================================================
     // 5. ENSAMBLAR EL WHILE Y RETORNAR
     // =========================================================================
-    // REPARADO: Se cambió 'listaId' por 'nombreArreglo' para obtener la dimensión numérica real
-    int tamanoArreglo = tablaSimbolos.getDimension(nombreArreglo);
-    String strTamano = String.valueOf(tamanoArreglo > 0 ? tamanoArreglo : 5);
-
-    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(strTamano), "i32");
+    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(formatoDimension), "i32");
     pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
 
-    // REPARADO: Se pasa 'nombreArreglo' al constructor del nodo del AST
     RESULT = new ValorMasCercano(ref, nombreArreglo, new ArrayList<Declaracion>(), pasos);
 :}
 | OP_RESTA factor:y {:

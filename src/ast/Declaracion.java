@@ -42,26 +42,32 @@ public class Declaracion extends Nodo {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Mapeamos tu tipo de dato al tipo de LLVM
+        // 1. Mapeamos tu tipo de dato al tipo de LLVM y definimos su valor por defecto
         String tipoLLVM = "";
+        String valorDefecto = "";
+
         if ("INT".equals(this.tipo)) {
             tipoLLVM = "i32";
+            valorDefecto = "0";
         } else if ("FLOAT".equals(this.tipo)) {
             tipoLLVM = "float";
+            valorDefecto = "0.0"; // <-- Aquí forzamos que sea 0.0 en lugar de null
         } else if ("BOOLEAN".equals(this.tipo)) {
             tipoLLVM = "i1";
+            valorDefecto = "false";
         } else {
             return "; ERROR: Tipo de dato '" + this.tipo + "' no soportado en LLVM\n";
         }
 
-        // 2. Generamos un 'alloca' para cada variable en la lista
+        // 2. Generamos un 'alloca' seguido de un 'store' de inicialización por seguridad
         for (String var : variables) {
-            // En LLVM: %x = alloca i32
-            // Usamos % delante del nombre de la variable para identificar el puntero local
-            resultado.append(String.format("%1$s = alloca %2$s\n",
-                    "%"+ var,       // Nombre de la variable
-                    tipoLLVM   // Tipo (i32, float, i1)
-            ));
+            String nombreVar = var.startsWith("%") ? var : "%" + var;
+
+            // Reservamos espacio en memoria
+            resultado.append(String.format("  %1$s = alloca %2$s\n", nombreVar, tipoLLVM));
+
+            // Inicializamos inmediatamente para evitar valores 'null' colgantes en el flujo
+            resultado.append(String.format("  store %1$s %2$s, %1$s* %3$s\n", tipoLLVM, valorDefecto, nombreVar));
         }
 
         return resultado.toString();

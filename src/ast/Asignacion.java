@@ -58,23 +58,32 @@ public class Asignacion extends Sentencia {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Generamos el código de la expresión de la derecha
-        resultado.append(this.valor.generarCodigo());
+        // 1. Generamos el código de la expresión de la derecha (el cálculo)
+        if (this.valor != null) {
+            resultado.append(this.valor.generarCodigo());
+        }
 
-        // 2. Generamos el store con el símbolo % incluido
-        if ("INT".equals(this.tipo)) {
-            // El %%%2$s genera un '%' seguido del nombre de la variable
-            resultado.append(String.format("store i32 %1$s, i32* %2$s\n",
-                    this.valor.getIr_ref(), this.getNombreP()));
+        // Normalizamos el tipo a mayúsculas para evitar fallos de formato
+        String tipoNormalizado = this.tipo != null ? this.tipo.toUpperCase() : "";
 
-        } else if ("FLOAT".equals(this.tipo)) {
-            resultado.append(String.format("store float %1$s, float* %2$s\n",
-                    this.valor.getIr_ref(), this.getNombreP()));
+        // Nos aseguramos de que el nombre de la variable lleve el '%' de LLVM
+        String nombreVar = this.getNombreP();
+        if (!nombreVar.startsWith("%")) {
+            nombreVar = "%" + nombreVar;
+        }
 
-        } else if ("BOOLEAN".equals(this.tipo)) {
-            // En LLVM los booleanos son i1
-            resultado.append(String.format("store i1 %1$s, i1* %2$s\n",
-                    this.valor.getIr_ref(), this.getNombreP()));
+        // 2. Generamos el store correspondiente evaluando las variantes comunes
+        if (tipoNormalizado.equals("INT") || tipoNormalizado.equals("I32")) {
+            resultado.append(String.format("  store i32 %1$s, i32* %2$s\n",
+                    this.valor.getIr_ref(), nombreVar));
+
+        } else if (tipoNormalizado.equals("FLOAT") || tipoNormalizado.equals("FLOAT_ARRAY")) {
+            resultado.append(String.format("  store float %1$s, float* %2$s\n",
+                    this.valor.getIr_ref(), nombreVar));
+
+        } else if (tipoNormalizado.equals("BOOLEAN") || tipoNormalizado.equals("I1") || tipoNormalizado.equals("BOOL")) {
+            resultado.append(String.format("  store i1 %1$s, i1* %2$s\n",
+                    this.valor.getIr_ref(), nombreVar));
         }
 
         return resultado.toString();
