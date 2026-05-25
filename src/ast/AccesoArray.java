@@ -59,12 +59,21 @@ public class AccesoArray extends Expresion {
 
         // 4. Registro final que contendrá el valor flotante extraído
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-
+        String p = CodeGeneratorHelper.getNewPointer();
         // 5. Cargar el valor real desde la dirección calculada al registro de esta Expresión
-        resultado.append(String.format("  %1$s = load double, float* %2$s\n",
-                this.getIr_ref(),
+        resultado.append(String.format("  %1$s = load float, float* %2$s\n",
+                p,
                 ptrDireccion
         ));
+        // 2. Pedimos un nuevo puntero temporal para guardar el resultado del casting (%ptro.X)
+
+
+        // 3. Emitimos la instrucción 'sitofp' apuntando estrictamente 'to double'
+        // LLVM exige: %nuevo_ptr = sitofp i32 %ptr_hijo to double
+        resultado.append(String.format("%1$s = fpext float %2$s to double\n",
+                this.getIr_ref(),
+                p
+                    ));
 
         return resultado.toString();
     }
