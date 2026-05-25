@@ -23,7 +23,7 @@ public class CodeGeneratorHelper {
      * @param sb El StringBuilder actual para inyectar la instrucción de casteo si hace falta
      * @return Arreglo con los 2 punteros definitivos [punteroIzq, punteroDer] listos para usarse.
      */
-    public static String[] balancearTiposLLVM(ast.Expresion izq, ast.Expresion der, String tipoEmision, StringBuilder sb) {
+    public static String[] balancearTiposLLVM(ast.OperacionBinaria izq, ast.OperacionBinaria der, String tipoEmision, StringBuilder sb) {
         String ptrIzq = izq.getIr_ref().trim();
         String ptrDer = der.getIr_ref().trim();
 

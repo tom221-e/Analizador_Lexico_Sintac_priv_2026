@@ -14,6 +14,10 @@ public abstract class OperacionBinaria extends Expresion {
         this.tipo = tipo;
     }
 
+    public String getTipo() {
+        return tipo;
+    }
+
     @Override
     protected String getEtiqueta() {
         return String.format("%s", this.getNombreOperacion());
