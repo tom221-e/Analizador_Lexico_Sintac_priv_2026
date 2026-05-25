@@ -31,7 +31,6 @@ public class Menor extends OperacionBinaria {
         // Evaluamos el tipo de los operandos para determinar el opcode escalar de LLVM
         switch (this.tipo) {
             case "float":
-            case "double":
                 return "fcmp olt"; // 'olt' significa Ordered Less Than
             case "i32":
             case "boolean":
@@ -68,16 +67,28 @@ public class Menor extends OperacionBinaria {
                 break;
         }
 
-        // 3. Emitimos la instrucción formateada de LLVM:
-        // Formato Enteros:  %ptro.X = icmp slt i32 %ptro.A, %ptro.B
-        // Formato Decimales: %ptro.Y = fcmp olt double %ptro.C, %ptro.D
+        String[] operandosSeguros = CodeGeneratorHelper.castearOperandosAlVuelo(
+                this.izquierda,
+                this.derecha,
+                tipoComparacion,
+                resultado
+        );
+        String ptrIzqFinal = operandosSeguros[0]; // Puede ser el original o el nuevo registro 'sitofp'
+        String ptrDerFinal = operandosSeguros[1]; // Puede ser el original o el nuevo registro 'sitofp'
+
+        // 2. Solicitamos un nuevo registro temporal SSA para guardar el resultado booleano (i1)
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+        // 🌟 CAMBIO 2: Reemplazar 'this.izquierda.getIr_ref()' por las variables finales balanceadas
+        // Formato limpio: %ptro.resultado = icmp/fcmp condición tipo %ptrIzqFinal, %ptrDerFinal
         resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
                 this.getIr_ref(),
                 this.get_llvm_op_code(),
                 tipoComparacion,
-                this.izquierda.getIr_ref().trim(),
-                this.derecha.getIr_ref().trim()
+                ptrIzqFinal,  // <-- Modificado
+                ptrDerFinal   // <-- Modificado
         ));
+
 
         return resultado.toString();
     }

@@ -14,9 +14,6 @@ public class Desigual extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "!="; // Corresponde a DESIGUAL
     }
-    public String getTipo(){
-        return tipo;
-    }
 
     @Override
     public String get_llvm_op_code() {
@@ -69,19 +66,26 @@ public class Desigual extends OperacionBinaria {
                 break;
         }
 
-        String[] operandosSeguros = CodeGeneratorHelper.balancearTiposLLVM(
-                this.izquierda, this.derecha, tipoComparacion, resultado
+        String[] operandosSeguros = CodeGeneratorHelper.castearOperandosAlVuelo(
+                this.izquierda,
+                this.derecha,
+                tipoComparacion,
+                resultado
         );
-        String ptrIzqFinal = operandosSeguros[0];
-        String ptrDerFinal = operandosSeguros[1];
+        String ptrIzqFinal = operandosSeguros[0]; // Puede ser el original o el nuevo registro 'sitofp'
+        String ptrDerFinal = operandosSeguros[1]; // Puede ser el original o el nuevo registro 'sitofp'
 
-        // 4. Emitimos la instrucción formateada con los punteros seguros
+        // 2. Solicitamos un nuevo registro temporal SSA para guardar el resultado booleano (i1)
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+
+        // Formato limpio: %ptro.resultado = icmp/fcmp condición tipo %ptrIzqFinal, %ptrDerFinal
         resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
                 this.getIr_ref(),
                 this.get_llvm_op_code(),
                 tipoComparacion,
-                ptrIzqFinal,
-                ptrDerFinal
+                ptrIzqFinal,  // <-- Modificado
+                ptrDerFinal   // <-- Modificado
         ));
 
         return resultado.toString();

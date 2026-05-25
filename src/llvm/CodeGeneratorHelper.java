@@ -13,37 +13,34 @@ public class CodeGeneratorHelper {
 
     private CodeGeneratorHelper(){}
 
-    /**
-     * Revisa los tipos de los operandos. Si la operación exige un 'double' pero
-     * recibe un 'i32', genera la instrucción 'sitofp' para castearlo y balancear la balanza.
-     *
-     * @param izq Nodo izquierdo
-     * @param der Nodo derecho
-     * @param tipoEmision El tipo final que exige la operación (ej: "double" o "i32")
-     * @param sb El StringBuilder actual para inyectar la instrucción de casteo si hace falta
-     * @return Arreglo con los 2 punteros definitivos [punteroIzq, punteroDer] listos para usarse.
-     */
-    public static String[] balancearTiposLLVM(ast.OperacionBinaria izq, ast.OperacionBinaria der, String tipoEmision, StringBuilder sb) {
-        String ptrIzq = izq.getIr_ref().trim();
-        String ptrDer = der.getIr_ref().trim();
+    public static String[] castearOperandosAlVuelo(ast.Expresion izquierda, ast.Expresion derecha, String tipoDestinoLLVM, StringBuilder sb) {
+        String ptrIzq = izquierda.getIr_ref().trim();
+        String ptrDer = derecha.getIr_ref().trim();
 
-        // Obtenemos los tipos originales de los nodos (asumiendo que Expresion tiene getTipo())
-        String tipoIzq = (izq.getTipo() != null) ? izq.getTipo() : "i32";
-        String tipoDer = (der.getTipo() != null) ? der.getTipo() : "i32";
+        // Solo analizamos si la operación final de LLVM requiere alta precisión (double)
+        if ("double".equals(tipoDestinoLLVM)) {
+            // Instanciamos tu validador semántico directamente
+            validator.ValidatorDataType validador = new validator.ValidatorDataType();
 
-        // Si la instrucción LLVM exige double, promovemos los enteros
-        if (tipoEmision.equals("double")) {
+            // Usamos la tabla global de tu Parser, igual que hace tu validador por defecto
+            parser.SymbolTable tabla = parser.Parser.tablaSimbolos;
 
-            if (tipoIzq.equals("i32") || tipoIzq.equals("int")) {
-                String nuevoPtrIzq = CodeGeneratorHelper.getNewPointer();
-                sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtrIzq, ptrIzq));
-                ptrIzq = nuevoPtrIzq; // Actualizamos el puntero al casteado
+            // Obtenemos la info exacta de cada hijo usando TU lógica recursiva
+            validator.ValidatorDataType.InfoNodo infoIzq = validador.obtenerInfo(izquierda, tabla);
+            validator.ValidatorDataType.InfoNodo infoDer = validador.obtenerInfo(derecha, tabla);
+
+            // Si el izquierdo es INT, se castea a double
+            if (infoIzq != null && "INT".equals(infoIzq.getTipo())) {
+                String nuevoPtr = CodeGeneratorHelper.getNewPointer();
+                sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtr, ptrIzq));
+                ptrIzq = nuevoPtr;
             }
 
-            if (tipoDer.equals("i32") || tipoDer.equals("int")) {
-                String nuevoPtrDer = CodeGeneratorHelper.getNewPointer();
-                sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtrDer, ptrDer));
-                ptrDer = nuevoPtrDer; // Actualizamos el puntero al casteado
+            // Si el derecho es INT, se castea a double
+            if (infoDer != null && "INT".equals(infoDer.getTipo())) {
+                String nuevoPtr = CodeGeneratorHelper.getNewPointer();
+                sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtr, ptrDer));
+                ptrDer = nuevoPtr;
             }
         }
 
