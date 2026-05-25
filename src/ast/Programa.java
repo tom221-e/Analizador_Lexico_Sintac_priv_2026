@@ -8,11 +8,13 @@ public class Programa extends Nodo {
     private final String nombre;
     private final ArrayList<Declaracion> declaraciones; // Para lista_variables
     private final ArrayList<Sentencia> instrucciones;
+    private final ArrayList<Declaracion> decMacro;
 
-    public Programa(String nombre, ArrayList<Declaracion> declaraciones, ArrayList<Sentencia> instrucciones) {
+    public Programa(String nombre, ArrayList<Declaracion> declaraciones, ArrayList<Declaracion> decMacro, ArrayList<Sentencia> instrucciones) {
         this.nombre = nombre;
         this.declaraciones = declaraciones;
         this.instrucciones = instrucciones;
+        this.decMacro = decMacro;
     }
 
     public String graficar() {
@@ -116,6 +118,20 @@ public class Programa extends Nodo {
                         String lineaLimpia = l.replace("\r", "").trim();
                         if (!lineaLimpia.isEmpty()) {
                             lineasDeclaracion.add(lineaLimpia); // Si está repetida, el Set la ignora
+                        }
+                    }
+                }
+            }
+        }
+
+        if (decMacro != null) {
+            for (Declaracion d : decMacro) {
+                if (d != null) {
+                    String[] lineas = d.generarCodigo().split("\n");
+                    for (String l : lineas) {
+                        String lineaLimpia = l.replace("\r", "").trim();
+                        if (!lineaLimpia.isEmpty()) {
+                            lineasDeclaracion.add(lineaLimpia);
                         }
                     }
                 }

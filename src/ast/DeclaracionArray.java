@@ -24,8 +24,17 @@ public class DeclaracionArray extends Declaracion {
     @Override
     protected String graficar(String idPadre) {
         String miId = this.getId();
-        StringBuilder dot = new StringBuilder(super.graficar(idPadre));
+        StringBuilder dot = new StringBuilder();
 
+        // 1. Dibujamos el nodo propio de la DeclaracionArray
+        dot.append(miId).append(" [label=\"").append(this.getEtiqueta()).append("\", color=\"black\"];\n");
+
+        // 2. Nos conectamos con nuestro padre en el AST (el Programa o la Macro)
+        if (idPadre != null) {
+            dot.append(idPadre).append(" -> ").append(miId).append(";\n");
+        }
+
+        // 3. Dibujamos nuestros hijos (las variables) una Sola Vez y en azul
         for (String var : variables) {
             String idVar = "var_" + var + "_" + miId;
             dot.append(idVar).append(" [label=\"Variable: ").append(var).append("\", color=\"blue\"];\n");

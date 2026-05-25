@@ -10,6 +10,7 @@ public class IntLiteral extends Expresion {
         this.valor = String.valueOf(valor);
     }
 
+
     @Override
     protected String getEtiqueta() {
         return "INT: " + valor;
