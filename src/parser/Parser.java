@@ -384,7 +384,7 @@ public class Parser extends java_cup.runtime.lr_parser {
 
     public ValidatorDataType validador = new ValidatorDataType();
 
-    public ArrayList<Declaracion> declaracionesMacro = new ArrayList<>();
+    public static ArrayList<Declaracion> declaracionesMacro = new ArrayList<>();
 
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
@@ -455,8 +455,7 @@ class CUP$Parser$actions {
     if (v == null) {
             v = new ArrayList<Declaracion>();
         }
-        v.addAll(parser.declaracionesMacro);
-    RESULT = new Programa("MiProyecto", v, l);
+    RESULT = new Programa("MiProyecto", v, declaracionesMacro, l);
 
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("programa",0, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -471,7 +470,7 @@ class CUP$Parser$actions {
 		int vright = ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).right;
 		ArrayList<Declaracion> v = (ArrayList<Declaracion>)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		
-    RESULT = new Programa("MiProyecto", v, null);
+    RESULT = new Programa("MiProyecto", v, declaracionesMacro, null);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("programa",0, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1144,8 +1143,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = new Igualdad(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Igualdad(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1163,8 +1175,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = new Mayor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Mayor(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1182,8 +1207,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = new Menor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Menor(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1201,8 +1239,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = new MayorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new MayorIgual(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1220,8 +1271,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new MenorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new MenorIgual(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1238,9 +1302,22 @@ String tipoEspecial = "FLOAT_ARRAY";
 		int e2right = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-    System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
-    System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new Desigual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    System.out.println("REGLA 11.6: expr_relacional -> expr_arit DESIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
+    System.out.printf("REGLA 11.6: expr_relacional -> %s != %s%n%n", e1, e2); // Corregido a !=
+    RESULT = new Desigual(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1254,8 +1331,8 @@ String tipoEspecial = "FLOAT_ARRAY";
 		int eright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Expresion e = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-    System.out.println("REGLA 11.6: expr_relacional -> expr_arit");
-    System.out.printf("REGLA 11.6: expr_relacional -> %s%n%n", e);
+    System.out.println("REGLA 11.7: expr_relacional -> expr_arit");
+    System.out.printf("REGLA 11.7: expr_relacional -> %s%n%n", e);
     RESULT = e;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1701,122 +1778,126 @@ String tipoEspecial = "FLOAT_ARRAY";
 		int listaIdright = ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).right;
 		String listaId = (String)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		
-    System.out.println("REGLA: Desmenuzando VALOR_MAS_CERCANO (Alineado con getTamano() numérico)");
-
-    String nombreArreglo = listaId;
-
-    // Si viene un arreglo implícito directo como [1.0, 2.0...] o no existe la variable en tu tabla:
-    if (listaId.startsWith("[") || !tablaSimbolos.exists(listaId)) {
-        nombreArreglo = "arr_literal_" + Math.abs(listaId.hashCode());
-        int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
-
-        if (!tablaSimbolos.exists(nombreArreglo)) {
-            // Guardamos directamente el número como tamaño/longitud en la tabla
-            tablaSimbolos.add("ID", nombreArreglo, "FLOAT_ARRAY", String.valueOf(dimension), String.valueOf(dimension));
-
-            ArrayList<String> varTemporal = new ArrayList<>();
-            varTemporal.add(nombreArreglo);
-            parser.declaracionesMacro.add(new DeclaracionArray(String.valueOf(dimension), varTemporal));
-        }
-    }
+    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Declaraciones a Cabecera Main) ===");
 
     // =========================================================================
-    // 0. REGISTRO EN LA TABLA DE SÍMBOLOS (CONTROL DE EXISTENCIA ÚNICA)
+    // 0. GENERACIÓN DE IDENTIFICADORES ÚNICOS LIMPIOS (Sin puntos)
     // =========================================================================
-    boolean yaDeclarado = tablaSimbolos.exists("masCercano");
+    String sufijoUnico = String.valueOf(Math.abs(listaId.hashCode()));
 
-    if (!yaDeclarado) {
-        tablaSimbolos.add("ID", "masCercano", "FLOAT", "-", "-");
-        tablaSimbolos.add("ID", "distMin", "FLOAT", "-", "-");
-        tablaSimbolos.add("ID", "i", "INT", "-", "-");
-        tablaSimbolos.add("ID", "actual", "FLOAT", "-", "-");
-        tablaSimbolos.add("ID", "distActual", "FLOAT", "-", "-");
-    }
+    String nombreArreglo = "arr_literal_" + sufijoUnico;
+    int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
+    String dimArreglo = String.valueOf(dimension);
+
+    String varMasCercano = "mc_masCercano_" + sufijoUnico;
+    String varDistMin    = "mc_distMin_"    + sufijoUnico;
+    String varI          = "mc_i_"          + sufijoUnico;
+    String varActual     = "mc_actual_"     + sufijoUnico;
+    String varDistActual = "mc_distActual_" + sufijoUnico;
 
     // =========================================================================
-    // 1. REGISTRO GLOBAL ÚNICO (Evita la duplicación de Allocas en la cabecera)
+    // 1. ENTORNO SEMÁNTICO LOCAL
     // =========================================================================
-    if (!yaDeclarado) {
-        ArrayList<String> varsFloat = new ArrayList<>();
-        varsFloat.add("masCercano"); varsFloat.add("distMin"); varsFloat.add("actual"); varsFloat.add("distActual");
-        parser.declaracionesMacro.add(new Declaracion("FLOAT", varsFloat));
+    parser.SymbolTable tablaLocal = new parser.SymbolTable();
 
-        ArrayList<String> varsInt = new ArrayList<>();
-        varsInt.add("i");
-        parser.declaracionesMacro.add(new Declaracion("INT", varsInt));
-    }
+    tablaLocal.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
+    tablaLocal.add("ID", varMasCercano, "float", "-", "-");
+    tablaLocal.add("ID", varDistMin,    "float", "-", "-");
+    tablaLocal.add("ID", varI,          "i32", "-", "-");
+    tablaLocal.add("ID", varActual,     "float", "-", "-");
+    tablaLocal.add("ID", varDistActual, "float", "-", "-");
 
-    // LISTA DE PASOS DE EJECUCIÓN
+    tablaSimbolos.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
+        tablaSimbolos.add("ID", varMasCercano, "float", "-", "-");
+        tablaSimbolos.add("ID", varDistMin,    "float", "-", "-");
+        tablaSimbolos.add("ID", varI,          "i32", "-", "-");
+        tablaSimbolos.add("ID", varActual,     "float", "-", "-");
+        tablaSimbolos.add("ID", varDistActual, "float", "-", "-");
+
+    // =========================================================================
+    // 2. REGISTRO EN LA LISTA GLOBAL DE DECLARACIONES DE MACROS
+    // =========================================================================
+    ArrayList<Declaracion> declaracionesLocales = new ArrayList<>();
+
+    // A. Declaración del Arreglo Literal Anónimo
+    ArrayList<String> varArreglo = new ArrayList<>();
+    varArreglo.add(nombreArreglo);
+    DeclaracionArray declArr = new DeclaracionArray(dimArreglo, varArreglo);
+    parser.declaracionesMacro.add(declArr);
+    declaracionesLocales.add(declArr); // Conservamos referencia local para graficar el AST
+
+    // B. Declaración de Variables Floats Internas
+    ArrayList<String> varsFloat = new ArrayList<>();
+    varsFloat.add(varMasCercano); varsFloat.add(varDistMin); varsFloat.add(varActual); varsFloat.add(varDistActual);
+    Declaracion declFloats = new Declaracion("float", varsFloat);
+    parser.declaracionesMacro.add(declFloats);
+    declaracionesLocales.add(declFloats);
+
+    // C. Declaración del Índice
+    ArrayList<String> varsInt = new ArrayList<>();
+    varsInt.add(varI);
+    Declaracion declInt = new Declaracion("i32", varsInt);
+    parser.declaracionesMacro.add(declInt);
+    declaracionesLocales.add(declInt);
+
+    // LISTA DE PASOS DE EJECUCIÓN LÓGICA
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
     // =========================================================================
-    // CORRECCIÓN: Recuperamos directamente el String con el número limpio ("5")
+    // 3. DETECCIÓN DINÁMICA DE TIPO PARA 'ref'
     // =========================================================================
-    String formatoDimension = tablaSimbolos.getTamano(nombreArreglo);
+    validator.ValidatorDataType validador = new validator.ValidatorDataType();
+    validator.ValidatorDataType.InfoNodo infoRef = validador.obtenerInfo(ref, tablaSimbolos);
+
+    Expresion refConvertida = ref;
+    if (infoRef != null && "INT".equals(infoRef.getTipo())) {
+        refConvertida = new ConversionFloat(ref);
+    }
 
     // =========================================================================
-    // 2. INICIALIZACIÓN DE VARIABLES
+    // 4. PASOS DE INICIALIZACIÓN Y BUCLE (Usando tablaLocal)
     // =========================================================================
-    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), formatoDimension);
-    pasos.add(new Asignacion("masCercano", primerElemento, tablaSimbolos, "float"));
+    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo);
+    pasos.add(new Asignacion(varMasCercano, primerElemento, tablaLocal, "float"));
 
-    // distMin = ref - masCercano
-    Expresion restaInicial = new Resta(ref, new IdLiteral("masCercano", "float"), "float");
-    pasos.add(new Asignacion("distMin", restaInicial, tablaSimbolos, "float"));
+    Expresion restaInicial = new Resta(refConvertida, new IdLiteral(varMasCercano, "float"), "float");
+    pasos.add(new Asignacion(varDistMin, restaInicial, tablaLocal, "float"));
 
-    // IF (distMin < 0.0) { distMin = 0.0 - distMin; }
     ArrayList<Sentencia> cuerpoAbsInicial = new ArrayList<>();
-    Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral("distMin", "float"), "float");
-    cuerpoAbsInicial.add(new Asignacion("distMin", inversionInicial, tablaSimbolos, "float"));
-
-    Expresion condicionAbsInicial = new Menor(new IdLiteral("distMin", "float"), new FloatLiteral("0.0"), "float");
+    Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral(varDistMin, "float"), "float");
+    cuerpoAbsInicial.add(new Asignacion(varDistMin, inversionInicial, tablaLocal, "float"));
+    Expresion condicionAbsInicial = new Menor(new IdLiteral(varDistMin, "float"), new FloatLiteral("0.0"), "float");
     pasos.add(new SentenciaIf(condicionAbsInicial, cuerpoAbsInicial, null));
 
-    // i = 1
-    pasos.add(new Asignacion("i", new IntLiteral("1"), tablaSimbolos, "i32"));
+    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaLocal, "i32"));
 
-    // =========================================================================
-    // 3. CUERPO DEL BUCLE WHILE
-    // =========================================================================
+    // --- Bucle While ---
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
+    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo);
+    cuerpoWhile.add(new Asignacion(varActual, elementoActual, tablaLocal, "float"));
 
-    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral("i", "i32"), formatoDimension);
-    cuerpoWhile.add(new Asignacion("actual", elementoActual, tablaSimbolos, "float"));
+    Expresion restaActual = new Resta(refConvertida, new IdLiteral(varActual, "float"), "float");
+    cuerpoWhile.add(new Asignacion(varDistActual, restaActual, tablaLocal, "float"));
 
-    // distActual = ref - actual
-    Expresion restaActual = new Resta(ref, new IdLiteral("actual", "float"), "float");
-    cuerpoWhile.add(new Asignacion("distActual", restaActual, tablaSimbolos, "float"));
-
-    // IF (distActual < 0.0) { distActual = 0.0 - distActual; }
     ArrayList<Sentencia> cuerpoAbsActual = new ArrayList<>();
-    Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral("distActual", "float"), "float");
-    cuerpoAbsActual.add(new Asignacion("distActual", inversionActual, tablaSimbolos, "float"));
-
-    Expresion condicionAbsActual = new Menor(new IdLiteral("distActual", "float"), new FloatLiteral("0.0"), "float");
+    Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral(varDistActual, "float"), "float");
+    cuerpoAbsActual.add(new Asignacion(varDistActual, inversionActual, tablaLocal, "float"));
+    Expresion condicionAbsActual = new Menor(new IdLiteral(varDistActual, "float"), new FloatLiteral("0.0"), "float");
     cuerpoWhile.add(new SentenciaIf(condicionAbsActual, cuerpoAbsActual, null));
 
-    // =========================================================================
-    // 4. COMPARACIÓN DE DISTANCIAS
-    // =========================================================================
-    // IF (distActual < distMin) { masCercano = actual; distMin = distActual; }
     ArrayList<Sentencia> cuerpoComparacionIf = new ArrayList<>();
-    cuerpoComparacionIf.add(new Asignacion("masCercano", new IdLiteral("actual", "float"), tablaSimbolos, "float"));
-    cuerpoComparacionIf.add(new Asignacion("distMin", new IdLiteral("distActual", "float"), tablaSimbolos, "float"));
-
-    Expresion condicionComparacion = new Menor(new IdLiteral("distActual", "float"), new IdLiteral("distMin", "float"), "float");
+    cuerpoComparacionIf.add(new Asignacion(varMasCercano, new IdLiteral(varActual, "float"), tablaLocal, "float"));
+    cuerpoComparacionIf.add(new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaLocal, "float"));
+    Expresion condicionComparacion = new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float");
     cuerpoWhile.add(new SentenciaIf(condicionComparacion, cuerpoComparacionIf, null));
 
-    // Incrementar índice: i = i + 1
-    Expresion incrementoI = new Suma(new IdLiteral("i", "i32"), new IntLiteral("1"), "i32");
-    cuerpoWhile.add(new Asignacion("i", incrementoI, tablaSimbolos, "i32"));
+    Expresion incrementoI = new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32");
+    cuerpoWhile.add(new Asignacion(varI, incrementoI, tablaLocal, "i32"));
 
-    // =========================================================================
-    // 5. ENSAMBLAR EL WHILE Y RETORNAR
-    // =========================================================================
-    Expresion condicionWhile = new Menor(new IdLiteral("i", "i32"), new IntLiteral(formatoDimension), "i32");
+    Expresion condicionWhile = new Menor(new IdLiteral(varI, "i32"), new IntLiteral(dimArreglo), "i32");
     pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
 
-    RESULT = new ValorMasCercano(ref, nombreArreglo, new ArrayList<Declaracion>(), pasos);
+    RESULT = new ValorMasCercano(refConvertida, nombreArreglo, declaracionesLocales, pasos, varMasCercano);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("factor",19, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-5)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
