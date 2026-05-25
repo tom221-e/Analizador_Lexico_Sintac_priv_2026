@@ -1,5 +1,6 @@
 package gui;
 
+import ast.Programa;
 import java.io.*;
 import java.nio.file.Files;
 import javax.swing.*;
@@ -14,8 +15,10 @@ public class VentanaPrueba extends javax.swing.JFrame {
     private JRadioButton sLexico;
     private JRadioButton sSintactico;
     private JButton run;
-    private JButton btnCargar;  // Nuevo
-    private JButton btnGuardar; // Nuevo
+    private JButton btnCargar;
+    private JButton btnGuardar;
+    private JButton btnGenerarAST;  // Nuevo
+    private JButton btnGenerarLLVM; // Nuevo
     private JScrollPane scrollInput;
     private JScrollPane scrollOutput;
     private ButtonGroup grupoOpciones;
@@ -28,13 +31,13 @@ public class VentanaPrueba extends javax.swing.JFrame {
 
     private void configurarVentana() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(850, 550); // Un poco más ancha para los nuevos botones
+        this.setSize(950, 550); // Un poco más ancha para acomodar la botonera derecha
         this.setLocationRelativeTo(null);
 
         grupoOpciones = new ButtonGroup();
         grupoOpciones.add(sLexico);
         grupoOpciones.add(sSintactico);
-        sLexico.setSelected(true);
+        sSintactico.setSelected(true); // Por defecto sintáctico, ya que habilita el AST y LLVM
     }
 
     private void initComponents() {
@@ -50,9 +53,11 @@ public class VentanaPrueba extends javax.swing.JFrame {
         sSintactico = new JRadioButton("Sintáctico");
         run = new JButton("Ejecutar");
 
-        // Inicializar nuevos botones
+        // Inicializar botones
         btnCargar = new JButton("Cargar Archivo");
         btnGuardar = new JButton("Guardar Salida");
+        btnGenerarAST = new JButton("Generar AST");   // Nuevo
+        btnGenerarLLVM = new JButton("Generar .ll");  // Nuevo
 
         JLabel lblEntrada = new JLabel("Entrada:");
         JLabel lblSalida = new JLabel("Salida (Consola):");
@@ -71,12 +76,18 @@ public class VentanaPrueba extends javax.swing.JFrame {
         panelControlesCentrales.add(sSintactico);
         panelControlesCentrales.add(run);
 
-        // Panel Sur con BorderLayout para separar los botones a los extremos
+        // 🌟 NUEVO: Panel contenedor para agrupar los botones en el extremo derecho
+        JPanel panelBotoneraDerecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        panelBotoneraDerecha.add(btnGenerarAST);
+        panelBotoneraDerecha.add(btnGenerarLLVM);
+        panelBotoneraDerecha.add(btnGuardar);
+
+        // Panel Sur con BorderLayout
         JPanel panelSur = new JPanel(new BorderLayout(10, 0));
-        panelSur.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Margen interno
+        panelSur.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         panelSur.add(btnCargar, BorderLayout.WEST);
         panelSur.add(panelControlesCentrales, BorderLayout.CENTER);
-        panelSur.add(btnGuardar, BorderLayout.EAST);
+        panelSur.add(panelBotoneraDerecha, BorderLayout.EAST); // Colocamos la botonera aquí
 
         this.setLayout(new BorderLayout(10, 10));
         this.add(panelNorte, BorderLayout.NORTH);
@@ -87,6 +98,8 @@ public class VentanaPrueba extends javax.swing.JFrame {
         run.addActionListener(e -> ejecutarProceso());
         btnCargar.addActionListener(e -> cargarArchivo());
         btnGuardar.addActionListener(e -> guardarArchivo());
+        btnGenerarAST.addActionListener(e -> generarASTInteractivos());   // Asignar acción AST
+        btnGenerarLLVM.addActionListener(e -> generarLLVMInteractivos()); // Asignar acción LLVM
     }
 
     private void cargarArchivo() {
@@ -96,7 +109,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
         if (seleccion == JFileChooser.APPROVE_OPTION) {
             File archivo = chooser.getSelectedFile();
             try {
-                // Leer todo el contenido y ponerlo en el input
                 String contenido = Files.readString(archivo.toPath());
                 input.setText(contenido);
             } catch (IOException ex) {
@@ -117,7 +129,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
         if (seleccion == JFileChooser.APPROVE_OPTION) {
             File archivo = chooser.getSelectedFile();
 
-            // Asegurar que tenga extensión .txt si el usuario no la puso
             if (!archivo.getName().toLowerCase().endsWith(".txt")) {
                 archivo = new File(archivo.getAbsolutePath() + ".txt");
             }
@@ -140,14 +151,13 @@ public class VentanaPrueba extends javax.swing.JFrame {
             return;
         }
 
-        // Redirigir System.out y System.err al JTextArea
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         PrintStream oldOut = System.out;
         PrintStream oldErr = System.err;
 
         System.setOut(ps);
-        System.setErr(ps); // Importante para ver errores de CUP
+        System.setErr(ps);
 
         try {
             if (sLexico.isSelected()) {
@@ -155,12 +165,8 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
 
                 lexer.Token t;
-                // ESTE ES EL BUCLE QUE FALTABA:
-                // Llamamos a yylex() hasta que devuelva null o un token de fin
                 while ((t = lexico.yylex()) != null) {
                     System.out.println("Token: " + t.toString());
-
-                    // Si tienes un token llamado FIN o EOF, rompemos el bucle
                     if ("FIN".equals(t.nombre)) break;
                 }
                 System.out.println("=== ANÁLISIS LÉXICO FINALIZADO ===");
@@ -183,13 +189,138 @@ public class VentanaPrueba extends javax.swing.JFrame {
         } catch (Exception e) {
             System.out.println("\n[!] ERROR:");
             System.out.println(e.getMessage());
-            e.printStackTrace(System.out); // Esto ahora saldrá en el JTextArea
+            e.printStackTrace(System.out);
         } finally {
             System.out.flush();
             System.err.flush();
             System.setOut(oldOut);
             System.setErr(oldErr);
-            txtOutput.setText(baos.toString()); // Volcar todo lo capturado al GUI
+            txtOutput.setText(baos.toString());
+        }
+    }
+
+    // 🌟 NUEVO MÉTODO: Compila el código, genera el .dot y pide guardar la imagen .png final
+    private void generarASTInteractivos() {
+        String texto = input.getText();
+        if (texto.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La entrada está vacía.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Seleccione dónde guardar el gráfico del AST (.png)");
+        int seleccion = chooser.showSaveDialog(this);
+
+        if (seleccion == JFileChooser.APPROVE_OPTION) {
+            File destinoPng = chooser.getSelectedFile();
+            if (!destinoPng.getName().toLowerCase().endsWith(".png")) {
+                destinoPng = new File(destinoPng.getAbsolutePath() + ".png");
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
+            PrintStream oldOut = System.out;
+            PrintStream oldErr = System.err;
+            System.setOut(ps); System.setErr(ps);
+
+            try {
+                System.out.println("=== COMPILANDO PARA EXPORTAR AST ===");
+                lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
+                SymbolFactory sf = new ComplexSymbolFactory();
+                parser.Parser p = new parser.Parser(lexico, sf);
+
+                Programa astRoot = (Programa) p.parse().value;
+
+                if (astRoot != null) {
+                    // Generamos el archivo .dot temporal en la raíz del proyecto
+                    File tempDot = new File("temp_arbol.dot");
+                    try (PrintWriter grafico = new PrintWriter(new FileWriter(tempDot))) {
+                        grafico.println(astRoot.graficar());
+                    }
+
+                    System.out.println("Llamando a Graphviz para estructurar la imagen...");
+                    Process process = Runtime.getRuntime().exec(new String[]{
+                            "dot", "-Tpng", tempDot.getAbsolutePath(), "-o", destinoPng.getAbsolutePath()
+                    });
+
+                    // Captura de errores de Graphviz
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String line;
+                        while ((line = errorReader.readLine()) != null) {
+                            System.err.println("Graphviz Warning/Error: " + line);
+                        }
+                    }
+
+                    int exitCode = process.waitFor();
+                    if (exitCode == 0) {
+                        System.out.println("Imagen del AST exportada con éxito en:\n" + destinoPng.getAbsolutePath());
+                        JOptionPane.showMessageDialog(this, "¡Gráfico del AST generado con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        System.err.println("Graphviz falló con código de salida: " + exitCode);
+                    }
+
+                    // Borramos el .dot temporal
+                    tempDot.delete();
+                }
+            } catch (Exception e) {
+                System.err.println("Error procesando o renderizando el AST:");
+                e.printStackTrace(System.out);
+            } finally {
+                System.out.flush(); System.err.flush();
+                System.setOut(oldOut); System.setErr(oldErr);
+                txtOutput.setText(baos.toString());
+            }
+        }
+    }
+
+    // 🌟 NUEVO MÉTODO: Compila el código actual y exporta el código LLVM IR a la ubicación deseada
+    private void generarLLVMInteractivos() {
+        String texto = input.getText();
+        if (texto.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La entrada está vacía.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Seleccione dónde guardar el código LLVM IR (.ll)");
+        int seleccion = chooser.showSaveDialog(this);
+
+        if (seleccion == JFileChooser.APPROVE_OPTION) {
+            File destinoLl = chooser.getSelectedFile();
+            if (!destinoLl.getName().toLowerCase().endsWith(".ll")) {
+                destinoLl = new File(destinoLl.getAbsolutePath() + ".ll");
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
+            PrintStream oldOut = System.out;
+            PrintStream oldErr = System.err;
+            System.setOut(ps); System.setErr(ps);
+
+            try {
+                System.out.println("=== COMPILANDO PARA GENERAR LLVM IR ===");
+                lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
+                SymbolFactory sf = new ComplexSymbolFactory();
+                parser.Parser p = new parser.Parser(lexico, sf);
+
+                Programa astRoot = (Programa) p.parse().value;
+
+                if (astRoot != null) {
+                    System.out.println("Escribiendo instrucciones IR estructuradas...");
+                    try (PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl))) {
+                        codigoLLVM.println(astRoot.generarCodigo());
+                    }
+                    System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
+                    JOptionPane.showMessageDialog(this, "¡Archivo LLVM IR generado e impreso con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception e) {
+                System.err.println("Error fatal emitiendo el código intermedio LLVM:");
+                e.printStackTrace(System.out);
+            } finally {
+                System.out.flush(); System.err.flush();
+                System.setOut(oldOut); System.setErr(oldErr);
+                txtOutput.setText(baos.toString());
+            }
         }
     }
 
