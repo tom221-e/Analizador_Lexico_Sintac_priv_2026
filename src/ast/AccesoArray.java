@@ -50,7 +50,7 @@ public class AccesoArray extends Expresion {
 
         // 3. CORRECCIÓN: getelementptr estructurado exactamente igual al de la asignación
         // Necesita saber que es un bloque '[tamano x float]' y usar los dos índices (i32 0, i32 %indice)
-        resultado.append(String.format("  %1$s = getelementptr inbounds [%2$s x float], [%2$s x float]* %3$s, i32 0, i32 %4$s\n",
+        resultado.append(String.format("  %1$s = getelementptr inbounds [%2$s x double], [%2$s x double]* %3$s, i32 0, i32 %4$s\n",
                 ptrDireccion,
                 this.tamano,
                 this.getNombreP(),
@@ -61,20 +61,10 @@ public class AccesoArray extends Expresion {
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
         String p = CodeGeneratorHelper.getNewPointer();
         // 5. Cargar el valor real desde la dirección calculada al registro de esta Expresión
-        resultado.append(String.format("  %1$s = load float, float* %2$s\n",
-                p,
+        resultado.append(String.format("  %1$s = load double, double* %2$s\n",
+                this.getIr_ref(),
                 ptrDireccion
         ));
-        // 2. Pedimos un nuevo puntero temporal para guardar el resultado del casting (%ptro.X)
-
-
-        // 3. Emitimos la instrucción 'sitofp' apuntando estrictamente 'to double'
-        // LLVM exige: %nuevo_ptr = sitofp i32 %ptr_hijo to double
-        resultado.append(String.format("%1$s = fpext float %2$s to double\n",
-                this.getIr_ref(),
-                p
-                    ));
-
         return resultado.toString();
     }
 }

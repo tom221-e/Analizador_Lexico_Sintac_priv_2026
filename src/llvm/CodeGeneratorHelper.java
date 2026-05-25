@@ -48,7 +48,8 @@ public class CodeGeneratorHelper {
     }
     public static String ejecutarOperacionVectorialCompleta(ast.OperacionBinaria nodo, String refIzq, String refDer, String tamanoArreglo, String codigoALU) {
         StringBuilder sb = new StringBuilder();
-        String tipoEstructuraLLVM = "[" + tamanoArreglo + " x float]";
+        // 🌟 MIGRADO: Ahora la estructura aloja elementos 'double' de 64-bits
+        String tipoEstructuraLLVM = "[" + tamanoArreglo + " x double]";
 
         String ptrArrayIzq = refIzq;
         String ptrArrayDer = refDer;
@@ -62,7 +63,8 @@ public class CodeGeneratorHelper {
             String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
             sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, tamanoArreglo, refIzq, "Izquierdo"));
             ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-            sb.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
+            // 🌟 SINTAXIS LLVM MODERNA: Usa 'ptr' en lugar de 'tipo*' e índice inicial i64 para matrices/arreglos
+            sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
         }
 
         // 2. Broadcasting Derecho si aplica
@@ -70,7 +72,7 @@ public class CodeGeneratorHelper {
             String arrayTempDer = CodeGeneratorHelper.getNewPointer();
             sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, tamanoArreglo, refDer, "Derecho"));
             ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-            sb.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
+            sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
         }
 
         // 3. Generación del contenedor del resultado final
@@ -81,10 +83,11 @@ public class CodeGeneratorHelper {
         sb.append(String.format("  %1$s = alloca %2$s\n", temporalResultado, tipoEstructuraLLVM));
 
         String ptrResultadoPlano = CodeGeneratorHelper.getNewPointer();
-        sb.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
+        sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
 
         // 4. Invocación matemática real a la función de C/C++
-        sb.append(String.format("  call void @operar_arreglos(float* %1$s, float* %2$s, float* %3$s, i32 %4$s, i32 %5$s)\n",
+        // 🌟 MIGRADO: Los parámetros pasaron de 'float*' a los punteros opacos universales 'ptr'
+        sb.append(String.format("  call void @operar_arreglos(ptr %1$s, ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
                 ptrArrayIzq, ptrArrayDer, ptrResultadoPlano, tamanoArreglo, codigoALU));
 
         return sb.toString();
@@ -92,25 +95,19 @@ public class CodeGeneratorHelper {
 
     /**
      * Genera el bloque LLVM intermedio para realizar el Broadcasting de un escalar a un arreglo.
-     * Convierte el valor escalar de alta precisión (double) a la precisión del arreglo (float).
-     *
-     * @param arrayTemp Nombre del puntero temporal asignado para el arreglo (alloca)
-     * @param tipoEstructura Formato de la estructura LLVM, ej: "[10 x float]"
-     * @param tamano Longitud o dimensión del arreglo en formato String (ej: "10")
-     * @param valRef Registro LLVM que contiene el valor escalar a replicar (ej: "%ptro.5")
-     * @param lado Identificador para los comentarios del código, ej: "Izquierdo" o "Derecho"
-     * @return Cadena de texto con el código LLVM estructurado en bloques de control.
+     * Como el escalar ya viene como un double, se elimina la instrucción de truncado fptrunc.
      */
     public static String generarBloqueBroadcasting(String arrayTemp, String tipoEstructura, String tamano, String valRef, String lado) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("; --- Broadcasting %1$s (Conversión automática double -> float) ---\n", lado));
+        // 🌟 CORRECCIÓN: El comentario ahora refleja la persistencia de alta precisión
+        sb.append(String.format("; --- Broadcasting %1$s (Mantenido nativamente como double) ---\n", lado));
         sb.append(String.format("  %1$s = alloca %2$s\n", arrayTemp, tipoEstructura));
 
         // Asignamos y limpiamos el índice del iterador (i32)
         String idx = CodeGeneratorHelper.getNewPointer();
         sb.append(String.format("  %1$s = alloca i32\n", idx));
-        sb.append(String.format("  store i32 0, i32* %1$s\n", idx));
+        sb.append(String.format("  store i32 0, ptr %1$s\n", idx));
 
         // Generamos las etiquetas de salto para el bucle
         String labelCond = CodeGeneratorHelper.getNewTag();
@@ -121,7 +118,7 @@ public class CodeGeneratorHelper {
         sb.append("  br label %" + labelCond + "\n");
         sb.append(labelCond + ":\n");
         String tIdx = CodeGeneratorHelper.getNewPointer();
-        sb.append(String.format("  %1$s = load i32, i32* %2$s\n", tIdx, idx));
+        sb.append(String.format("  %1$s = load i32, ptr %2$s\n", tIdx, idx));
         String cmp = CodeGeneratorHelper.getNewPointer();
         sb.append(String.format("  %1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamano));
         sb.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
@@ -129,19 +126,21 @@ public class CodeGeneratorHelper {
         // --- Bloque Cuerpo ---
         sb.append(labelBody + ":\n");
 
-        // 🌟 Conversión obligatoria de bits: Truncamos el double escalar a float para guardarlo en el vector
-        String valTruncado = CodeGeneratorHelper.getNewPointer();
-        sb.append(String.format("  %1$s = fptrunc double %2$s to float\n", valTruncado, valRef.trim()));
+        // 🌟 SOLUCCIÓN AL GRÁFICO SSA: Expandimos el iterador tIdx (i32) a i64 para el cálculo de puntero
+        String tIdx64 = CodeGeneratorHelper.getNewPointer();
+        sb.append(String.format("  %1$s = sext i32 %2$s to i64\n", tIdx64, tIdx));
 
-        // Obtenemos la posición de memoria e insertamos el elemento truncado
+        // Obtenemos la posición de memoria usando el índice i64 expandido
         String ptrPos = CodeGeneratorHelper.getNewPointer();
-        sb.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructura, arrayTemp, tIdx));
-        sb.append(String.format("  store float %1$s, float* %2$s\n", valTruncado, ptrPos));
+        sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 %4$s\n", ptrPos, tipoEstructura, arrayTemp, tIdx64));
 
-        // Incrementamos el iterador indexado
+        // 🌟 MIGRADO: Se elimina el 'fptrunc' obsoleto. Se almacena directamente como 'double'
+        sb.append(String.format("  store double %1$s, ptr %2$s\n", valRef.trim(), ptrPos));
+
+        // Incrementamos el iterador indexado (i32 habitual)
         String nIdx = CodeGeneratorHelper.getNewPointer();
         sb.append(String.format("  %1$s = add i32 %2$s, 1\n", nIdx, tIdx));
-        sb.append(String.format("  store i32 %1$s, i32* %2$s\n", nIdx, idx));
+        sb.append(String.format("  store i32 %1$s, ptr %2$s\n", nIdx, idx));
         sb.append("  br label %" + labelCond + "\n");
 
         // --- Cierre del bucle ---

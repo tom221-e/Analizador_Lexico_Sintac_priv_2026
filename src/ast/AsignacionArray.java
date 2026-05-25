@@ -57,15 +57,14 @@ public class AsignacionArray extends Sentencia {
 
         // 3. getelementptr inbounds para arrays de floats
         // NOTA: Se usa el método local 'this.getNombreP()' para inyectar correctamente el '%nombre'
-        resultado.append(String.format("%1$s = getelementptr inbounds [%2$s x float], [%2$s x float]* %3$s, i32 0, i32 %4$s\n",
+        resultado.append(String.format("%1$s = getelementptr inbounds [%2$s x double], [%2$s x double]* %3$s, i32 0, i32 %4$s\n",
                 ptrElemento,
                 this.tamano,
                 this.getNombreP(),
                 this.indice.getIr_ref()
         ));
-
         // 4. Guardamos el valor calculado en la posición indexada
-        resultado.append(String.format("store double %1$s, float* %2$s\n",
+        resultado.append(String.format("store double %1$s, double* %2$s\n",
                 this.valor.getIr_ref(),
                 ptrElemento
         ));
