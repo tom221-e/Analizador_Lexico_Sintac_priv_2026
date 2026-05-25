@@ -2,33 +2,84 @@ package ast.relacional;
 
 import ast.Expresion;
 import ast.OperacionBinaria;
-import parser.SymbolTable;
-import validator.ValidatorDataType;
+import llvm.CodeGeneratorHelper;
 
 public class Mayor extends OperacionBinaria {
 
-    private SymbolTable tabla;
     public Mayor(Expresion izquierda, Expresion derecha, String tipo) {
         super(izquierda, derecha, tipo);
+    }
+    public String getTipo(){
+        return tipo;
     }
 
     @Override
     protected String getNombreOperacion() {
-        return ">";
-    }  
-    
+        return ">"; // Corresponde a MAYOR
+    }
+
     @Override
     public String get_llvm_op_code() {
-
-        ValidatorDataType validator = new ValidatorDataType();
-
-        ValidatorDataType.InfoNodo info =
-                validator.obtenerInfo(derecha, tabla);
-
-        if ("FLOAT".equals(info.getTipo())) {
-            return "fcmp ogt double";
+        if (this.tipo == null) {
+            return "; ERROR: Tipo de dato nulo en la operación\n";
         }
 
-        return "icmp sgt";
+        // Si el tipo es numérico (dimensión), le avisa al Padre que use la ALU de vectores
+        if (this.tipo.matches("\\d+")) {
+            return "7"; // Cambia este identificador por el número que use tu ALU para ">"
+        }
+
+        // Evaluamos el tipo de los operandos para determinar el opcode escalar de LLVM
+        switch (this.tipo) {
+            case "float":
+                return "fcmp ogt"; // 'ogt' significa Ordered Greater Than
+            case "i32":
+            case "boolean":
+            default:
+                return "icmp sgt"; // 'sgt' significa Signed Greater Than
+        }
+    }
+
+    /**
+     * Genera la instrucción de comparación relacional escalar para "Mayor que".
+     * El registro resultante devuelto en ir_ref siempre será de tipo 'i1' (booleano).
+     */
+    @Override
+    protected String obtenerCodigoEscalar() {
+        StringBuilder resultado = new StringBuilder();
+
+        // 1. Solicitamos un nuevo registro temporal SSA para guardar el resultado de la comparación (i1)
+        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+        // 2. Mapeamos el tipo con el que se van a comparar los operandos de entrada
+        String tipoComparacion = "i32";
+        switch (this.tipo) {
+            case "float":
+            case "double":
+                tipoComparacion = "double"; // Comparamos en alta precisión de 64-bits
+                break;
+            case "i32":
+                tipoComparacion = "i32";
+                break;
+            case "boolean":
+                tipoComparacion = "i1";     // Comparación lógica entre booleanos
+                break;
+            default:
+                tipoComparacion = "i32";    // Respaldo por defecto
+                break;
+        }
+
+        // 3. Emitimos la instrucción formateada de LLVM:
+        // Formato Enteros:  %ptro.X = icmp sgt i32 %ptro.A, %ptro.B
+        // Formato Decimales: %ptro.Y = fcmp ogt double %ptro.C, %ptro.D
+        resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
+                this.getIr_ref(),
+                this.get_llvm_op_code(),
+                tipoComparacion,
+                this.izquierda.getIr_ref().trim(),
+                this.derecha.getIr_ref().trim()
+        ));
+
+        return resultado.toString();
     }
 }
