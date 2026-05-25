@@ -68,7 +68,7 @@ public class SentenciaPrint extends Sentencia {
 
             } else if ("float".equals(this.tipo)) {
                 // Formato exacto para floats usando la global @.float y tu variable común % (sin fpext)
-                resultado.append(String.format("%1$s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.float, i32 0, i32 0), float %2$s)\n",
+                resultado.append(String.format("%1$s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.float, i32 0, i32 0), double %2$s)\n",
                         tempCall, exp.getIr_ref()));
 
             } else if ("i1".equals(this.tipo)) {
