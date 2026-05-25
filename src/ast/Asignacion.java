@@ -78,9 +78,9 @@ public class Asignacion extends Sentencia {
                 resultado.append(String.format("  store i32 %1$s, i32* %2$s\n",
                         this.valor.getIr_ref(), nombreVar));
             }
-            case "FLOAT", "FLOAT_ARRAY" -> {
+            case "FLOAT" -> {
                 assert this.valor != null;
-                resultado.append(String.format("  store float %1$s, float* %2$s\n",
+                resultado.append(String.format("  store double %1$s, float* %2$s\n",
                         this.valor.getIr_ref(), nombreVar));
             }
             case "BOOLEAN", "I1", "BOOL" -> {

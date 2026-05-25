@@ -17,14 +17,18 @@ public class BoolLiteral extends Expresion {
     public Boolean getBool() {
     return Boolean.valueOf(valor);
     }
+    @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+
+        // Usamos la instrucción lógica 'or' que sí es válida para i1 en LLVM
         if (this.getBool()){
-            resultado.append(String.format("%1$s = add i1 0, %2$s\n", this.getIr_ref(), 1));
-        }else {
-            resultado.append(String.format("%1$s = add i1 0, %2$s\n", this.getIr_ref(), 0));
+            resultado.append(String.format("  %1$s = or i1 false, true\n", this.getIr_ref()));
+        } else {
+            resultado.append(String.format("  %1$s = or i1 false, false\n", this.getIr_ref()));
         }
+
         return resultado.toString();
     }
 }

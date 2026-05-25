@@ -65,7 +65,7 @@ public class AsignacionArray extends Sentencia {
         ));
 
         // 4. Guardamos el valor calculado en la posición indexada
-        resultado.append(String.format("store float %1$s, float* %2$s\n",
+        resultado.append(String.format("store double %1$s, float* %2$s\n",
                 this.valor.getIr_ref(),
                 ptrElemento
         ));

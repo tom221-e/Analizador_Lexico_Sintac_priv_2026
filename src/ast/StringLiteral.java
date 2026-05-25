@@ -4,43 +4,62 @@ import llvm.CodeGeneratorHelper;
 
 public class StringLiteral extends Expresion {
     private final String valor;
+    private int tamanoRealBytes = 0;
 
     public StringLiteral(String valor) {
-        // Limpiamos las comillas para que el grafo se vea mejor
         this.valor = valor.replace("\"", "");
     }
 
     @Override
     protected String getEtiqueta() {
-        return "STRING: " + valor; // Lo que dirá el globo en Graphviz
+        return "STRING: " + valor;
     }
 
     @Override
     protected String graficar(String idPadre) {
-        // Llama a la lógica de Nodo para crear el círculo y la flecha
         return super.graficar(idPadre);
     }
+
     public String getStr() {
         return valor;
     }
+
     public Integer getLongitudStr() {
-        return valor.length() + 1;
+        if (this.tamanoRealBytes == 0) {
+            calcularTamanoLLVM(); // Por si acaso se llama antes de generarCodigo
+        }
+        return this.tamanoRealBytes;
     }
 
-    @Override
-    public String generarCodigo() {
-        // 1. Reemplazamos el '%' por '@' para que la referencia se guarde como una global válida de LLVM (Ej: @ptro.134)
-        String refGlobal = CodeGeneratorHelper.getNewPointer().replace("%", "@");
-        this.setIr_ref(refGlobal);
+    private String calcularTamanoLLVM() {
         String valorEscapado = this.valor.replace("\r\n", "\\0A")
                 .replace("\n", "\\0A")
                 .replace("\r", "\\0D");
 
-        // 2. Retornamos directamente la cadena formateada con comillas escapadas y el tipo de longitud correcto (%2$d)
+        int numEscapes = 0;
+        int index = valorEscapado.indexOf("\\");
+        while (index != -1) {
+            numEscapes++;
+            index = valorEscapado.indexOf("\\", index + 1);
+        }
+
+        // Almacenamos el tamaño exacto que LLVM interpretará en bytes
+        this.tamanoRealBytes = valorEscapado.length() - (numEscapes * 2) + 1;
+        return valorEscapado;
+    }
+
+    @Override
+    public String generarCodigo() {
+        String refGlobal = CodeGeneratorHelper.getNewPointer().replace("%", "@");
+        this.setIr_ref(refGlobal);
+
+        // Calculamos el valor escapado y congelamos el 'tamanoRealBytes'
+        String valorEscapado = calcularTamanoLLVM();
+
         return String.format("%1$s = private unnamed_addr constant [%2$d x i8] c\"%3$s\\00\"\n",
-                this.getIr_ref(),          // %1$s -> @ptro.134
-                valorEscapado.length() + 1,     // %2$d -> Longitud del string (usa %d si es un entero)
-                valorEscapado                 // %3$s -> El texto de la cadena
+                this.getIr_ref(),
+                this.tamanoRealBytes,
+                valorEscapado
         );
     }
 }

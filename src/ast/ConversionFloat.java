@@ -31,9 +31,22 @@ public class ConversionFloat extends Expresion {
     }
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
+
+        // 1. Forzamos a que el nodo hijo genere su código primero (ej: si es una operación o una carga)
+        if (this.hijo != null) {
+            resultado.append(this.hijo.generarCodigo());
+        }
+
+        // 2. Pedimos un nuevo puntero temporal para guardar el resultado del casting (%ptro.X)
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("%1$s = sitofp i32 %2$s to float\n",
-                this.getIr_ref(), hijo.getIr_ref()));
+
+        // 3. Emitimos la instrucción 'sitofp' apuntando estrictamente 'to double'
+        // LLVM exige: %nuevo_ptr = sitofp i32 %ptr_hijo to double
+        resultado.append(String.format("  %1$s = sitofp i32 %2$s to double\n",
+                this.getIr_ref(),
+                this.hijo != null ? this.hijo.getIr_ref() : "0"
+        ));
+
         return resultado.toString();
     }
 }

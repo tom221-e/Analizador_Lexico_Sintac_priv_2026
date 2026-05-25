@@ -32,14 +32,14 @@ PROGRAM
     multilinea
     entre código *}
 
-    c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
+    c = valor_mas_cercano(5.5, [1.0,2.0,5.0,8.0,10.0])
     print (c)
 
     while c < aux
 
         % comentario dentro del bloque
 
-        c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
+        c = valor_mas_cercano(5.5, [1.0,2.0,5.0,8.0,10.0])
 
         if c == mediciones[4]
 

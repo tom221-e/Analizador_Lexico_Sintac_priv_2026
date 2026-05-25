@@ -61,7 +61,7 @@ public class AccesoArray extends Expresion {
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
 
         // 5. Cargar el valor real desde la dirección calculada al registro de esta Expresión
-        resultado.append(String.format("  %1$s = load float, float* %2$s\n",
+        resultado.append(String.format("  %1$s = load double, float* %2$s\n",
                 this.getIr_ref(),
                 ptrDireccion
         ));

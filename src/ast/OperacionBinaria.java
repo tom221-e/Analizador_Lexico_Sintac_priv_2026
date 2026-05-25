@@ -116,7 +116,7 @@ public abstract class OperacionBinaria extends Expresion {
                 resultado.append(labelBody + ":\n");
                 String ptrPos = CodeGeneratorHelper.getNewPointer();
                 resultado.append(String.format("  %1$s = getelementptr %2$s, %2$s* %3$s, i32 0, i32 %4$s\n", ptrPos, tipoEstructuraLLVM, arrayTempDer, tIdx));
-                resultado.append(String.format("  store float %1$s, float* %2$s\n", this.derecha.getIr_ref(), ptrPos));
+                resultado.append(String.format("  store double %1$s, float* %2$s\n", this.derecha.getIr_ref(), ptrPos));
                 String nIdx = CodeGeneratorHelper.getNewPointer();
                 resultado.append(String.format("  %1$s = add i32 %2$s, 1\n", nIdx, tIdx));
                 resultado.append(String.format("  store i32 %1$s, i32* %2$s\n", nIdx, idx));

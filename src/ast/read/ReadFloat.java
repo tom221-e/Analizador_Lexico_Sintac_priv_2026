@@ -32,8 +32,11 @@ public class ReadFloat extends Expresion {
         // 3. Cargar el valor leído en un registro virtual (load)
         // Este es el valor que el nodo de expresión debe exponer hacia afuera
         String valorLeido = CodeGeneratorHelper.getNewPointer();
+        String valor = CodeGeneratorHelper.getNewPointer();
         resultado.append(String.format("%1$s = load float, float* %2$s\n",
-                valorLeido, ptrDest));
+                valor, ptrDest));
+        resultado.append(String.format("  %1$s = sitofp i32 %2$s to double\n",
+                valorLeido, valor));
 
         // Guardamos este registro en ir_ref para que si haces "x = readInt()",
         // el compilador use %value (valorLeido) como resultado de la expresión

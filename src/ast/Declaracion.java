@@ -52,7 +52,7 @@ public class Declaracion extends Nodo {
             tipoLLVM = "i32";
             valorDefecto = "0";
         } else if ("FLOAT".equals(tipoNormalizado)) {
-            tipoLLVM = "float";
+            tipoLLVM = "double";
             valorDefecto = "0.0";
         } else if ("BOOLEAN".equals(tipoNormalizado) || "I1".equals(tipoNormalizado)) {
             tipoLLVM = "i1";

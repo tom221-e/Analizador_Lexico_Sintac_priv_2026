@@ -71,7 +71,7 @@ public class ValorMasCercano extends Expresion {
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
 
         sb.append("; --- RETORNO DE MACRO A ASIGNACIÓN ---\n");
-        sb.append(String.format("  %1$s = load float, float* %%masCercano\n", this.getIr_ref()));
+        sb.append(String.format("  %1$s = load double, float* %%masCercano\n", this.getIr_ref()));
 
         sb.append("; --- FIN MACRO VALOR_MAS_CERCANO ---\n");
 

@@ -7,7 +7,7 @@ import validator.ValidatorDataType; // Importamos tu validador
 
 public class IdLiteral extends Expresion {
     private final String valor;
-    private final String tipo;
+    private String tipo;
 
     public IdLiteral(String valor, String tipo) {
         this.valor = String.valueOf(valor);
@@ -38,10 +38,14 @@ public class IdLiteral extends Expresion {
             // === CASO ESCALAR ===
             // Necesitamos extraer el valor guardado en el puntero, generamos un temporal
             this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-
-            resultado.append(String.format("%1$s = load %2$s, %2$s* %3$s\n",
+            String tipo2 = this.tipo;
+            if ("float".equals(this.tipo)){
+                tipo2="double";
+            }
+            resultado.append(String.format("%1$s = load %2$s, %3$s* %4$s\n",
                     this.getIr_ref(),   // El nuevo temporal (%1)
-                    this.tipo,          // El tipo (i32, float, i1)
+                    tipo2,          // El tipo (i32, float, i1)
+                    tipo2,
                     this.getStringID()  // El nombre de la variable original (%x)
             ));
         } else {

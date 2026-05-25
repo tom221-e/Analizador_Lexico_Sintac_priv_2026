@@ -81,7 +81,7 @@ public class Programa extends Nodo {
         llvm.append("@.integer = private constant [4 x i8] c\"%d\\0A\\00\"\n");
         llvm.append("@.float = private constant [4 x i8] c\"%f\\0A\\00\"\n");
         llvm.append("@int_read_format = unnamed_addr constant [3 x i8] c\"%d\\00\"\n");
-        llvm.append("@float_read_format = unnamed_addr constant [3 x i8] c\"%f\\0A\\00\"\n\n");
+        llvm.append("@float_read_format = unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"\n\n");
 
         // =========================================================================
         // 3. CADENAS DE TEXTO DINÁMICAS (ALMACÉN GLOBAL)
