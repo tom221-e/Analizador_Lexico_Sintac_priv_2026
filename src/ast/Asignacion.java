@@ -80,7 +80,7 @@ public class Asignacion extends Sentencia {
             }
             case "FLOAT" -> {
                 assert this.valor != null;
-                resultado.append(String.format("  store double %1$s, float* %2$s\n",
+                resultado.append(String.format("  store double %1$s, double* %2$s\n",
                         this.valor.getIr_ref(), nombreVar));
             }
             case "BOOLEAN", "I1", "BOOL" -> {
