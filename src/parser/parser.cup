@@ -388,37 +388,115 @@ expr_not    ::= NOT expr_not:e {:
 
 expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = new Igualdad(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Igualdad(e1, e2, tipoFinal);
 :}
 | expr_arit:e1 MAYOR expr_arit:e2 {:
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = new Mayor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Mayor(e1, e2, tipoFinal);
 :}
 | expr_arit:e1 MENOR expr_arit:e2 {:
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = new Menor(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new Menor(e1, e2, tipoFinal);
 :}
 | expr_arit:e1 MAYORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = new MayorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new MayorIgual(e1, e2, tipoFinal);
 :}
 | expr_arit:e1 MENORIGUAL expr_arit:e2 {:
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new MenorIgual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    RESULT = new MenorIgual(e1, e2, tipoFinal);
 :}
 | expr_arit:e1 DESIGUAL expr_arit:e2 {:
-    System.out.println("REGLA 11.5: expr_relacional -> expr_arit DESIGUAL expr_arit");
-    System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new Desigual(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+    System.out.println("REGLA 11.6: expr_relacional -> expr_arit DESIGUAL expr_arit");
+
+    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
+    String tipoFinal = t1;
+
+    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+        e1 = new ConversionFloat(e1);
+        tipoFinal = "FLOAT";
+    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        e2 = new ConversionFloat(e2);
+        tipoFinal = "FLOAT";
+    }
+
+    System.out.printf("REGLA 11.6: expr_relacional -> %s != %s%n%n", e1, e2); // Corregido a !=
+    RESULT = new Desigual(e1, e2, tipoFinal);
 :}
 | expr_arit:e {:
-    System.out.println("REGLA 11.6: expr_relacional -> expr_arit");
-    System.out.printf("REGLA 11.6: expr_relacional -> %s%n%n", e);
+    System.out.println("REGLA 11.7: expr_relacional -> expr_arit");
+    System.out.printf("REGLA 11.7: expr_relacional -> %s%n%n", e);
     RESULT = e;
 :};
 

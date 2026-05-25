@@ -184,13 +184,13 @@ public abstract class OperacionBinaria extends Expresion {
                 // Si la izquierda es entero, o no tiene punto decimal (literal crudo como 5)
                 if (tipoIzq.equals("INT") || tipoIzq.equals("I32") || (!refIzq.contains(".") && !tipoIzq.equals("FLOAT"))) {
                     String tempCast = CodeGeneratorHelper.getNewPointer();
-                    resultado.append(String.format("  %s = sitofp i32 %s to float\n", tempCast, refIzq));
+                    resultado.append(String.format("  %s = sitofp i32 %s to double\n", tempCast, refIzq));
                     refIzq = tempCast;
                 }
                 // Si la derecha es entero o variable int (%aux)
                 if (tipoDer.equals("INT") || tipoDer.equals("I32") || (!refDer.contains(".") && !tipoDer.equals("FLOAT"))) {
                     String tempCast = CodeGeneratorHelper.getNewPointer();
-                    resultado.append(String.format("  %s = sitofp i32 %s to float\n", tempCast, refDer));
+                    resultado.append(String.format("  %s = sitofp i32 %s to double\n", tempCast, refDer));
                     refDer = tempCast;
                 }
             }

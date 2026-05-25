@@ -24,7 +24,7 @@ public class Desigual extends OperacionBinaria {
                 validator.obtenerInfo(this.izquierda, this.tabla);
 
         if ("FLOAT".equals(info.getTipo())) {
-            return "fcmp one";
+            return "fcmp one double";
         }
 
         return "icmp ne";

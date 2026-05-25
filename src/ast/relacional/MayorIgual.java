@@ -20,7 +20,7 @@ public class MayorIgual extends OperacionBinaria {
     public String get_llvm_op_code() {
         ValidatorDataType validator = new ValidatorDataType();
         if ("FLOAT".equals(validator.obtenerInfo(this.izquierda, this.tabla).getTipo())) {
-            return "fcmp oge"; // Ordered Greater or Equal
+            return "fcmp oge double"; // Ordered Greater or Equal
         }
         return "icmp sge";     // Signed Greater or Equal
     }

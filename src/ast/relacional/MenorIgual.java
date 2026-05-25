@@ -20,7 +20,7 @@ public class MenorIgual extends OperacionBinaria {
     public String get_llvm_op_code() {
         ValidatorDataType validator = new ValidatorDataType();
         if ("FLOAT".equals(validator.obtenerInfo(this.izquierda, this.tabla).getTipo())) {
-            return "fcmp ole"; // Ordered Less or Equal
+            return "fcmp ole double"; // Ordered Less or Equal
         }
         return "icmp sle";     // Signed Less or Equal
     }

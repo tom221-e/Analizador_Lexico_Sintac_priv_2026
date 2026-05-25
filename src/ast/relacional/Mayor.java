@@ -26,7 +26,7 @@ public class Mayor extends OperacionBinaria {
                 validator.obtenerInfo(derecha, tabla);
 
         if ("FLOAT".equals(info.getTipo())) {
-            return "fcmp ogt";
+            return "fcmp ogt double";
         }
 
         return "icmp sgt";

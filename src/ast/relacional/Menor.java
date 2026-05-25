@@ -20,7 +20,7 @@ public class Menor extends OperacionBinaria {
     public String get_llvm_op_code() {
         ValidatorDataType validator = new ValidatorDataType();
         if ("FLOAT".equals(validator.obtenerInfo(this.izquierda, this.tabla).getTipo())) {
-            return "fcmp olt"; // Ordered Less Than
+            return "fcmp olt double"; // Ordered Less Than
         }
         return "icmp slt";     // Signed Less Than
     }

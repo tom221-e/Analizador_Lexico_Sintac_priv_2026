@@ -20,7 +20,7 @@ public class Igualdad extends OperacionBinaria {
     public String get_llvm_op_code() {
         ValidatorDataType validator = new ValidatorDataType();
         if ("FLOAT".equals(validator.obtenerInfo(this.izquierda, this.tabla).getTipo())) {
-            return "fcmp oeq"; // Ordered Equal
+            return "fcmp oeq double"; // Ordered Equal
         }
         return "icmp eq";      // Equal
     }
