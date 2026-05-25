@@ -1,5 +1,5 @@
 package ast;
-
+/*
 public class Igual extends OperacionBinaria {
     public Igual(Expresion izquierda, Expresion derecha, String tipo) {
         super(izquierda, derecha, tipo);
@@ -14,4 +14,4 @@ public class Igual extends OperacionBinaria {
     public String get_llvm_op_code() {
         return("igual");
     }
-}
+}*/
