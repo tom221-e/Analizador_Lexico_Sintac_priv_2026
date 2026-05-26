@@ -24,8 +24,8 @@ public class ValidatorDataType {
         // 1. Regla: Restricción de tipos no numéricos
         // No tiene sentido sumar "true + 5"
         if (info1.tipo.equals("BOOLEAN") || info2.tipo.equals("BOOLEAN")) {
-            System.err.println("Error Semántico: No se puede realizar aritmética con BOOLEAN.");
-            return null; // El null indica que la operación no es válida
+            //System.err.println("Error Semántico: No se puede realizar aritmética con BOOLEAN.");
+            return "BOOLEAN"; // El null indica que la operación no es válida
         }
 
         // 2. Regla: Verificación de dimensiones para Arreglos
