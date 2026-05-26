@@ -5,9 +5,8 @@ import llvm.CodeGeneratorHelper;
 public class AccesoArray extends Expresion {
     private final String nombre;
     private final Expresion indice;
-    private final String tamano; // ¡AGREGADO! Necesario para el getelementptr de LLVM
+    private final String tamano;
 
-    // Modificamos el constructor para recibir el tamaño total del arreglo
     public AccesoArray(String nombre, Expresion indice, String tamano) {
         this.nombre = nombre;
         this.indice = indice;
@@ -42,29 +41,38 @@ public class AccesoArray extends Expresion {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Generamos el código del índice (recursividad)
+        // 1. Generamos el código del índice (recursividad del AST)
         resultado.append(this.indice.generarCodigo());
+
+        // 🌟 CORRECCIÓN 1: Convertir el índice i32 a i64 para evitar desajustes de tipos en punteros de 64-bits
+        String ptrIndice64 = CodeGeneratorHelper.getNewPointer();
+        resultado.append(String.format("  %1$s = sext i32 %2$s to i64\n",
+                ptrIndice64,
+                this.indice.getIr_ref()
+        ));
 
         // 2. Puntero temporal para almacenar la dirección calculada de la celda
         String ptrDireccion = CodeGeneratorHelper.getNewPointer();
 
-        // 3. CORRECCIÓN: getelementptr estructurado exactamente igual al de la asignación
-        // Necesita saber que es un bloque '[tamano x float]' y usar los dos índices (i32 0, i32 %indice)
-        resultado.append(String.format("  %1$s = getelementptr inbounds [%2$s x double], [%2$s x double]* %3$s, i32 0, i32 %4$s\n",
+        // 🌟 CORRECCIÓN 2: Sintaxis moderna de LLVM usando 'ptr' e índices i64
+        String tipoEstructura = "[" + this.tamano + " x double]";
+        resultado.append(String.format("  %1$s = getelementptr inbounds %2$s, ptr %3$s, i64 0, i64 %4$s\n",
                 ptrDireccion,
-                this.tamano,
+                tipoEstructura,
                 this.getNombreP(),
-                this.indice.getIr_ref()
+                ptrIndice64
         ));
 
-        // 4. Registro final que contendrá el valor flotante extraído
+        // 🌟 CORRECCIÓN 3: Eliminado el 'String p' duplicado fantasma.
+        // Solicitamos un ÚNICO registro definitivo que contendrá el valor extraído.
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        String p = CodeGeneratorHelper.getNewPointer();
-        // 5. Cargar el valor real desde la dirección calculada al registro de esta Expresión
-        resultado.append(String.format("  %1$s = load double, double* %2$s\n",
+
+        // 🌟 CORRECCIÓN 4: Carga opaca nativa con 'ptr' sin asteriscos
+        resultado.append(String.format("  %1$s = load double, ptr %2$s\n",
                 this.getIr_ref(),
                 ptrDireccion
         ));
+
         return resultado.toString();
     }
 }
