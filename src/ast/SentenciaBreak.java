@@ -18,7 +18,7 @@ public class SentenciaBreak extends Sentencia {
 
         if (tagDestino != null) {
             // 2. Generamos el salto incondicional de LLVM hacia esa salida
-            resultado.append(String.format("br label %1$s\n\n", tagDestino));
+            resultado.append(String.format("br label %1$s\n\n", "%"+tagDestino));
         } else {
             // Por si el usuario escribe un break fuera de un ciclo (Error semántico)
             resultado.append("; ERROR: Se encontró un 'break' fuera de un bucle activo\n");
