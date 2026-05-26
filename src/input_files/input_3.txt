@@ -10,5 +10,5 @@ PROGRAM
     mediciones[3] = 2.0
     mediciones[4] = 3.0
     sum = mediciones + a
-    print (mediciones[1])
+    print (sum[1])
     print ("Fin del programa")
