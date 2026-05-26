@@ -48,27 +48,44 @@ public class CodeGeneratorHelper {
     }
     public static String ejecutarOperacionVectorialCompleta(ast.OperacionBinaria nodo, String refIzq, String refDer, String tamanoArreglo, String codigoALU) {
         StringBuilder sb = new StringBuilder();
-        // 🌟 MIGRADO: Ahora la estructura aloja elementos 'double' de 64-bits
         String tipoEstructuraLLVM = "[" + tamanoArreglo + " x double]";
 
         String ptrArrayIzq = refIzq;
         String ptrArrayDer = refDer;
 
-        // Detectamos si son escalares (si no contienen palabras clave de arreglos)
-        boolean izqEsEscalar = !refIzq.contains("data") && !refIzq.contains("Array") && !refIzq.contains("result");
-        boolean derEsEscalar = !refDer.contains("data") && !refDer.contains("Array") && !refDer.contains("result");
+        // 🌟 SOLUCIÓN: Usamos tu validador oficial para saber si son arreglos o no basándonos en los datos reales
+        validator.ValidatorDataType validador = new validator.ValidatorDataType();
+        parser.SymbolTable tabla = parser.Parser.tablaSimbolos;
 
-        // 1. Broadcasting Izquierdo si aplica
-        if (izqEsEscalar) {
+        validator.ValidatorDataType.InfoNodo infoIzq = validador.obtenerInfo(nodo.getE1(), tabla);
+        validator.ValidatorDataType.InfoNodo infoDer = validador.obtenerInfo(nodo.getE2(), tabla);
+
+        // Si la dimensión es > 0, significa que es un arreglo. Por ende, NO es escalar.
+        boolean izqEsEscalar = (infoIzq.getDim() == 0);
+        boolean derEsEscalar = (infoDer.getDim() == 0);
+
+        // 1. Procesamiento Izquierdo
+        if (!izqEsEscalar) {
+            // Si es un Arreglo Real (como %mediciones), extraemos su puntero inicial con getelementptr
+            ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
+            sb.append("; --- Obtener puntero plano del arreglo izquierdo ---\n");
+            sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, refIzq.trim()));
+        } else {
+            // Si es un escalar (un número o variable simple), se genera su bloque de Broadcasting
             String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
             sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, tamanoArreglo, refIzq, "Izquierdo"));
             ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-            // 🌟 SINTAXIS LLVM MODERNA: Usa 'ptr' en lugar de 'tipo*' e índice inicial i64 para matrices/arreglos
             sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
         }
 
-        // 2. Broadcasting Derecho si aplica
-        if (derEsEscalar) {
+        // 2. Procesamiento Derecho
+        if (!derEsEscalar) {
+            // Si es un Arreglo Real, extraemos su puntero inicial
+            ptrArrayDer = CodeGeneratorHelper.getNewPointer();
+            sb.append("; --- Obtener puntero plano del arreglo derecho ---\n");
+            sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, refDer.trim()));
+        } else {
+            // Si es un escalar, se genera su bloque de Broadcasting
             String arrayTempDer = CodeGeneratorHelper.getNewPointer();
             sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, tamanoArreglo, refDer, "Derecho"));
             ptrArrayDer = CodeGeneratorHelper.getNewPointer();
@@ -77,7 +94,7 @@ public class CodeGeneratorHelper {
 
         // 3. Generación del contenedor del resultado final
         String temporalResultado = CodeGeneratorHelper.getNewPointer();
-        nodo.setIr_ref(temporalResultado); // Asignamos el puntero al nodo de la AST
+        nodo.setIr_ref(temporalResultado);
 
         sb.append("; --- Llamada final a la función ALU de Arreglos ---\n");
         sb.append(String.format("  %1$s = alloca %2$s\n", temporalResultado, tipoEstructuraLLVM));
@@ -85,8 +102,7 @@ public class CodeGeneratorHelper {
         String ptrResultadoPlano = CodeGeneratorHelper.getNewPointer();
         sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
 
-        // 4. Invocación matemática real a la función de C/C++
-        // 🌟 MIGRADO: Los parámetros pasaron de 'float*' a los punteros opacos universales 'ptr'
+        // 4. Invocación matemática real a la función externa
         sb.append(String.format("  call void @operar_arreglos(ptr %1$s, ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
                 ptrArrayIzq, ptrArrayDer, ptrResultadoPlano, tamanoArreglo, codigoALU));
 

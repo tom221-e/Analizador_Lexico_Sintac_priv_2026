@@ -42,10 +42,10 @@ PROGRAM
         if c == mediciones[5]
 
             {* comentario dentro del if *}
-            c = valor_mas_cercano(5, [1.0,2.0,5.0,8.0,10.0])
+            c = valor_mas_cercano(5, [1.0,2.0,5.4,8.0,10.0])
             print ("Mitad de: camino")
             print (c)
-
+            break
         elif c > 8
             print (999)
 

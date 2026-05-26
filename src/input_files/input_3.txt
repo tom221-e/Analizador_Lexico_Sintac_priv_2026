@@ -1,22 +1,14 @@
 INT: a, b
 FLOAT: resultado
+ARRAY[4]: mediciones, sum
 PROGRAM
     {* Comentario inicial *}
     a = 10
     b = 5
-
-%Otro comentario
-
-    print ("Inicio de prueba")
-
-    if a > b
-        print ("A es mayor")
-        resultado = 1.5
-    else
-        print ("B es mayor")
-
-    while a > 0
-        a = a - 1
-        print ("Contando")
-
+    mediciones[1] = 0.0
+    mediciones[2] = 1.0
+    mediciones[3] = 2.0
+    mediciones[4] = 3.0
+    sum = mediciones + a
+    print (mediciones[1])
     print ("Fin del programa")

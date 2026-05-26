@@ -34,6 +34,7 @@ public class Mayor extends OperacionBinaria {
             case "float":
                 return "fcmp ogt"; // 'ogt' significa Ordered Greater Than
             case "i32":
+                return "icmp sgt";
             case "boolean":
             default:
                 return "icmp sgt"; // 'sgt' significa Signed Greater Than

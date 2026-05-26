@@ -8,7 +8,7 @@ PROGRAM
     print ("Chequeo de seguridad")
 
     if sensor > 100
-        print ("ALERTA: Peligro Crítico")
+        print ("ALERTA: Peligro Critico")
     elif sensor > umbral
         print ("Advertencia: Umbral superado")
         if ! (estado == 0)

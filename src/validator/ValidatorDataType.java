@@ -52,94 +52,81 @@ public class ValidatorDataType {
      * Verifica si es legal guardar el valor de una expresión en una variable específica.
      */
     public boolean validarAsignacion(String id, Expresion e, SymbolTable tabla) {
-        // Primero, verificamos que la variable en la que queremos guardar exista
+        if (id != null) id = id.replace("%", "").replace("@", "").trim();
+
         if (!tabla.exists(id)) {
-            System.err.println("Error: Variable '" + id + "' no declarada.");
+            System.err.println("Error Semántico: Variable '" + id + "' no declarada.");
             return false;
         }
 
-        // Obtenemos los datos de la variable destino desde la tabla de símbolos
-        String tipoDestino = tabla.getTipo(id);
-        int dimDestino = tabla.getDimension(id);
+        String tipoDestino = tabla.getTipo(id); // "FLOAT_ARRAY"
 
-        // Obtenemos los datos de la expresión que queremos asignar
+        // 🌟 Rescatamos el tamaño de la variable destino desde la tabla
+        int dimDestino = 0;
+        String tamDestinoStr = tabla.getTamano(id);
+        if (tamDestinoStr != null && tamDestinoStr.matches("\\d+")) {
+            dimDestino = Integer.parseInt(tamDestinoStr);
+        }
+
+        // Información de la expresión de la derecha (la Suma)
         InfoNodo infoExp = obtenerInfo(e, tabla);
 
-        // Caso A: El destino es un Arreglo (ej: float[] lista)
-        if (tipoDestino.equals("FLOAT_ARRAY") || tipoDestino.equals("INT_ARRAY") || dimDestino > 0) {
-            // Subcaso: "Broadcasting" (Asignar un número único a todas las celdas del arreglo)
+        // Si el destino es un arreglo (ej: mediciones)
+        if ("FLOAT_ARRAY".equals(tipoDestino) || "INT_ARRAY".equals(tipoDestino)) {
+            // Subcaso 1: Asignarle un escalar directo (Broadcasting directo: mediciones = 5.0)
             if (infoExp.dimension == 0) {
-                // Solo se permite si el número es INT o FLOAT
-                return infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT");
+                return "INT".equals(infoExp.tipo) || "FLOAT".equals(infoExp.tipo);
             }
-            // Subcaso: Asignar un arreglo a otro (Deben ser de la misma dimensión Y tipos base compatibles)
-            // REPARADO: Ahora no solo chequea dimensiones, también extrae y valida el tipo base
-            if (dimDestino == infoExp.dimension) {
-                String tipoBaseDestino = tipoDestino.replace("_ARRAY", "");
-                if (tipoBaseDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return true;
-                return tipoBaseDestino.equals(infoExp.tipo);
-            }
-            return false;
+            // Subcaso 2: Asignarle el resultado de una operación (mediciones = mediciones + a)
+            // Validamos que la dimensión calculada por la suma coincida con el tamaño del arreglo destino
+            return dimDestino == infoExp.dimension;
         }
 
-        // Caso B: El destino es una variable simple (Escalar: INT, FLOAT o BOOLEAN)
+        // Si el destino es un escalar pero le intentas meter un arreglo
         if (infoExp.dimension > 0) {
-            // Error: No puedes meter una lista entera en una variable que solo guarda un número
-            System.err.println("Error: No se puede asignar un arreglo a la variable escalar '" + id + "'");
+            System.err.println("Error Semántico: No se puede asignar un arreglo a un escalar.");
             return false;
         }
 
-        // Regla: Interoperabilidad numérica (Un FLOAT puede recibir un INT)
-        if (tipoDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return true;
-
-        // Regla General: Los tipos deben ser idénticos (ej: BOOLEAN = BOOLEAN)
+        if ("FLOAT".equals(tipoDestino) && "INT".equals(infoExp.tipo)) return true;
         return tipoDestino.equals(infoExp.tipo);
     }
 
 
     public String obtenerTipoResultante(String id, Expresion e, SymbolTable tabla) {
-        // 1. Verificamos existencia
+        if (id != null) id = id.replace("%", "").replace("@", "").trim();
+
         if (!tabla.exists(id)) {
             return "ERROR_NO_DECLARADO";
         }
 
         String tipoDestino = tabla.getTipo(id);
-        int dimDestino = tabla.getDimension(id);
-        InfoNodo infoExp = obtenerInfo(e, tabla);
 
-        // --- Lógica para Arreglos ---
-        if (tipoDestino.equals("FLOAT_ARRAY") || tipoDestino.equals("INT_ARRAY") || dimDestino > 0) {
-            // Broadcasting: un número a un arreglo resulta en el tipo del arreglo
-            if (infoExp.dimension == 0) {
-                if (infoExp.tipo.equals("INT") || infoExp.tipo.equals("FLOAT")) {
-                    return tipoDestino;
-                }
-                return "ERROR_TIPO_INCOMPATIBLE";
-            }
-            // Asignación de arreglo a arreglo
-            // REPARADO: Se agregó la validación de compatibilidad de tipo base además del tamaño
-            if (dimDestino == infoExp.dimension) {
-                String tipoBaseDestino = tipoDestino.replace("_ARRAY", "");
-                if (tipoBaseDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) return tipoDestino;
-                if (tipoBaseDestino.equals(infoExp.tipo)) return tipoDestino;
-            }
-            return "ERROR_DIMENSION_O_TIPO_INCOMPATIBLE";
+        int dimDestino = 0;
+        String tamDestinoStr = tabla.getTamano(id);
+        if (tamDestinoStr != null && tamDestinoStr.matches("\\d+")) {
+            dimDestino = Integer.parseInt(tamDestinoStr);
         }
 
-        // --- Lógica para Escalares ---
+        InfoNodo infoExp = obtenerInfo(e, tabla);
+
+        if ("FLOAT_ARRAY".equals(tipoDestino) || "INT_ARRAY".equals(tipoDestino)) {
+            if (infoExp.dimension == 0) {
+                if ("INT".equals(infoExp.tipo) || "FLOAT".equals(infoExp.tipo)) return tipoDestino;
+                return "ERROR_TIPO_INCOMPATIBLE";
+            }
+            if (dimDestino == infoExp.dimension) {
+                return tipoDestino; // Devuelve exitosamente "FLOAT_ARRAY"
+            }
+            return "ERROR_DIMENSION_INCOMPATIBLE";
+        }
+
         if (infoExp.dimension > 0) {
             return "ERROR_ASIGNAR_ARRAY_A_ESCALAR";
         }
 
-        // Promoción automática: Si el destino es FLOAT y llega un INT, el resultado es FLOAT
-        if (tipoDestino.equals("FLOAT") && infoExp.tipo.equals("INT")) {
-            return "FLOAT";
-        }
-
-        // Si los tipos son iguales (BOOLEAN con BOOLEAN, etc.)
-        if (tipoDestino.equals(infoExp.tipo)) {
-            return tipoDestino;
-        }
+        if ("FLOAT".equals(tipoDestino) && "INT".equals(infoExp.tipo)) return "FLOAT";
+        if (tipoDestino.equals(infoExp.tipo)) return tipoDestino;
 
         return "ERROR_TIPO_INCOMPATIBLE";
     }
@@ -183,26 +170,40 @@ public class ValidatorDataType {
         // 2. Si es una variable (IdLiteral)
         if (n instanceof IdLiteral) {
             String id = ((IdLiteral) n).getNombreVariable();
+
+            // 🌟 CORRECCIÓN 1: Limpiar los prefijos % o @ de LLVM para poder encontrar el ID en la tabla
+            if (id != null) {
+                id = id.replace("%", "").replace("@", "").trim();
+            }
+
             if (tabla == null) {
-                // Si viene null, la rescatas del entorno global de tu Parser
                 tabla = parser.Parser.tablaSimbolos;
             }
             String t = tabla.getTipo(id);
 
-            // Validar existencia en tiempo de inspección
             if (t == null) {
                 System.err.println("Error Semántico: Variable '" + id + "' no declarada.");
                 return new InfoNodo("ERROR", 0);
             }
 
-            int d = tabla.getDimension(id);
-            // Normalizamos nombres de tipos internos de la tabla
-            if ("FLOAT_ARRAY".equals(t)) return new InfoNodo("FLOAT", d);
-            if ("INT_ARRAY".equals(t)) return new InfoNodo("INT", d); // REPARADO: Soporte para tu INT_ARRAY interno
-            if ("INT".equals(t)) return new InfoNodo("INT", d);
+            // 🌟 CORRECCIÓN 2: Extraer y convertir el String de getTamano() a un int numérico
+            int d = 0;
+            if ("FLOAT_ARRAY".equals(t) || "INT_ARRAY".equals(t)) {
+                String tamanoStr = tabla.getTamano(id); // Recibe el String de la tabla (ej: "10")
 
-            return new InfoNodo(t, d);
+                if (tamanoStr != null && tamanoStr.matches("\\d+")) {
+                    d = Integer.parseInt(tamanoStr); // Convierte el String a int real de Java
+                }
+
+                System.out.println("   [VALIDADOR] Variable: " + id + " | Tipo: " + t + " | Dimensión real: " + d);
+                // Retornamos el tipo base (FLOAT o INT) junto con su tamaño > 0
+                return new InfoNodo("FLOAT_ARRAY".equals(t) ? "FLOAT" : "INT", d);
+            }
+
+            // Si es un escalar común (INT, FLOAT, BOOLEAN), su dimensión de arreglo es 0
+            return new InfoNodo(t, 0);
         }
+
 
         // 3. Si es un acceso a una posición (ej: a[i])
         if (n instanceof AccesoArray) {
@@ -286,5 +287,9 @@ public class ValidatorDataType {
             default:
                 return "unknown";
         }
+    }
+    public String obtenerTipo(Expresion e, SymbolTable tabla) {
+        InfoNodo info = obtenerInfo(e, tabla);
+        return info.getTipo();
     }
 }

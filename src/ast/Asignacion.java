@@ -1,6 +1,7 @@
 package ast;
 
 import ast.literal.IdLiteral;
+import llvm.CodeGeneratorHelper;
 import parser.SymbolTable;
 
 public class Asignacion extends Sentencia {
@@ -57,37 +58,43 @@ public class Asignacion extends Sentencia {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Generamos el código de la expresión de la derecha (el cálculo)
-        if (this.valor != null) {
-            resultado.append(this.valor.generarCodigo());
-        }
+        String tipoDestino = tabla.getTipo(id);
+        String tipoNormalizado = tipoDestino != null ? tipoDestino.toUpperCase() : "";
 
-        // Normalizamos el tipo a mayúsculas para evitar fallos de formato
-        String tipoNormalizado = this.tipo != null ? this.tipo.toUpperCase() : "";
-
-        // Nos aseguramos de que el nombre de la variable lleve el '%' de LLVM
         String nombreVar = this.getNombreP();
         if (!nombreVar.startsWith("%")) {
             nombreVar = "%" + nombreVar;
         }
 
-        // 2. Generamos el store correspondiente evaluando las variantes comunes
+        // 🌟 SI EL DESTINO ES UN ARREGLO
+        if (tipoNormalizado.contains("ARRAY")) {
+            String tamano = tabla.getTamano(id);
+            String tipoEstructuraLLVM = "[" + tamano + " x double]";
+
+            // 1. Obtenemos el puntero a la celda 0 de la variable destino real (ej: %sum)
+            String ptrDestinoReal = CodeGeneratorHelper.getNewPointer();
+            resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n",
+                    ptrDestinoReal, tipoEstructuraLLVM, nombreVar));
+
+            // 2. Si es una operación binaria, delegamos el código pasándole el destino directo
+            if (this.valor instanceof ast.OperacionBinaria) {
+                resultado.append(((ast.OperacionBinaria) this.valor).generarCodigoConDestino(ptrDestinoReal));
+            } else {
+                // Asignación simple de arreglos si correspondiera (ej: sum = mediciones)
+                if (this.valor != null) resultado.append(this.valor.generarCodigo());
+            }
+            return resultado.toString();
+        }
+
+        // 🌟 CAMINO ESCALAR TRADICIONAL
+        if (this.valor != null) {
+            resultado.append(this.valor.generarCodigo());
+        }
+
         switch (tipoNormalizado) {
-            case "INT", "I32" -> {
-                assert this.valor != null;
-                resultado.append(String.format("  store i32 %1$s, i32* %2$s\n",
-                        this.valor.getIr_ref(), nombreVar));
-            }
-            case "FLOAT" -> {
-                assert this.valor != null;
-                resultado.append(String.format("  store double %1$s, double* %2$s\n",
-                        this.valor.getIr_ref(), nombreVar));
-            }
-            case "BOOLEAN", "I1", "BOOL" -> {
-                assert this.valor != null;
-                resultado.append(String.format("  store i1 %1$s, i1* %2$s\n",
-                        this.valor.getIr_ref(), nombreVar));
-            }
+            case "INT", "I32" -> resultado.append(String.format("  store i32 %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
+            case "FLOAT" -> resultado.append(String.format("  store double %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
+            case "BOOLEAN", "I1", "BOOL" -> resultado.append(String.format("  store i1 %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
         }
 
         return resultado.toString();
