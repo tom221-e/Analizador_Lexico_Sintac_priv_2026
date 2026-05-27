@@ -36,8 +36,9 @@ Compilador_ejemplos/
 │        └── ValidatorDataType.java  ← Funciones que validan los tipos de operaciones
 └── target/                			 ← Archivo compilado (.jar) con interfaz grafica
      ├── Funcion/
-            └── array_alu.ll          ← Librería externa en LLVM para operaciones vectoriales
-
+     │     └── array_alu.ll          ← Librería externa en LLVM para operaciones vectoriales
+     └── Compilador.rar				 ← Compilador funcionando, requiere todas las librerias mencionadas
+									    tambien debe tener el Graphviz y el LLVM(Clang) agregados sl PATH
 ```
 
 > **Nota:** `Lexer.java`, `Parser.java` y `ParserSym.java` son archivos
@@ -170,7 +171,8 @@ el usuario lo verá resaltado en ese mismo panel de salida.
  en un archivo `.txt`.
 
 **NUEVO
-
-	Se agregaron las Opciones al .jar para generar el arbol AST de parsing
-	y para compilar a .ll y .exe el programa, para lo cual se nesesitan las
-	nuevas herramientas
+Se agregaron las Opciones al .jar para generar el arbol AST de parsing
+y para compilar a .ll y .exe el programa, para lo cual se nesesitan las
+nuevas herramientas.
+Se encuantra dentro de la carpeta Target, dentro del compilador.rar la version final
+dentro esta el .jar y la funcion auxiliar para las operaciones de array
