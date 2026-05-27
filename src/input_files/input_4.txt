@@ -7,8 +7,8 @@ PROGRAM
    Aquí definimos las variables iniciales.
 *}
 
-    a = 10
-    b = 5
+    a = 0
+    b = 8
     div = 0.4
 
     print ("Inicio de prueba con comentarios")
@@ -16,7 +16,7 @@ PROGRAM
     if a > b
         resultado =  div + b
         print ("Calculando division...")
-    else
+    ELIF a < b
         print ("Esto no deberia ejecutarse")
 
     print ("Inicio de prueba con comentarios")

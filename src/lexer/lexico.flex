@@ -195,17 +195,17 @@ FLOAT_ARRAY    = \[\s*-?{FLOAT}(\s*,\s*-?{FLOAT})*\s*\]
 
     "FIN" { return token("FIN", yytext()); }
 
-    "PROGRAM" { return token("PROGRAM", yytext()); }
-    "if" { return token("IF", yytext()); }
-    "else" { return token("ELSE", yytext()); }
-    "while" { return token("WHILE", yytext()); }
-    "alt_while" { return token("ALT_WHILE", yytext()); }
-    "elif" { return token("ELIF", yytext()); }
-    "begin" { return token("BEGIN", yytext()); }
-    "end" { return token("END", yytext()); }
-    "print" { return token("PRINT", yytext()); }
-    "break" { return token("BREAK", yytext()); }
-    "continue" { return token("CONTINUE", yytext()); }
+    "program" | "PROGRAM"       { return token("PROGRAM", yytext()); }
+    "if" | "IF"                 { return token("IF", yytext()); }
+    "else" | "ELSE"             { return token("ELSE", yytext()); }
+    "while" | "WHILE"           { return token("WHILE", yytext()); }
+    "alt_while" | "ALT_WHILE"   { return token("ALT_WHILE", yytext()); }
+    "elif" | "ELIF"             { return token("ELIF", yytext()); }
+    "begin" | "BEGIN"           { return token("BEGIN", yytext()); }
+    "end" | "END"               { return token("END", yytext()); }
+    "print" | "PRINT"           { return token("PRINT", yytext()); }
+    "break" | "BREAK"           { return token("BREAK", yytext()); }
+    "continue" | "CONTINUE"     { return token("CONTINUE", yytext()); }
 
     "INT" { return token("TYPE_INT", yytext()); }
     "FLOAT" { return token("TYPE_FLOAT", yytext()); }

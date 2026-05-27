@@ -25,22 +25,23 @@ public class SentenciaWhile extends Sentencia {
 
         String lblCondicion = CodeGeneratorHelper.getNewTag();
         String lblCuerpo = CodeGeneratorHelper.getNewTag();
+        String lblEvaluarAlt = CodeGeneratorHelper.getNewTag(); // 🌟 NUEVO: Bloque intermedio para controlar el alt_while
         String lblFin = CodeGeneratorHelper.getNewTag();
 
         // SOPORTE PARA BREAK Y CONTINUE
         CodeGeneratorHelper.pushContinueTag(lblCondicion);
         CodeGeneratorHelper.pushBreakTag(lblFin);
 
-        // CORRECCIÓN: Añadido '%%' para el salto inicial al bloque de condición (br label %tag.X)
+        // Salto inicial al bloque de condición
         resultado.append(String.format("br label %%%1$s\n", lblCondicion));
 
         // --- BLOQUE 1: EVALUACIÓN DE LA CONDICIÓN ---
         resultado.append(String.format("\n%1$s:\n", lblCondicion));
         resultado.append(this.condicion.generarCodigo());
 
-        // CORRECCIÓN CRÍTICA: Se cambiaron los índices a %1$s, %2$s, %3$s y se añadieron los prefijos '%%'
+        // 🌟 CORRECCIÓN: Si es falso, saltamos a evaluar las alternativas (lblEvaluarAlt) en lugar de ir al fin directo
         resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n",
-                this.condicion.getIr_ref(), lblCuerpo, lblFin));
+                this.condicion.getIr_ref(), lblCuerpo, lblEvaluarAlt));
 
         // --- BLOQUE 2: CUERPO DEL CICLO ---
         resultado.append(String.format("\n%1$s:\n", lblCuerpo));
@@ -53,14 +54,23 @@ public class SentenciaWhile extends Sentencia {
             }
         }
 
-        // CORRECCIÓN: Añadido '%%' para regresar al bloque de evaluación
+        // Regresar al bloque de evaluación
         resultado.append(String.format("br label %%%1$s\n", lblCondicion));
 
         // SOPORTE PARA BREAK Y CONTINUE: Desapilamos
         CodeGeneratorHelper.popContinueTag();
         CodeGeneratorHelper.popBreakTag();
 
-        // --- BLOQUE 3: SALIDA DEL CICLO ---
+        // --- BLOQUE 3: ENTORNO DEL ALT_WHILE ---
+        resultado.append(String.format("\n%1$s:\n", lblEvaluarAlt));
+        if (this.alternativa != null) {
+            // 🌟 GENERACIÓN CRÍTICA: Ahora sí inyectamos el código del alt_while si existe
+            resultado.append(this.alternativa.generarCodigo());
+        }
+        // Si no hay alternativa, o si ya pasó por ella, va linealmente al fin
+        resultado.append(String.format("br label %%%1$s\n", lblFin));
+
+        // --- BLOQUE 4: SALIDA DEL CICLO ---
         resultado.append(String.format("\n%1$s:\n", lblFin));
 
         return resultado.toString();

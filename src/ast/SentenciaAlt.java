@@ -23,41 +23,39 @@ public class SentenciaAlt extends Sentencia {
         StringBuilder resultado = new StringBuilder();
         String lblCondicion = CodeGeneratorHelper.getNewTag();
         String lblCuerpo = CodeGeneratorHelper.getNewTag();
-        String lblSiguiente = CodeGeneratorHelper.getNewTag(); // Para el siguiente "else if"
-        String lblFin = CodeGeneratorHelper.getNewTag();       // El final de esta encapsulación
+        String lblSiguiente = CodeGeneratorHelper.getNewTag();
+        String lblFin = CodeGeneratorHelper.getNewTag();
 
-        // Evaluar la condición
-        resultado.append(String.format("br label %s\n", lblCondicion));
+        // 🌟 CORRECCIÓN: Agregado el prefijo '%%' para el salto de etiqueta
+        resultado.append(String.format("br label %%%s\n", lblCondicion));
 
         // --- BLOQUE 1: CONDICIÓN ---
         resultado.append(String.format("\n%s:\n", lblCondicion));
         resultado.append(this.condicion.generarCodigo());
 
-        // Saltamos al cuerpo si es true, o al "siguiente" si es false
-        resultado.append(String.format("br i1 %1$s, label %2$s, label %3$s\n",
+        // 🌟 CORRECCIÓN: Agregados los prefijos '%%' en las etiquetas de bifurcación condicional
+        resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n",
                 this.condicion.getIr_ref(), lblCuerpo, lblSiguiente));
 
-        // --- BLOQUE 2: CUERPO (Si la condición fue verdadera) ---
+        // --- BLOQUE 2: CUERPO ---
         resultado.append(String.format("\n%s:\n", lblCuerpo));
         if (this.cuerpo != null) {
             for (Sentencia s : this.cuerpo) {
                 if (s != null) {
                     resultado.append(s.generarCodigo());
-                    // Las sentencias internas heredarán automáticamente los tags de
-                    // Break y Continue que fueron apilados originalmente por el SentenciaWhile padre.
                 }
             }
         }
-        // Una vez que el cuerpo termina de forma lineal, salta a nuestro bloque de cierre local
-        resultado.append(String.format("br label %s\n", lblFin));
+        // 🌟 CORRECCIÓN: Agregado '%%'
+        resultado.append(String.format("br label %%%s\n", lblFin));
 
-        // --- BLOQUE 3: SIGUIENTE ALTERNATIVA (Si la condición fue falsa) ---
+        // --- BLOQUE 3: SIGUIENTE ALTERNATIVA ---
         resultado.append(String.format("\n%s:\n", lblSiguiente));
         if (this.alternativa != null) {
             resultado.append(this.alternativa.generarCodigo());
         }
-        // Después de procesar las ramas hijas redundantes, salimos de este contexto
-        resultado.append(String.format("br label %s\n", lblFin));
+        // 🌟 CORRECCIÓN: Agregado '%%'
+        resultado.append(String.format("br label %%%s\n", lblFin));
 
         // --- BLOQUE 4: ETIQUETA DE FIN LOCAL ---
         resultado.append(String.format("\n%s:\n", lblFin));
