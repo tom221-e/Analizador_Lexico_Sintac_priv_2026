@@ -514,7 +514,6 @@ expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
 expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
 
-    // 1. Validamos usando las cadenas oficiales
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
     if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la Suma.");
@@ -523,31 +522,26 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
     Expresion izq = e1;
     Expresion der = e2;
 
-    // 2. Extraemos la información del validador
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
-    // 3. Casteos preventivos (Los InfoNodo devuelven el tipo base "FLOAT" para los arreglos)
     if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
         izq = new ConversionFloat(e1);
     } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
         der = new ConversionFloat(e2);
     }
 
-    // 4. Determinación del tipo/dimensión para el Backend de LLVM
     String tipoLLVM = "";
     int dimMax = Math.max(i1.getDim(), i2.getDim());
 
     if (dimMax > 0) {
-        // Entorno Vectorial: mandamos la dimensión como un String numérico (ej: "10")
         tipoLLVM = String.valueOf(dimMax);
-        System.out.println("   [CUP] Detectado contexto vectorial. Dimensión: " + tipoLLVM);
+        System.out.println("   [CUP] Detectado contexto vectorial en Suma. Dimensión: " + tipoLLVM);
     } else {
-        // Entorno Escalar: mapeo directo a los tipos primitivos de LLVM
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
         } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
-            tipoLLVM = "float"; // Respaldo por si acaso
+            tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
             tipoLLVM = "i1";
         }
@@ -565,6 +559,7 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -574,29 +569,23 @@ expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Cálculo directo y robusto de la dimensión para el entorno vectorial
     String tipoLLVM = "";
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en Resta. Dimensión: " + tipoLLVM);
     } else {
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";
         }
     }
+
     RESULT = new Resta(izq, der, tipoLLVM);
 :}
 | termino:e {:
@@ -613,6 +602,7 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -622,24 +612,17 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Quita la dependencia de IdLiteral para soportar operaciones anidadas
     String tipoLLVM = "";
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en Multiplicación. Dimensión: " + tipoLLVM);
     } else {
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";
@@ -652,12 +635,13 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR") || tipo == null) {
+    if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la División.");
     }
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -667,31 +651,17 @@ termino ::= termino:e1 OP_MULTI factor:e2 {:
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Propagación exacta de tamaños de arrays en divisiones de vectores o broadcasting
     String tipoLLVM = "";
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-    // 1. Evaluamos si la operación involucra un arreglo usando las dimensiones del validador
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        // Buscamos cuál de los dos operandos es el arreglo para extraer su tamaño desde la tabla
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
-
-        // Si logramos recuperar el identificador, le pedimos la dimensión como String a tu tabla
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            // Un respaldo seguro: hereda el entero de la dimensión máxima detectada en el árbol
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
-
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en División. Dimensión: " + tipoLLVM);
     } else {
-        // 2. Si no es un arreglo, se procesa como un tipo escalar normal
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";

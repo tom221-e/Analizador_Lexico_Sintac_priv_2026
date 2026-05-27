@@ -1144,16 +1144,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int"; // Por defecto para el backend
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float"; // Si ambos son FLOAT, forzamos "float" minúscula para el backend
     }
 
     System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
@@ -1176,16 +1178,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int";
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float";
     }
 
     System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
@@ -1208,16 +1212,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int";
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float";
     }
 
     System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
@@ -1240,16 +1246,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int";
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float";
     }
 
     System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
@@ -1272,16 +1280,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int";
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float";
     }
 
     System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
@@ -1304,19 +1314,21 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 11.6: expr_relacional -> expr_arit DESIGUAL expr_arit");
 
-    String t1 = validador.obtenerTipoLLVM(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipoLLVM(e2, tablaSimbolos);
-    String tipoFinal = t1;
+    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
+    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
+    String tipoFinal = "int";
 
-    if (t1.equals("INT") && (t2.equals("FLOAT") || t2.equals("DOUBLE"))) {
+    if (t1.equals("INT") && t2.equals("FLOAT")) {
         e1 = new ConversionFloat(e1);
-        tipoFinal = "FLOAT";
-    } else if (t2.equals("INT") && (t1.equals("FLOAT") || t1.equals("DOUBLE"))) {
+        tipoFinal = "float";
+    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
         e2 = new ConversionFloat(e2);
-        tipoFinal = "FLOAT";
+        tipoFinal = "float";
+    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
+        tipoFinal = "float";
     }
 
-    System.out.printf("REGLA 11.6: expr_relacional -> %s != %s%n%n", e1, e2); // Corregido a !=
+    System.out.printf("REGLA 11.6: expr_relacional -> %s != %s%n%n", e1, e2);
     RESULT = new Desigual(e1, e2, tipoFinal);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_relacional",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1359,6 +1371,7 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -1369,28 +1382,21 @@ String tipoEspecial = "FLOAT_ARRAY";
     }
 
     String tipoLLVM = "";
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en Suma. Dimensión: " + tipoLLVM);
     } else {
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
-             tipoLLVM = "i1";
+            tipoLLVM = "i1";
         }
     }
+
     RESULT = new Suma(izq, der, tipoLLVM);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_arit",17, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1417,6 +1423,7 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -1426,29 +1433,23 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Cálculo directo y robusto de la dimensión para el entorno vectorial
     String tipoLLVM = "";
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en Resta. Dimensión: " + tipoLLVM);
     } else {
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";
         }
     }
+
     RESULT = new Resta(izq, der, tipoLLVM);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_arit",17, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1489,6 +1490,7 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -1498,24 +1500,17 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Quita la dependencia de IdLiteral para soportar operaciones anidadas
     String tipoLLVM = "";
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en Multiplicación. Dimensión: " + tipoLLVM);
     } else {
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";
@@ -1542,12 +1537,13 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
 
     String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo.equals("ERROR") || tipo == null) {
+    if (tipo == null || tipo.equals("ERROR")) {
         throw new RuntimeException("Error Semántico: Tipos incompatibles en la División.");
     }
 
     Expresion izq = e1;
     Expresion der = e2;
+
     ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
     ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
 
@@ -1557,31 +1553,17 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
+    // 🌟 NORMALIZADO: Propagación exacta de tamaños de arrays en divisiones de vectores o broadcasting
     String tipoLLVM = "";
+    int dimMax = Math.max(i1.getDim(), i2.getDim());
 
-    // 1. Evaluamos si la operación involucra un arreglo usando las dimensiones del validador
-    if (i1.getDim() > 0 || i2.getDim() > 0) {
-        // Buscamos cuál de los dos operandos es el arreglo para extraer su tamaño desde la tabla
-        String idVar = "";
-        if (i1.getDim() > 0 && e1 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e1).getNombreVariable();
-        } else if (i2.getDim() > 0 && e2 instanceof IdLiteral) {
-            idVar = ((IdLiteral) e2).getNombreVariable();
-        }
-
-        // Si logramos recuperar el identificador, le pedimos la dimensión como String a tu tabla
-        if (!idVar.isEmpty()) {
-            tipoLLVM = tablaSimbolos.getTamano(idVar);
-        } else {
-            // Un respaldo seguro: hereda el entero de la dimensión máxima detectada en el árbol
-            tipoLLVM = String.valueOf(Math.max(i1.getDim(), i2.getDim()));
-        }
-
+    if (dimMax > 0) {
+        tipoLLVM = String.valueOf(dimMax);
+        System.out.println("   [CUP] Detectado contexto vectorial en División. Dimensión: " + tipoLLVM);
     } else {
-        // 2. Si no es un arreglo, se procesa como un tipo escalar normal
         if ("INT".equals(tipo)) {
             tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
+        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
              tipoLLVM = "i1";

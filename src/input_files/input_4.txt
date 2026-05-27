@@ -1,5 +1,5 @@
 INT: a, b
-FLOAT: resultado
+FLOAT: resultado , div
 ARRAY[3]: datos
 PROGRAM
 {* Este es un comentario multilínea
@@ -9,11 +9,12 @@ PROGRAM
 
     a = 10
     b = 5
+    div = 0.4
 
     print ("Inicio de prueba con comentarios")
 
     if a > b
-        resultado = a / b
+        resultado =  div + b
         print ("Calculando division...")
     else
         print ("Esto no deberia ejecutarse")

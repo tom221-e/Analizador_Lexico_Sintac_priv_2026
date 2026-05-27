@@ -7,50 +7,33 @@ ARRAY[3]: datos
 
 PROGRAM
 
-    % Comentario de una línea
+    % Asignacion de valores
+    c = 1
+    aux = 10
+    A = true
+    mediciones[1] = 1.0
+    mediciones[2] = 1.1
+    mediciones[3] = 1.2
+    mediciones[4] = 1.3
+    mediciones[5] = 1.4
+    mediciones[6] = 1.5
+    mediciones[7] = 1.6
+    mediciones[8] = 1.7
+    mediciones[0] = 1.8
+    mediciones[10] = 1.9
 
-    {* Comentario multilínea
-       con formato de llaves *}
+    %INICIO
+    print ("Inicio Impresion de Array")
 
-    si = A || B || D
-    si = false
-    print (! ! si)
-
-    c = 0.3
-    aux = 10 * 2 + (5 - 1)
-    promedio = 0.0
-    monto_total = 10 - 8
-    a = 10
-    b = 5
-
-    c = 5 + id * -3
-
-    c = valor_mas_cercano(5, [1.0, 2.0, 5.0, 8.0, 10.0])
-    print (c)
-
-    sensor = 45
-    umbral = 50.5
-
-    if sensor > 100
-        print ("ALERTA: Peligro Crítico")
-    elif sensor > umbral
-        print ("Advertencia: Umbral superado")
-        if ! (estado == 0)
-            print ("Estado activo detectado")
-    else
-        print ("Sistema normal")
-        print ("Todo ok")
-
-    while a > 0
-        a = a - 1
-        if a == 5
-            print ("Mitad del conteo")
-    alt_while promedio < 100.0
-        promedio = promedio + 10.5
-        print promedio
-
-    if ! (c == 0)
-        print ("Fin del
-        programa")
+    while ! (c == 0)
+        if aux > c
+           print (mediciones[c])
+           c = c + 1
+        elif aux == c
+           print (mediciones[c])
+           print ("fin de array")
+           break
+        else
+          print ("Error")
 
     print ("Fin de programa con exito")

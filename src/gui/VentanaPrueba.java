@@ -17,8 +17,8 @@ public class VentanaPrueba extends javax.swing.JFrame {
     private JButton run;
     private JButton btnCargar;
     private JButton btnGuardar;
-    private JButton btnGenerarAST;  // Nuevo
-    private JButton btnGenerarLLVM; // Nuevo
+    private JButton btnGenerarAST;
+    private JButton btnGenerarLLVM;
     private JScrollPane scrollInput;
     private JScrollPane scrollOutput;
     private ButtonGroup grupoOpciones;
@@ -31,13 +31,13 @@ public class VentanaPrueba extends javax.swing.JFrame {
 
     private void configurarVentana() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(950, 550); // Un poco más ancha para acomodar la botonera derecha
+        this.setSize(950, 550);
         this.setLocationRelativeTo(null);
 
         grupoOpciones = new ButtonGroup();
         grupoOpciones.add(sLexico);
         grupoOpciones.add(sSintactico);
-        sSintactico.setSelected(true); // Por defecto sintáctico, ya que habilita el AST y LLVM
+        sSintactico.setSelected(true);
     }
 
     private void initComponents() {
@@ -53,11 +53,10 @@ public class VentanaPrueba extends javax.swing.JFrame {
         sSintactico = new JRadioButton("Sintáctico");
         run = new JButton("Ejecutar");
 
-        // Inicializar botones
         btnCargar = new JButton("Cargar Archivo");
         btnGuardar = new JButton("Guardar Salida");
-        btnGenerarAST = new JButton("Generar AST");   // Nuevo
-        btnGenerarLLVM = new JButton("Generar .ll");  // Nuevo
+        btnGenerarAST = new JButton("Generar AST");
+        btnGenerarLLVM = new JButton("Generar .ll y .exe"); // Actualizado texto indicativo
 
         JLabel lblEntrada = new JLabel("Entrada:");
         JLabel lblSalida = new JLabel("Salida (Consola):");
@@ -70,36 +69,32 @@ public class VentanaPrueba extends javax.swing.JFrame {
         panelCentro.add(scrollInput);
         panelCentro.add(scrollOutput);
 
-        // Panel para los controles centrales (RadioButtons y Ejecutar)
         JPanel panelControlesCentrales = new JPanel();
         panelControlesCentrales.add(sLexico);
         panelControlesCentrales.add(sSintactico);
         panelControlesCentrales.add(run);
 
-        // 🌟 NUEVO: Panel contenedor para agrupar los botones en el extremo derecho
         JPanel panelBotoneraDerecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         panelBotoneraDerecha.add(btnGenerarAST);
         panelBotoneraDerecha.add(btnGenerarLLVM);
         panelBotoneraDerecha.add(btnGuardar);
 
-        // Panel Sur con BorderLayout
         JPanel panelSur = new JPanel(new BorderLayout(10, 0));
         panelSur.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         panelSur.add(btnCargar, BorderLayout.WEST);
         panelSur.add(panelControlesCentrales, BorderLayout.CENTER);
-        panelSur.add(panelBotoneraDerecha, BorderLayout.EAST); // Colocamos la botonera aquí
+        panelSur.add(panelBotoneraDerecha, BorderLayout.EAST);
 
         this.setLayout(new BorderLayout(10, 10));
         this.add(panelNorte, BorderLayout.NORTH);
         this.add(panelCentro, BorderLayout.CENTER);
         this.add(panelSur, BorderLayout.SOUTH);
 
-        // Acciones
         run.addActionListener(e -> ejecutarProceso());
         btnCargar.addActionListener(e -> cargarArchivo());
         btnGuardar.addActionListener(e -> guardarArchivo());
-        btnGenerarAST.addActionListener(e -> generarASTInteractivos());   // Asignar acción AST
-        btnGenerarLLVM.addActionListener(e -> generarLLVMInteractivos()); // Asignar acción LLVM
+        btnGenerarAST.addActionListener(e -> generarASTInteractivos());
+        btnGenerarLLVM.addActionListener(e -> generarLLVMInteractivos());
     }
 
     private void cargarArchivo() {
@@ -199,7 +194,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
         }
     }
 
-    // 🌟 NUEVO MÉTODO: Compila el código, genera el .dot y pide guardar la imagen .png final
     private void generarASTInteractivos() {
         String texto = input.getText();
         if (texto.trim().isEmpty()) {
@@ -232,7 +226,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 Programa astRoot = (Programa) p.parse().value;
 
                 if (astRoot != null) {
-                    // Generamos el archivo .dot temporal en la raíz del proyecto
                     File tempDot = new File("temp_arbol.dot");
                     try (PrintWriter grafico = new PrintWriter(new FileWriter(tempDot))) {
                         grafico.println(astRoot.graficar());
@@ -243,7 +236,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
                             "dot", "-Tpng", tempDot.getAbsolutePath(), "-o", destinoPng.getAbsolutePath()
                     });
 
-                    // Captura de errores de Graphviz
                     try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                         String line;
                         while ((line = errorReader.readLine()) != null) {
@@ -259,7 +251,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
                         System.err.println("Graphviz falló con código de salida: " + exitCode);
                     }
 
-                    // Borramos el .dot temporal
                     tempDot.delete();
                 }
             } catch (Exception e) {
@@ -273,7 +264,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
         }
     }
 
-    // 🌟 NUEVO MÉTODO: Compila el código actual y exporta el código LLVM IR a la ubicación deseada
+    // 🌟 MÉTODO MODIFICADO: Ahora genera el .ll y compila automáticamente el ejecutable nativo (.exe)
     private void generarLLVMInteractivos() {
         String texto = input.getText();
         if (texto.trim().isEmpty()) {
@@ -282,7 +273,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
         }
 
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Seleccione dónde guardar el código LLVM IR (.ll)");
+        chooser.setDialogTitle("Seleccione dónde guardar el archivo LLVM de salida (.ll)");
         int seleccion = chooser.showSaveDialog(this);
 
         if (seleccion == JFileChooser.APPROVE_OPTION) {
@@ -290,6 +281,9 @@ public class VentanaPrueba extends javax.swing.JFrame {
             if (!destinoLl.getName().toLowerCase().endsWith(".ll")) {
                 destinoLl = new File(destinoLl.getAbsolutePath() + ".ll");
             }
+
+            // Calculamos la ruta absoluta del ejecutable correspondiente cambiando la extensión a .exe
+            String pathAbsolutoExe = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".exe";
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(baos);
@@ -311,10 +305,53 @@ public class VentanaPrueba extends javax.swing.JFrame {
                         codigoLLVM.println(astRoot.generarCodigo());
                     }
                     System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
-                    JOptionPane.showMessageDialog(this, "¡Archivo LLVM IR generado e impreso con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+                    // 🌟 LOCALIZACIÓN DE LA DEPENDENCIA: Buscamos dentro de la carpeta local Funcion/array_alu.ll
+                    String raizJar = System.getProperty("user.dir");
+                    File archivoAlu = new File(raizJar + File.separator + "Funcion" + File.separator + "array_alu.ll");
+
+                    System.out.println("Buscando librería matemática en: " + archivoAlu.getAbsolutePath());
+
+                    if (!archivoAlu.exists()) {
+                        System.err.println("[!] ERROR: No se encontró 'array_alu.ll' en la ruta: " + archivoAlu.getAbsolutePath());
+                        System.err.println("Asegurate de crear la carpeta 'Funcion' al lado de tu ejecutable/proyecto.");
+                        JOptionPane.showMessageDialog(this, "No se encontró el archivo de soporte Funcion/array_alu.ll", "Error de Dependencia", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    // 🌟 EJECUCIÓN DEL COMANDO CLANG UNIFICADO
+                    System.out.println("Llamando al enlazador Clang para compilar el código nativo...");
+
+                    String[] comandoClang = {
+                            "clang",
+                            destinoLl.getAbsolutePath(),
+                            archivoAlu.getAbsolutePath(),
+                            "-o",
+                            pathAbsolutoExe
+                    };
+
+                    Process process = Runtime.getRuntime().exec(comandoClang);
+
+                    // Leemos errores en tiempo real de Clang (si los hubiera)
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String lineaError;
+                        while ((lineaError = errorReader.readLine()) != null) {
+                            System.err.println("Clang Log: " + lineaError);
+                        }
+                    }
+
+                    int codigoSalida = process.waitFor();
+                    if (codigoSalida == 0) {
+                        System.out.println("\n=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                        System.out.println("Ejecutable generado en: " + pathAbsolutoExe);
+                        JOptionPane.showMessageDialog(this, "¡Archivos .ll y .exe creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        System.err.println("\n[!] Clang abortó el proceso. Código de salida: " + codigoSalida);
+                        JOptionPane.showMessageDialog(this, "Clang no pudo generar el ejecutable. Revisá los logs de la consola.", "Error de Compilación", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             } catch (Exception e) {
-                System.err.println("Error fatal emitiendo el código intermedio LLVM:");
+                System.err.println("Error fatal emitiendo código o ejecutando Clang:");
                 e.printStackTrace(System.out);
             } finally {
                 System.out.flush(); System.err.flush();
