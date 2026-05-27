@@ -18,28 +18,21 @@ public class ReadFloat extends Expresion {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Reservar memoria para el entero (alloca)
-        // Guardamos la referencia a este espacio en ir_ref para poder hacer el load luego
+        // 1. Reservar memoria local para el double según la especificación de la cátedra
         String ptrDest = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = alloca float\n", ptrDest));
+        resultado.append(String.format("  %1$s = alloca double\n", ptrDest));
 
-        // 2. Llamar a scanf
-        // Usamos la global @int_read_format que tu guía pide declarar al inicio
+        // 2. Llamar a scanf usando el formato exacto @double_read_format (%lf)
         String tempCall = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @float_read_format, i64 0, i64 0), float* %2$s)\n",
+        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @double_read_format, i64 0, i64 0), double* %2$s)\n",
                 tempCall, ptrDest));
 
-        // 3. Cargar el valor leído en un registro virtual (load)
-        // Este es el valor que el nodo de expresión debe exponer hacia afuera
+        // 3. Cargar el valor double leído a un registro virtual para retornarlo
         String valorLeido = CodeGeneratorHelper.getNewPointer();
-        String valor = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = load float, float* %2$s\n",
-                valor, ptrDest));
-        resultado.append(String.format("  %1$s = sitofp i32 %2$s to double\n",
-                valorLeido, valor));
+        resultado.append(String.format("  %1$s = load double, double* %2$s\n",
+                valorLeido, ptrDest));
 
-        // Guardamos este registro en ir_ref para que si haces "x = readInt()",
-        // el compilador use %value (valorLeido) como resultado de la expresión
+        // Exponemos el registro resultante hacia el AST
         this.setIr_ref(valorLeido);
 
         return resultado.toString();

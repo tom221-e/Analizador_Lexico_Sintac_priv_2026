@@ -264,7 +264,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
         }
     }
 
-    // 🌟 MÉTODO MODIFICADO: Ahora genera el .ll y compila automáticamente el ejecutable nativo (.exe)
+    // 🌟 MÉTODO MODIFICADO: Ahora genera el .ll y compila el .exe mediante la secuencia de la cátedra
     private void generarLLVMInteractivos() {
         String texto = input.getText();
         if (texto.trim().isEmpty()) {
@@ -284,6 +284,8 @@ public class VentanaPrueba extends javax.swing.JFrame {
 
             // Calculamos la ruta absoluta del ejecutable correspondiente cambiando la extensión a .exe
             String pathAbsolutoExe = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".exe";
+            // Calculamos el nombre del archivo objeto intermedio (.o) en base al destino .ll
+            String pathAbsolutoO = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".o";
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(baos);
@@ -303,51 +305,80 @@ public class VentanaPrueba extends javax.swing.JFrame {
                     System.out.println("Escribiendo instrucciones IR estructuradas...");
                     try (PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl))) {
                         codigoLLVM.println(astRoot.generarCodigo());
+                        // 🌟 PROTECCIÓN CRÍTICA: Forzamos la descarga completa del buffer al disco duro
+                        codigoLLVM.flush();
                     }
                     System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
 
-                    // 🌟 LOCALIZACIÓN DE LA DEPENDENCIA: Buscamos dentro de la carpeta local Funcion/array_alu.ll
+                    // 🌟 LOCALIZACIÓN DE DEPENDENCIAS: Buscamos dentro de la carpeta local Funcion/
                     String raizJar = System.getProperty("user.dir");
                     File archivoAlu = new File(raizJar + File.separator + "Funcion" + File.separator + "array_alu.ll");
+                    File archivoScanfO = new File(raizJar + File.separator + "Funcion" + File.separator + "scanf.o");
 
-                    System.out.println("Buscando librería matemática en: " + archivoAlu.getAbsolutePath());
+                    System.out.println("Verificando dependencias en la carpeta '/Funcion'...");
 
-                    if (!archivoAlu.exists()) {
-                        System.err.println("[!] ERROR: No se encontró 'array_alu.ll' en la ruta: " + archivoAlu.getAbsolutePath());
-                        System.err.println("Asegurate de crear la carpeta 'Funcion' al lado de tu ejecutable/proyecto.");
-                        JOptionPane.showMessageDialog(this, "No se encontró el archivo de soporte Funcion/array_alu.ll", "Error de Dependencia", JOptionPane.ERROR_MESSAGE);
+                    if (!archivoAlu.exists() || !archivoScanfO.exists()) {
+                        System.err.println("[!] ERROR CRÍTICO: Falta 'array_alu.ll' o 'scanf.o' en la ruta /Funcion.");
+                        System.err.println("Asegúrate de que ambos archivos existan en: " + raizJar + File.separator + "Funcion");
+                        JOptionPane.showMessageDialog(this, "Faltan componentes en la carpeta Funcion/ (Se requieren array_alu.ll y scanf.o)", "Error de Dependencias", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
-                    // 🌟 EJECUCIÓN DEL COMANDO CLANG UNIFICADO
-                    System.out.println("Llamando al enlazador Clang para compilar el código nativo...");
-
-                    String[] comandoClang = {
-                            "clang",
-                            destinoLl.getAbsolutePath(),
-                            archivoAlu.getAbsolutePath(),
-                            "-o",
-                            pathAbsolutoExe
+                    // -----------------------------------------------------------------
+                    // PASO A: clang -c -o program.o program.ll
+                    // -----------------------------------------------------------------
+                    System.out.println("\nPaso 1/2 (Clang): Traduciendo código intermedio a objeto (.o)...");
+                    String[] comandoPasoA = {
+                            "C:\\Program Files\\LLVM\\bin\\clang.exe", "-c",
+                            "-o", pathAbsolutoO,
+                            destinoLl.getAbsolutePath()
                     };
 
-                    Process process = Runtime.getRuntime().exec(comandoClang);
+                    Process procPasoA = Runtime.getRuntime().exec(comandoPasoA);
 
-                    // Leemos errores en tiempo real de Clang (si los hubiera)
-                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    try (BufferedReader errorA = new BufferedReader(new InputStreamReader(procPasoA.getErrorStream()))) {
                         String lineaError;
-                        while ((lineaError = errorReader.readLine()) != null) {
-                            System.err.println("Clang Log: " + lineaError);
+                        while ((lineaError = errorA.readLine()) != null) {
+                            System.err.println("Clang (Paso A) Log: " + lineaError);
                         }
                     }
 
-                    int codigoSalida = process.waitFor();
-                    if (codigoSalida == 0) {
-                        System.out.println("\n=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                    int statusA = procPasoA.waitFor();
+                    if (statusA != 0) {
+                        System.err.println("[!] El Paso A falló de forma crítica. Enlace abortado.");
+                        JOptionPane.showMessageDialog(this, "Error de sintaxis LLVM IR. Clang no pudo crear el código objeto.", "Error (Paso A)", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    // -----------------------------------------------------------------
+                    // PASO B: clang -o program.exe program.o array_alu.ll scanf.o
+                    // -----------------------------------------------------------------
+                    System.out.println("Paso 2/2 (Clang): Vinculando objetos y librerías de la cátedra...");
+                    String[] comandoPasoB = {
+                            "C:\\Program Files\\LLVM\\bin\\clang.exe",
+                            "-o", pathAbsolutoExe,
+                            pathAbsolutoO,
+                            archivoAlu.getAbsolutePath(),
+                            archivoScanfO.getAbsolutePath()
+                    };
+
+                    Process procPasoB = Runtime.getRuntime().exec(comandoPasoB);
+
+                    try (BufferedReader errorB = new BufferedReader(new InputStreamReader(procPasoB.getErrorStream()))) {
+                        String lineaError;
+                        while ((lineaError = errorB.readLine()) != null) {
+                            System.err.println("Clang (Paso B) Log: " + lineaError);
+                        }
+                    }
+
+                    int statusB = procPasoB.waitFor();
+                    if (statusB == 0) {
+                        System.out.println("\n=== 🚀 COMPILACIÓN COMPLETADA CON ÉXITO ===");
                         System.out.println("Ejecutable generado en: " + pathAbsolutoExe);
-                        JOptionPane.showMessageDialog(this, "¡Archivos .ll y .exe creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "¡Archivos .ll, .o y ejecutable .exe creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
                     } else {
-                        System.err.println("\n[!] Clang abortó el proceso. Código de salida: " + codigoSalida);
-                        JOptionPane.showMessageDialog(this, "Clang no pudo generar el ejecutable. Revisá los logs de la consola.", "Error de Compilación", JOptionPane.ERROR_MESSAGE);
+                        System.err.println("\n[!] El enlazador (Paso B) abortó el proceso. Código de salida: " + statusB);
+                        JOptionPane.showMessageDialog(this, "El enlazador de Clang falló. Verificá que los prototipos de scanf coincidan.", "Error (Paso B)", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             } catch (Exception e) {

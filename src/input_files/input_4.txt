@@ -1,16 +1,18 @@
 INT: a, b
 FLOAT: resultado , div
 ARRAY[3]: datos
+BOOLEAN: bull
 PROGRAM
 {* Este es un comentario multilínea
    usando el formato de paréntesis.
    Aquí definimos las variables iniciales.
 *}
 
-    a = 0
-    b = 8
-    div = 0.4
-
+    a = 10
+    b = READ_INT()
+    div = READ_FLOAT()
+    bull = READ_BOOL()
+    PRINT (bull)
     print ("Inicio de prueba con comentarios")
 
     if a > b

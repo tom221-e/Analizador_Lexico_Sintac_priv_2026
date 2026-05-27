@@ -77,7 +77,7 @@ public class Main_parser {
                     System.out.println("AST generado exitosamente: arbol.dot y arbol.png");
 
                     // =========================================================================
-                    // 🌟 BACKEND ACTIVADO: GENERACIÓN DE LLVM IR (.ll)
+                    // 🌟 BACKEND: GENERACIÓN DE LLVM IR (.ll)
                     // =========================================================================
                     System.out.println("Generando código LLVM IR...");
 
@@ -86,56 +86,88 @@ public class Main_parser {
 
                     // Invocamos el método maestro que dispara la recursividad en todo el AST
                     codigoLLVM.println(astRoot.generarCodigo());
+
+                    // 🌟 PROTECCIÓN: Vaciamos y cerramos explícitamente para asegurar la persistencia en disco
+                    codigoLLVM.flush();
                     codigoLLVM.close();
 
                     System.out.println("Código LLVM IR generado exitosamente: " + destinoLl.getAbsolutePath());
 
                     // =========================================================================
-                    // 🌟 NUEVO: COMPILACIÓN AUTOMÁTICA A NATIVO (.exe) CON CLANG
+                    // 🌟 COMPILACIÓN AUTOMÁTICA REQUERIDA POR LA CÁTEDRA (Paso A y Paso B)
                     // =========================================================================
-                    System.out.println("\nIniciando compilación nativa con Clang...");
+                    System.out.println("\nIniciando secuencia de compilación nativa con Clang...");
 
-                    // Definimos el nombre final del archivo ejecutable
+                    String raizProyecto = System.getProperty("user.dir");
+
+                    // 📁 Ambas dependencias se encuentran juntas en el directorio /Funcion
+                    File archivoAlu = new File(raizProyecto + File.separator + "Funcion" + File.separator + "array_alu.ll");
+                    File archivoScanfO = new File(raizProyecto + File.separator + "Funcion" + File.separator + "scanf.o");
+
+                    File archivoObjetoSalida = new File("codigo_salida.o");
                     String rutaAbsolutaExe = new File("programa.exe").getAbsolutePath();
 
-                    // Buscamos la librería auxiliar en el directorio raíz /Funcion/array_alu.ll
-                    String raizProyecto = System.getProperty("user.dir");
-                    File archivoAlu = new File(raizProyecto + File.separator + "Funcion" + File.separator + "array_alu.ll");
-
-                    System.out.println("Buscando soporte matemático en: " + archivoAlu.getAbsolutePath());
-
-                    if (!archivoAlu.exists()) {
-                        System.err.println("[!] ERROR CRÍTICO: No se encontró la función auxiliar en la ruta especificada.");
-                        System.err.println("Por favor, asegúrate de tener la carpeta 'Funcion' en la raíz de tu entorno de ejecución.");
+                    // Validaciones de archivos de soporte obligatorios
+                    if (!archivoAlu.exists() || !archivoScanfO.exists()) {
+                        System.err.println("[!] ERROR CRÍTICO: No se encontraron las dependencias en la carpeta '/Funcion'.");
+                        System.err.println("Asegúrate de que 'array_alu.ll' y 'scanf.o' estén en: " + raizProyecto + File.separator + "Funcion");
                         return;
                     }
 
-                    // Preparamos el comando exacto para Clang
-                    String[] comandoClang = {
-                            "clang",
-                            destinoLl.getAbsolutePath(),
-                            archivoAlu.getAbsolutePath(),
-                            "-o",
-                            rutaAbsolutaExe
+                    // -----------------------------------------------------------------
+                    // PASO A: clang -c -o codigo_salida.o codigo_salida.ll
+                    // -----------------------------------------------------------------
+                    String[] comandoPasoA = {
+                            "clang", "-c",
+                            "-o", archivoObjetoSalida.getAbsolutePath(),
+                            destinoLl.getAbsolutePath()
                     };
 
-                    System.out.println("Ejecutando enlazador Clang...");
-                    Process processClang = Runtime.getRuntime().exec(comandoClang);
+                    System.out.println("Paso 1/2: Compilando código fuente a objeto (.o)...");
+                    Process procPasoA = Runtime.getRuntime().exec(comandoPasoA);
 
-                    // Capturamos y mostramos en consola cualquier advertencia o error que devuelva Clang
-                    try (BufferedReader clangErrorReader = new BufferedReader(new InputStreamReader(processClang.getErrorStream()))) {
-                        String lineaClang;
-                        while ((lineaClang = clangErrorReader.readLine()) != null) {
-                            System.err.println("Clang Log: " + lineaClang);
+                    // Captura de logs de error del Paso A
+                    try (BufferedReader errorA = new BufferedReader(new InputStreamReader(procPasoA.getErrorStream()))) {
+                        String log;
+                        while ((log = errorA.readLine()) != null) {
+                            System.err.println("Clang (Paso A) Log: " + log);
                         }
                     }
 
-                    int codigoSalida = processClang.waitFor();
-                    if (codigoSalida == 0) {
-                        System.out.println("=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                    int statusA = procPasoA.waitFor();
+                    if (statusA != 0) {
+                        System.err.println("[!] Error en el Paso A. Compilación abortada.");
+                        return;
+                    }
+
+                    // -----------------------------------------------------------------
+                    // PASO B: clang -o programa.exe codigo_salida.o array_alu.ll scanf.o
+                    // -----------------------------------------------------------------
+                    String[] comandoPasoB = {
+                            "clang",
+                            "-o", rutaAbsolutaExe,
+                            archivoObjetoSalida.getAbsolutePath(),
+                            archivoAlu.getAbsolutePath(),
+                            archivoScanfO.getAbsolutePath()
+                    };
+
+                    System.out.println("Paso 2/2: Enlazando ejecutables y librerías auxiliares...");
+                    Process procPasoB = Runtime.getRuntime().exec(comandoPasoB);
+
+                    // Captura de logs de error del Paso B (Enlazador)
+                    try (BufferedReader errorB = new BufferedReader(new InputStreamReader(procPasoB.getErrorStream()))) {
+                        String log;
+                        while ((log = errorB.readLine()) != null) {
+                            System.err.println("Clang (Paso B) Log: " + log);
+                        }
+                    }
+
+                    int statusB = procPasoB.waitFor();
+                    if (statusB == 0) {
+                        System.out.println("\n=== 🚀 COMPILACIÓN COMPLETADA CON ÉXITO ===");
                         System.out.println("Ejecutable binario creado en: " + rutaAbsolutaExe);
                     } else {
-                        System.err.println("[!] ERROR: Clang falló al enlazar los archivos. Código de salida: " + codigoSalida);
+                        System.err.println("[!] ERROR: El enlazador de Clang falló. Código de salida: " + statusB);
                     }
                     // =========================================================================
                 }

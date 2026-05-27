@@ -1,5 +1,6 @@
 package validator;
 
+import ast.read.*;
 import ast.relacional.Menor;
 import parser.SymbolTable;
 import ast.*;
@@ -251,7 +252,18 @@ public class ValidatorDataType {
             // Esta función específica siempre retorna un número flotante simple
             return new InfoNodo("FLOAT", 0);
         }
-
+        // 6 si es un ReadFloat
+        if (n instanceof ReadFloat) {
+            return new InfoNodo("FLOAT", 0); // Le avisa al sistema que esto devuelve un FLOAT escalar
+        }
+        // 7 si es un ReadInt
+        if (n instanceof ReadInt) {
+            return new InfoNodo("INT", 0); // Le avisa al sistema que esto devuelve un INT escalar
+        }
+        // 0 si es un ReadBoolean
+        if (n instanceof ReadBoolean) {
+            return new InfoNodo("BOOLEAN", 0); // Le avisa al sistema que esto devuelve un BOOLEAN escalar
+        }
         return new InfoNodo("UNKNOWN", 0);
     }
 

@@ -22,31 +22,31 @@ public class ReadBoolean extends Expresion {
         return super.graficar(idPadre);
     }
 
+    @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. Reservar memoria para el entero (alloca)
-        // Guardamos la referencia a este espacio en ir_ref para poder hacer el load luego
+        // 1. Reservar memoria para un entero de 32 bits (alloca i32)
+        // Se usa i32 porque scanf necesita 4 bytes completos para escribir el número
         String ptrDest = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = alloca i1\n", ptrDest));
+        resultado.append(String.format("  %1$s = alloca i32\n", ptrDest));
 
-        // 2. Llamar a scanf
-        // Usamos la global @int_read_format que tu guía pide declarar al inicio
+        // 2. Llamar a scanf usando el formato de enteros @int_read_format ("%d")
         String tempCall = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @float_read_format, i64 0, i64 0), i32* %2$s)\n",
+        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @int_read_format, i64 0, i64 0), i32* %2$s)\n",
                 tempCall, ptrDest));
 
-        // 3. Cargar el valor leído en un registro virtual (load)
-        // Este es el valor que el nodo de expresión debe exponer hacia afuera
-        String valorLeido = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = load float, float* %2$s\n",
-                valorLeido, ptrDest));
+        // 3. Cargar el entero leído desde la memoria a un registro virtual
+        String enteroLeido = CodeGeneratorHelper.getNewPointer();
+        resultado.append(String.format("  %1$s = load i32, i32* %2$s\n",
+                enteroLeido, ptrDest));
 
+        // 4. Truncar el i32 a i1 (Boolean real de LLVM: 0 = false, cualquier otro = true)
         String valorBool = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = trunc i32 %2$s to i1\n",
-                valorBool, valorLeido));
+        resultado.append(String.format("  %1$s = trunc i32 %2$s to i1\n",
+                valorBool, enteroLeido));
 
-        // 5. Guardamos el resultado final (tipo i1) en ir_ref para uso del AST
+        // 5. Guardamos la referencia del registro i1 para que lo use el AST
         this.setIr_ref(valorBool);
 
         return resultado.toString();
