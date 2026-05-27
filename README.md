@@ -13,6 +13,10 @@ Compiladores 2026 - Grupo 3
 Compilador_ejemplos/
 ├── pom.xml
 │── src/
+├── Funcion/
+│   └── array_alu.ll          ← Librería externa en LLVM para operaciones vectoriales
+├── src/
+│    ├── ast/                  ← 🌟 NUEVO: Nodos del Árbol de Sintaxis Abstracta y Generación IR
 │    ├── lexer/
 │    │   ├── lexico.flex             ← Definición del léxico (fuente JFlex)
 │    │   ├── Lexer.java              ← Léxico generado por JFlex
@@ -26,7 +30,14 @@ Compilador_ejemplos/
 │    │    └── SymbolTable.java       ← Tabla de símbolos
 │    ├── Generador.java              ← Regenera Lexer.java + Parser.java desde las fuentes
 │    ├── input_files/                ← Archivos de prueba
-└── target/                			 ← Archivo compilado (.jar) con interfaz grafica	
+│    ├──llvm/
+│        └── CodeGeneratorHelper.java ← Funciones auxiliares para la generacion de codigo LLVM
+│    ├──validator/
+│        └── ValidatorDataType.java  ← Funciones que validan los tipos de operaciones
+└── target/                			 ← Archivo compilado (.jar) con interfaz grafica
+     ├── Funcion/
+            └── array_alu.ll          ← Librería externa en LLVM para operaciones vectoriales
+
 ```
 
 > **Nota:** `Lexer.java`, `Parser.java` y `ParserSym.java` son archivos
@@ -39,6 +50,10 @@ Compilador_ejemplos/
 - Maven 3.6 o superior
 - JFlex
 - CUP
+  
+*NUEVO
+- LLVM & Visual Basic Toola
+- Graphviz
 
 ## Primer uso: regenerar el léxico y el parser
 
@@ -53,7 +68,7 @@ Esto produce `Lexer.java`, `Parser.java` y `ParserSym.java`.
 ## Compilar
 
 ```bash
-mvn clean compile
+mvn clean package
 ```
 
 ## Ejecutar el analizador léxico
@@ -100,6 +115,7 @@ Seleccione un archivo:
   ...
 Ingrese el número del archivo: 
 ```
+Desde el analizador sintáctico se puede crear el AST, el .ll y el .exe
 
 ## Diseño del léxico (`lexico.flex`)
 
@@ -152,3 +168,9 @@ el usuario lo verá resaltado en ese mismo panel de salida.
 * Exportación: Finalmente, si el resultado es satisfactorio o se necesita reporta
  un error, el usuario utiliza el botón Guardar Salida para generar un reporte
  en un archivo `.txt`.
+
+**NUEVO
+
+	Se agregaron las Opciones al .jar para generar el arbol AST de parsing
+	y para compilar a .ll y .exe el programa, para lo cual se nesesitan las
+	nuevas herramientas
