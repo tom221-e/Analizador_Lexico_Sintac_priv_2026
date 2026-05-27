@@ -1,6 +1,6 @@
 package parser;
 
-import ast.*; // Asegúrate de importar tu clase raíz
+import ast.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -61,14 +61,14 @@ public class Main_parser {
 
                     // Escribir el contenido DOT
                     PrintWriter grafico = new PrintWriter(new FileWriter("arbol.dot"));
-                    grafico.println(astRoot.graficar()); // Llamamos al método graficar de Programa
+                    grafico.println(astRoot.graficar());
                     grafico.close();
 
                     // Ejecutar Graphviz (comando 'dot')
-                    Process process = Runtime.getRuntime().exec(new String[]{"dot", "-Tpng", "arbol.dot", "-o", "arbol.png"});
+                    Process processDot = Runtime.getRuntime().exec(new String[]{"dot", "-Tpng", "arbol.dot", "-o", "arbol.png"});
 
                     // Leer posibles errores del proceso 'dot'
-                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(processDot.getErrorStream()));
                     String line;
                     while ((line = errorReader.readLine()) != null) {
                         System.err.println("DOT Error: " + line);
@@ -77,18 +77,66 @@ public class Main_parser {
                     System.out.println("AST generado exitosamente: arbol.dot y arbol.png");
 
                     // =========================================================================
-                    // DESHABILITADO POR AHORA (COMENTADO)
+                    // 🌟 BACKEND ACTIVADO: GENERACIÓN DE LLVM IR (.ll)
                     // =========================================================================
                     System.out.println("Generando código LLVM IR...");
 
-                    // Creamos el archivo de salida
-                    PrintWriter codigoLLVM = new PrintWriter(new FileWriter("codigo_salida.ll"));
+                    File destinoLl = new File("codigo_salida.ll");
+                    PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl));
 
                     // Invocamos el método maestro que dispara la recursividad en todo el AST
                     codigoLLVM.println(astRoot.generarCodigo());
                     codigoLLVM.close();
 
-                    System.out.println("Código LLVM IR generado exitosamente: codigo_salida.ll");
+                    System.out.println("Código LLVM IR generado exitosamente: " + destinoLl.getAbsolutePath());
+
+                    // =========================================================================
+                    // 🌟 NUEVO: COMPILACIÓN AUTOMÁTICA A NATIVO (.exe) CON CLANG
+                    // =========================================================================
+                    System.out.println("\nIniciando compilación nativa con Clang...");
+
+                    // Definimos el nombre final del archivo ejecutable
+                    String rutaAbsolutaExe = new File("programa.exe").getAbsolutePath();
+
+                    // Buscamos la librería auxiliar en el directorio raíz /Funcion/array_alu.ll
+                    String raizProyecto = System.getProperty("user.dir");
+                    File archivoAlu = new File(raizProyecto + File.separator + "Funcion" + File.separator + "array_alu.ll");
+
+                    System.out.println("Buscando soporte matemático en: " + archivoAlu.getAbsolutePath());
+
+                    if (!archivoAlu.exists()) {
+                        System.err.println("[!] ERROR CRÍTICO: No se encontró la función auxiliar en la ruta especificada.");
+                        System.err.println("Por favor, asegúrate de tener la carpeta 'Funcion' en la raíz de tu entorno de ejecución.");
+                        return;
+                    }
+
+                    // Preparamos el comando exacto para Clang
+                    String[] comandoClang = {
+                            "clang",
+                            destinoLl.getAbsolutePath(),
+                            archivoAlu.getAbsolutePath(),
+                            "-o",
+                            rutaAbsolutaExe
+                    };
+
+                    System.out.println("Ejecutando enlazador Clang...");
+                    Process processClang = Runtime.getRuntime().exec(comandoClang);
+
+                    // Capturamos y mostramos en consola cualquier advertencia o error que devuelva Clang
+                    try (BufferedReader clangErrorReader = new BufferedReader(new InputStreamReader(processClang.getErrorStream()))) {
+                        String lineaClang;
+                        while ((lineaClang = clangErrorReader.readLine()) != null) {
+                            System.err.println("Clang Log: " + lineaClang);
+                        }
+                    }
+
+                    int codigoSalida = processClang.waitFor();
+                    if (codigoSalida == 0) {
+                        System.out.println("=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                        System.out.println("Ejecutable binario creado en: " + rutaAbsolutaExe);
+                    } else {
+                        System.err.println("[!] ERROR: Clang falló al enlazar los archivos. Código de salida: " + codigoSalida);
+                    }
                     // =========================================================================
                 }
 
