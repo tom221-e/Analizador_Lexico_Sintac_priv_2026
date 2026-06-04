@@ -1,5 +1,6 @@
 package ast;
 import java.util.ArrayList;
+import llvm.CodeGeneratorHelper;
 
 // 1. Cambiamos 'extends Nodo' por 'extends Declaracion'
 public class DeclaracionArray extends Declaracion {
@@ -63,6 +64,23 @@ public class DeclaracionArray extends Declaracion {
             resultado.append(String.format("%1$s = alloca [ %2$s x double]\n",
                     "%" + var,
                     this.tamano
+            ));
+            
+            // INICIALIZACIÓN DE ARRAY EN 0
+            // 1. obtener puntero al primer elemento
+            String ptrElem = CodeGeneratorHelper.getNewPointer();
+            resultado.append(String.format(
+                "%s = getelementptr [%s x double], ptr %%%s, i64 0, i64 0\n",
+                ptrElem, this.tamano, var
+            ));
+
+            // 2. calcular el tamaño en bytes: N elementos * 8 bytes por double
+            int byteSize = Integer.parseInt(this.tamano) * 8;
+
+            // 3. llamar a memset con 0
+            resultado.append(String.format(
+                "call void @llvm.memset.p0.i64(ptr %s, i8 0, i64 %d, i1 false)\n",
+                ptrElem, byteSize
             ));
         }
         return resultado.toString();

@@ -403,6 +403,7 @@ class CUP$Parser$actions {
 
 
     Hashtable table = new Hashtable();
+    String tam = "0" ;// ← nuevo
 
   private final Parser parser;
 
@@ -765,9 +766,16 @@ String tipoEspecial = "FLOAT_ARRAY";
         } else if ("FLOAT".equals(tipo)) {
             tipoLLVM = "float";
         } else if ("BOOLEAN".equals(tipo)) {
-             tipoLLVM = "i1";
-        }
-    RESULT = new SentenciaPrint(e, tipoLLVM);
+            tipoLLVM = "i1";
+        } else if ("FLOAT_ARRAY".equals(tipo)) {          // ← nuevo
+            tipoLLVM = "array";
+            // obtener el nombre de la variable para buscar su tamaño
+            if (e instanceof ast.literal.IdLiteral) {
+                String nombreVar = ((ast.literal.IdLiteral) e).getNombre();
+                tam = tablaSimbolos.getTamano(nombreVar);
+            }
+    }
+    RESULT = new SentenciaPrint(e, tipoLLVM, tam);  // ← pasa tamano
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("sentencia",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-3)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -839,15 +847,16 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     if (validador.validarAsignacion(id, e, tablaSimbolos)) {
            System.out.println("Asignación válida.");
-               String tipoLLVM = "";
                ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e, tablaSimbolos);
+               String tipoLLVM = "";
+
                if ("INT".equals(i1.getTipo())) {
                            tipoLLVM = "i32";
                        } else if ("FLOAT".equals(i1.getTipo())) {
-                           tipoLLVM = "float";
+                           tipoLLVM = "double";
                        } else if ("BOOLEAN".equals(i1.getTipo())) {
                            tipoLLVM = "i1";
-                       }
+                       } 
            RESULT = new Asignacion(id, e, tablaSimbolos, tipoLLVM);
     } else {
              // Detiene la ejecución si los tipos no son compatibles
@@ -1433,7 +1442,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
-    // 🌟 NORMALIZADO: Cálculo directo y robusto de la dimensión para el entorno vectorial
+    // NORMALIZADO: Cálculo directo y robusto de la dimensión para el entorno vectorial
     String tipoLLVM = "";
     int dimMax = Math.max(i1.getDim(), i2.getDim());
 
@@ -1500,7 +1509,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
-    // 🌟 NORMALIZADO: Quita la dependencia de IdLiteral para soportar operaciones anidadas
+    // NORMALIZADO: Quita la dependencia de IdLiteral para soportar operaciones anidadas
     String tipoLLVM = "";
     int dimMax = Math.max(i1.getDim(), i2.getDim());
 
@@ -1553,7 +1562,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         der = new ConversionFloat(e2);
     }
 
-    // 🌟 NORMALIZADO: Propagación exacta de tamaños de arrays en divisiones de vectores o broadcasting
+    // NORMALIZADO: Propagación exacta de tamaños de arrays en divisiones de vectores o broadcasting
     String tipoLLVM = "";
     int dimMax = Math.max(i1.getDim(), i2.getDim());
 

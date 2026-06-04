@@ -1,7 +1,5 @@
 package ast;
 import llvm.CodeGeneratorHelper;
-import parser.Parser;
-
 import java.util.ArrayList;
 
 public class Programa extends Nodo {
@@ -71,19 +69,25 @@ public class Programa extends Nodo {
 
         // =========================================================================
         // 2. CABECERA GLOBAL Y DECLARACIONES OBLIGATORIAS
-        // =========================================================================
+        // =========================================================================       
         llvm.append("; --- Cabecera del Programa ---\n");
         llvm.append("target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
         llvm.append("target triple = \"x86_64-pc-windows-msvc19.16.27038\"\n\n");
         llvm.append("declare i32 @printf(i8*, ...)\n");
         llvm.append("declare i32 @scanf(i8*, ...)\n\n");
+        llvm.append("declare i32 @exit(i32)\n");                    // ← nuevo
         llvm.append("declare void @operar_arreglos(double*, double*, double*, i32, i32)\n\n");
+        llvm.append("declare void @llvm.memset.p0.i64(ptr, i8, i64, i1)");
 
-        // Formatos fijos para Print y Read (Obligatorios)
+        // Formatos fijos para Print y Read
         llvm.append("@.integer = private constant [4 x i8] c\"%d\\0A\\00\"\n");
         llvm.append("@.float = private constant [4 x i8] c\"%f\\0A\\00\"\n");
         llvm.append("@int_read_format = unnamed_addr constant [3 x i8] c\"%d\\00\"\n");
         llvm.append("@double_read_format = unnamed_addr constant [4 x i8] c\"%lf\\00\"\n\n");
+        llvm.append("@.bounds_error = private constant [30 x i8] c\"Error: indice fuera de rango\\0A\\00\"\n\n");  // ← nuevo
+llvm.append("@.array_ini  = private constant [2 x i8] c\"[\\00\"\n");
+llvm.append("@.array_elem = private constant [5 x i8] c\"%g \\00\"\n");
+llvm.append("@.array_fin  = private constant [3 x i8] c\"]\\0A\\00\"\n\n");
 
         // =========================================================================
         // 3. CADENAS DE TEXTO DINÁMICAS (ALMACÉN GLOBAL)

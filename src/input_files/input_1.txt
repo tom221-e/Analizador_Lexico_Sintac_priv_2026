@@ -1,11 +1,20 @@
 INT: aux, id
-BOOLEAN: si, A, B, D
+BOOLEAN: es_mayor, si, A, B, D
 INT: monto_total
-FLOAT: promedio, c
+FLOAT: promedio, c, valorDePrueba
 ARRAY[10]: mediciones
 
 PROGRAM
+    mediciones[0] = 1.5
+    mediciones[1] = 2.5
+    mediciones[2] = 3.5
+    mediciones[15] = 9.9
 
+    print(mediciones[0])
+
+    es_mayor = ! true
+    id = -6
+    valorDePrueba = -2.3
     % comentario antes del código
 
     {* comentario

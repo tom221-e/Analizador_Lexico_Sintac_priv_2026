@@ -19,4 +19,8 @@ public abstract class OperacionUnaria extends Expresion {
         final String miId = this.getId();
         return super.graficar(idPadre) + operando.graficar(miId);
     }
+    
+    public Expresion getOperando() {
+        return this.operando;
+    }
 }
