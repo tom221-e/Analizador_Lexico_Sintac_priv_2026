@@ -12,11 +12,18 @@ public class BoolLiteral extends Expresion {
 
     @Override
     protected String getEtiqueta() {
+        return "BOOL: " + valor;
+    }
+    
+    /*@Override
+    protected String getEtiqueta() {
         return "Bool: " + valor; // Etiqueta para el globo del grafo
-    }
+    }*/
+    
     public Boolean getBool() {
-    return Boolean.valueOf(valor);
+        return Boolean.valueOf(valor);
     }
+    
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();

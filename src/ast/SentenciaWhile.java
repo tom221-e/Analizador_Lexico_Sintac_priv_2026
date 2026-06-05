@@ -25,7 +25,7 @@ public class SentenciaWhile extends Sentencia {
 
         String lblCondicion = CodeGeneratorHelper.getNewTag();
         String lblCuerpo = CodeGeneratorHelper.getNewTag();
-        String lblEvaluarAlt = CodeGeneratorHelper.getNewTag(); // 🌟 NUEVO: Bloque intermedio para controlar el alt_while
+        String lblEvaluarAlt = CodeGeneratorHelper.getNewTag(); //NUEVO: Bloque intermedio para controlar el alt_while
         String lblFin = CodeGeneratorHelper.getNewTag();
 
         // SOPORTE PARA BREAK Y CONTINUE
@@ -39,7 +39,7 @@ public class SentenciaWhile extends Sentencia {
         resultado.append(String.format("\n%1$s:\n", lblCondicion));
         resultado.append(this.condicion.generarCodigo());
 
-        // 🌟 CORRECCIÓN: Si es falso, saltamos a evaluar las alternativas (lblEvaluarAlt) en lugar de ir al fin directo
+        // CORRECCIÓN: Si es falso, saltamos a evaluar las alternativas (lblEvaluarAlt) en lugar de ir al fin directo
         resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n",
                 this.condicion.getIr_ref(), lblCuerpo, lblEvaluarAlt));
 
@@ -64,11 +64,11 @@ public class SentenciaWhile extends Sentencia {
         // --- BLOQUE 3: ENTORNO DEL ALT_WHILE ---
         resultado.append(String.format("\n%1$s:\n", lblEvaluarAlt));
         if (this.alternativa != null) {
-            // 🌟 GENERACIÓN CRÍTICA: Ahora sí inyectamos el código del alt_while si existe
+            // GENERACIÓN CRÍTICA: Ahora sí inyectamos el código del alt_while si existe
             resultado.append(this.alternativa.generarCodigo());
         }
         // Si no hay alternativa, o si ya pasó por ella, va linealmente al fin
-        resultado.append(String.format("br label %%%1$s\n", lblFin));
+        resultado.append(String.format("  br label %%%1$s\n", lblFin));
 
         // --- BLOQUE 4: SALIDA DEL CICLO ---
         resultado.append(String.format("\n%1$s:\n", lblFin));

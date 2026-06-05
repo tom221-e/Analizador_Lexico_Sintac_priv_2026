@@ -18,10 +18,29 @@ public class IdLiteral extends Expresion {
         return valor;
     }
 
+    private String tipoLenguaje() {
+        if (this.tipo == null) return "?";
+        return switch (this.tipo) {
+            case "i32"             -> "INT";
+            case "float", "double" -> "FLOAT";
+            case "i1"              -> "BOOL";
+            case "FLOAT_ARRAY"      -> "ARRAY";
+            default -> {
+                if (this.tipo.matches("\\d+")) yield "ARRAY[" + this.tipo + "]";
+                yield this.tipo;
+            }
+        };
+    }
+
+    // Reemplazar getEtiqueta():
     @Override
     protected String getEtiqueta() {
-        return "ID(" +tipo+"): " + valor;
+        return "ID(" + tipoLenguaje() + "): " + valor;
     }
+    /*@Override
+    protected String getEtiqueta() {
+        return "ID(" +tipo+"): " + valor;
+    }*/
 
     public String getStringID() {
         return "%" + valor;
@@ -42,7 +61,7 @@ public class IdLiteral extends Expresion {
             if ("float".equals(this.tipo)){
                 tipo2="double";
             }
-            resultado.append(String.format("%1$s = load %2$s, %3$s* %4$s\n",
+            resultado.append(String.format("  %1$s = load %2$s, %3$s* %4$s\n",
                     this.getIr_ref(),   // El nuevo temporal (%1)
                     tipo2,          // El tipo (i32, float, i1)
                     tipo2,

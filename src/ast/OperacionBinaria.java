@@ -1,7 +1,6 @@
 package ast;
 
 import llvm.*;
-import ast.literal.IdLiteral; // <--- Importamos tu clase de variables
 
 public abstract class OperacionBinaria extends Expresion {
     protected final Expresion izquierda;
@@ -18,10 +17,30 @@ public abstract class OperacionBinaria extends Expresion {
         return tipo;
     }
 
+    private String tipoLenguaje() {
+        if (this.tipo == null) return "?";
+        return switch (this.tipo) {
+            case "i32"             -> "INT";
+            case "float", "double" -> "FLOAT";
+            case "i1"              -> "BOOL";
+            default -> {
+                // si ya es INT/FLOAT/BOOL/dimensión numérica, mostrar directo
+                if (this.tipo.matches("\\d+")) yield "ARRAY[" + this.tipo + "]";
+                yield this.tipo;
+            }
+        };
+    }
+
+    // Reemplazar getEtiqueta():
     @Override
     protected String getEtiqueta() {
-        return String.format("%s", this.getNombreOperacion());
+        return String.format("%s (%s)", this.getNombreOperacion(), tipoLenguaje());
     }
+    
+    /*@Override
+    protected String getEtiqueta() {
+        return String.format("%s", this.getNombreOperacion());
+    }*/
 
     public Expresion getE1() {
         return izquierda;
@@ -75,7 +94,7 @@ public abstract class OperacionBinaria extends Expresion {
 
         return resultado.toString();
     }
-    // 🌟 NUEVO MÉTODO: Permite que el asignador le diga dónde guardar el resultado vectorial
+    // NUEVO MÉTODO: Permite que el asignador le diga dónde guardar el resultado vectorial
     public String generarCodigoConDestino(String ptrDestinoReal) {
         StringBuilder resultado = new StringBuilder();
 
@@ -90,7 +109,7 @@ public abstract class OperacionBinaria extends Expresion {
         boolean esOperacionDeArreglo = this.tipo != null && this.tipo.matches("\\d+");
 
         if (esOperacionDeArreglo) {
-            // 🌟 MODIFICACIÓN CLAVE: En vez de dejar que el helper cree un temporal aleatorio,
+            // MODIFICACIÓN CLAVE: En vez de dejar que el helper cree un temporal aleatorio,
             // modificamos temporalmente el comportamiento o llamamos a una versión que use ptrDestinoReal
             String tipoEstructuraLLVM = "[" + this.tipo + " x double]";
 
@@ -134,4 +153,5 @@ public abstract class OperacionBinaria extends Expresion {
 
         return resultado.toString();
     }
+    
 }

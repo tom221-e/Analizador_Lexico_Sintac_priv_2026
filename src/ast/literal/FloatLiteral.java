@@ -17,10 +17,12 @@ public class FloatLiteral extends Expresion {
     public Float getFloat() {
         return Float.parseFloat(valor);
     }
+    
+    @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("%1$s = fadd double 0.0, %2$s\n", this.getIr_ref(), getFloat()));
+        resultado.append(String.format("  %1$s = fadd double 0.0, %2$s\n", this.getIr_ref(), getFloat()));
         return resultado.toString();
     }
 }

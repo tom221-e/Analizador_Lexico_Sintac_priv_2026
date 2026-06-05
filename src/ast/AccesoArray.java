@@ -13,11 +13,16 @@ public class AccesoArray extends Expresion {
         this.tamano = tamano;
     }
 
-    @Override
+    /*@Override
     protected String getEtiqueta() {
         return "ACCESO ARRAY: " + nombre + "[" + indice.getEtiqueta() + "]";
+    }*/
+    @Override
+    protected String getEtiqueta() {
+        return "FLOAT: " + nombre + "[" + indice.getEtiqueta() + "]";
     }
 
+    @Override
     public String getId() {
         return nombre;
     }

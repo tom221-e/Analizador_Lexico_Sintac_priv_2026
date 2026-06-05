@@ -25,7 +25,6 @@ public class ValidatorDataType {
         // 1. Regla: Restricción de tipos no numéricos
         // No tiene sentido sumar "true + 5"
         if (info1.tipo.equals("BOOLEAN") || info2.tipo.equals("BOOLEAN")) {
-            //System.err.println("Error Semántico: No se puede realizar aritmética con BOOLEAN.");
             return "BOOLEAN"; // El null indica que la operación no es válida
         }
 
@@ -62,7 +61,7 @@ public class ValidatorDataType {
 
         String tipoDestino = tabla.getTipo(id); // "FLOAT_ARRAY"
 
-        // 🌟 Rescatamos el tamaño de la variable destino desde la tabla
+        // Rescatamos el tamaño de la variable destino desde la tabla
         int dimDestino = 0;
         String tamDestinoStr = tabla.getTamano(id);
         if (tamDestinoStr != null && tamDestinoStr.matches("\\d+")) {
@@ -89,7 +88,11 @@ public class ValidatorDataType {
             return false;
         }
 
+        //if ("FLOAT".equals(tipoDestino) && "INT".equals(infoExp.tipo)) return true;
+        //return tipoDestino.equals(infoExp.tipo);+
+        
         if ("FLOAT".equals(tipoDestino) && "INT".equals(infoExp.tipo)) return true;
+        if ("BOOLEAN".equals(tipoDestino) && "BOOLEAN".equals(infoExp.tipo)) return true;
         return tipoDestino.equals(infoExp.tipo);
     }
 
@@ -169,10 +172,10 @@ public class ValidatorDataType {
         if (n instanceof BoolLiteral) return new InfoNodo("BOOLEAN", 0);
 
         // 2. Si es una variable (IdLiteral)
-        if (n instanceof IdLiteral) {
-            String id = ((IdLiteral) n).getNombreVariable();
+        if (n instanceof IdLiteral idLiteral) {
+            String id = idLiteral.getNombreVariable();
 
-            // 🌟 CORRECCIÓN 1: Limpiar los prefijos % o @ de LLVM para poder encontrar el ID en la tabla
+            // CORRECCIÓN 1: Limpiar los prefijos % o @ de LLVM para poder encontrar el ID en la tabla
             if (id != null) {
                 id = id.replace("%", "").replace("@", "").trim();
             }
@@ -187,7 +190,7 @@ public class ValidatorDataType {
                 return new InfoNodo("ERROR", 0);
             }
 
-            // 🌟 CORRECCIÓN 2: Extraer y convertir el String de getTamano() a un int numérico
+            // CORRECCIÓN 2: Extraer y convertir el String de getTamano() a un int numérico
             int d = 0;
             if ("FLOAT_ARRAY".equals(t) || "INT_ARRAY".equals(t)) {
                 String tamanoStr = tabla.getTamano(id); // Recibe el String de la tabla (ej: "10")
@@ -221,9 +224,9 @@ public class ValidatorDataType {
         }
 
         // 4. Si es una operación (ej: x + y)
-        if (n instanceof OperacionBinaria) {
-            Expresion e1 = ((OperacionBinaria)n).getE1();
-            Expresion e2 = ((OperacionBinaria)n).getE2();
+        if (n instanceof OperacionBinaria operacionBinaria) {
+            Expresion e1 = operacionBinaria.getE1();
+            Expresion e2 = operacionBinaria.getE2();
 
             // Llamada recursiva para validar la aritmética de los hijos
             String tRes = validarAritmetica(e1, e2, tabla);
@@ -264,6 +267,13 @@ public class ValidatorDataType {
         if (n instanceof ReadBoolean) {
             return new InfoNodo("BOOLEAN", 0); // Le avisa al sistema que esto devuelve un BOOLEAN escalar
         }
+        
+        // Operaciones unarias
+        if (n instanceof OperacionUnaria operacionUnaria) {
+            Expresion operando = operacionUnaria.getOperando();
+            return obtenerInfo(operando, tabla);
+        }
+        
         return new InfoNodo("UNKNOWN", 0);
     }
 

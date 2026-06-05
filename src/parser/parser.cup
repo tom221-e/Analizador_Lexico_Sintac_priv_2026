@@ -15,7 +15,8 @@ class Parser;
 
 action code {:
     Hashtable table = new Hashtable();
-    String tam = "0" ;// ← nuevo
+    String tam = "0" ;// ← nuevo; tamaño del array
+    int nivelLoop = 0;    // ← controla si un break o continue esta dentro de un loop o no
 :};
 
 
@@ -57,7 +58,7 @@ terminal TYPE_ARRAY;
 terminal PROGRAM;
 terminal IF, ELSE, ELIF;
 terminal WHILE, ALT_WHILE;
-terminal BEGIN, END;
+//terminal BEGIN, END;
 terminal PRINT, BREAK, CONTINUE;
 
 terminal String VALOR_MAS_CERCANO;
@@ -91,6 +92,7 @@ non terminal Sentencia sentencia_if;
 non terminal ArrayList<Sentencia> sentencia_elif;
 non terminal Sentencia sentencia_while;
 non terminal SentenciaAlt sentencia_alt;
+non terminal inicio_loop;
 
 non terminal Expresion expr_logica;
 non terminal Expresion expr_and;
@@ -255,11 +257,18 @@ sentencia ::= sentencia_if:s {:
 | BREAK {:
     System.out.println("REGLA 3.5: sentencia -> BREAK");
     System.out.printf("REGLA 3.5: sentencia -> break%n%n");
+    if (nivelLoop == 0) {
+        throw new RuntimeException("ERROR SEMÁNTICO: BREAK fuera de un ciclo.");
+    }
+    System.out.println("BREAK válido, nivelLoop = " + nivelLoop);
     RESULT = new SentenciaBreak();
 :}
 | CONTINUE {:
     System.out.println("REGLA 3.6: sentencia -> CONTINUE");
     System.out.printf("REGLA 3.6: sentencia -> continue%n%n");
+    if (nivelLoop == 0) {
+        throw new RuntimeException("ERROR SEMÁNTICO: CONTINUE fuera de un ciclo.");
+    }
     RESULT = new SentenciaContinue();
 :};
 
@@ -268,18 +277,32 @@ asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
 
     if (validador.validarAsignacion(id, e, tablaSimbolos)) {
-           System.out.println("Asignación válida.");
-               ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e, tablaSimbolos);
-               String tipoLLVM = "";
+        System.out.println("Asignación válida.");
+        ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e, tablaSimbolos);
+        String tipoLLVM = "";
 
-               if ("INT".equals(i1.getTipo())) {
-                           tipoLLVM = "i32";
-                       } else if ("FLOAT".equals(i1.getTipo())) {
-                           tipoLLVM = "double";
-                       } else if ("BOOLEAN".equals(i1.getTipo())) {
-                           tipoLLVM = "i1";
-                       } 
-           RESULT = new Asignacion(id, e, tablaSimbolos, tipoLLVM);
+        if ("INT".equals(i1.getTipo())) {
+            tipoLLVM = "i32";
+        } else if ("FLOAT".equals(i1.getTipo())) {
+            tipoLLVM = "double";
+        } else if ("BOOLEAN".equals(i1.getTipo())) {
+            tipoLLVM = "i1";
+        } else if (i1.getDim() > 0) {
+            tipoLLVM = String.valueOf(i1.getDim());   // ← caso array: pasa la dimensión
+        }
+        
+        // INS[
+        if (tipoLLVM.isEmpty()) {
+            // fallback: leer el tipo desde la tabla de símbolos directamente
+            String tipoTabla = tablaSimbolos.getTipo(id);
+            if ("INT".equals(tipoTabla))     tipoLLVM = "i32";
+            else if ("FLOAT".equals(tipoTabla))   tipoLLVM = "double";
+            else if ("BOOLEAN".equals(tipoTabla)) tipoLLVM = "i1";
+        }
+        // ]INS
+
+        RESULT = new Asignacion(id, e, tablaSimbolos, tipoLLVM);
+
     } else {
              // Detiene la ejecución si los tipos no son compatibles
              throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles en la asignación de '" + id + "'");
@@ -339,10 +362,18 @@ sentencia_elif ::= ELIF expr_logica:e bloque:b sentencia_elif:s
     RESULT = null;
 :};
 
-sentencia_while ::=WHILE expr_logica:e bloque:b sentencia_alt:alt
+/* marcador que se reduce ANTES de parsear el bloque */
+inicio_loop ::= /* vacío */
+{:
+    nivelLoop++;
+    System.out.println("Entrando a loop, nivelLoop = " + nivelLoop);
+:};
+
+sentencia_while ::=WHILE inicio_loop expr_logica:e bloque:b sentencia_alt:alt   //La acción {: nivelLoop++; :} después del terminal WHILE se ejecuta en el momento exacto en que se reconoce la palabra WHILE, antes de parsear el cuerpo del loop.
 {:
     System.out.println("REGLA 6: sentencia_while -> WHILE expresion bloque");
     System.out.printf("REGLA 6: while %s do %s%n%n", e, b);
+    nivelLoop--;                              // ← decrementar al salir
     RESULT = new SentenciaWhile(e, b, alt);
 :};
 

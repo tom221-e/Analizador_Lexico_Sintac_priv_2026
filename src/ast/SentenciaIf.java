@@ -80,7 +80,7 @@ public class SentenciaIf extends Sentencia {
             }
         }
         // CORRECCIÓN: Añadido '%%' para el salto incondicional (br label %tag.X)
-        resultado.append(String.format("br label %%%1$s\n\n", labelEnd));
+        resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
 
         // ==========================================
         // BLOQUE ELSE
@@ -93,7 +93,7 @@ public class SentenciaIf extends Sentencia {
                 }
             }
             // CORRECCIÓN: Añadido '%%' para el salto incondicional
-            resultado.append(String.format("br label %%%1$s\n\n", labelEnd));
+            resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
         }
 
         // ==========================================

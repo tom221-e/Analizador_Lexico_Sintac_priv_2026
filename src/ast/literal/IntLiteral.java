@@ -21,10 +21,11 @@ public class IntLiteral extends Expresion {
         return valor;
     }
 
+    @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("%1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(getValor())));
+        resultado.append(String.format("  %1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(getValor())));
         return resultado.toString();
     }
 
