@@ -13,6 +13,9 @@ public class ConversionFloat extends Expresion {
     protected String getEtiqueta() {
         return "(INT_A_FLOAT)";
     }
+    public String getValor() {
+        return hijo.getValor();
+    }
 
     @Override
     public String graficar(String idPadre) {

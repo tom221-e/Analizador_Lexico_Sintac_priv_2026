@@ -26,6 +26,11 @@ public class FloatLiteral extends Expresion {
         return resultado.toString();
     }
     @Override
+    public Expresion copiar() {
+        // Al hacer 'new' aquí, garantizas que es una dirección de memoria nueva
+        return new IntLiteral(this.valor);
+    }
+    @Override
     public String getTipo() {
         return "float";
     }

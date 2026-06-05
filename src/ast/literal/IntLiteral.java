@@ -26,6 +26,12 @@ public class IntLiteral extends Expresion {
     }
 
     @Override
+    public Expresion copiar() {
+        // Al hacer 'new' aquí, garantizas que es una dirección de memoria nueva
+        return new IntLiteral(this.valor);
+    }
+
+    @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());

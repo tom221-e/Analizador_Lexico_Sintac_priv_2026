@@ -13,11 +13,13 @@ public class ValorMasCercano extends Expresion {
     private final ArrayList<Sentencia> pasos;
     private final String punteroResultado;
     private final String tipo;
+    private final String valoresArregloString; // <--- Nuevo campo
 
-    public ValorMasCercano(Expresion referencia, String nombreArreglo, ArrayList<Declaracion> declaraciones, ArrayList<Sentencia> pasos, String punteroResultado) {
+    public ValorMasCercano(Expresion referencia, String nombreArreglo, ArrayList<Declaracion> declaraciones, ArrayList<Sentencia> pasos, String punteroResultado, String valoresArregloString) {
         this.referencia = referencia;
         this.nombreArreglo = nombreArreglo;
         this.declaraciones = declaraciones;
+        this.valoresArregloString = valoresArregloString;
         this.pasos = pasos;
         this.punteroResultado = punteroResultado;
         this.tipo = "float";
@@ -25,7 +27,9 @@ public class ValorMasCercano extends Expresion {
 
     @Override
     protected String getEtiqueta() {
-        return "SUBPROGRAMA: ValorMasCercano\\nArreglo Anónimo: " + nombreArreglo + "\\nResultado en: %" + punteroResultado;
+        // Aquí construimos el texto exacto que quieres que aparezca
+        // Asumimos que referencia.toString() devuelve "5" o el valor correspondiente
+        return "SUBPROGRAMA: valor_mas_cercano(" + referencia.getValor() + ", " + valoresArregloString + ")";
     }
 
     @Override

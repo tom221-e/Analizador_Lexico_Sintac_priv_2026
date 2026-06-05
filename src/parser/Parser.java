@@ -1662,145 +1662,120 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Estructura Semántica AST Corregida) ===");
 
-    // =========================================================================
-    // 0. GENERACIÓN DE IDENTIFICADORES ÚNICOS LIMPIOS
-    // =========================================================================
+    // 0. ID únicos
     String sufijoUnico = String.valueOf(Math.abs(listaId.hashCode()));
-
     String nombreArreglo = "arr_literal_" + sufijoUnico;
     int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
     String dimArreglo = String.valueOf(dimension);
-
     String varMasCercano = "mc_masCercano_" + sufijoUnico;
-    String varDistMin    = "mc_distMin_"    + sufijoUnico; // difMin
+    String varDistMin    = "mc_distMin_"    + sufijoUnico;
     String varI          = "mc_i_"          + sufijoUnico;
-    String varDistActual = "mc_distActual_" + sufijoUnico; // dif
+    String varDistActual = "mc_distActual_" + sufijoUnico;
 
-    // =========================================================================
-    // 1. ENTORNO SEMÁNTICO LOCAL (Sin varActual para evitar aristas duplicadas)
-    // =========================================================================
+    // 1. Entorno Semántico
     parser.SymbolTable tablaLocal = new parser.SymbolTable();
-
     tablaLocal.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
     tablaLocal.add("ID", varMasCercano, "float", "-", "-");
     tablaLocal.add("ID", varDistMin,    "float", "-", "-");
-    tablaLocal.add("ID", varI,          "i32",   "-", "-");
+    tablaLocal.add("ID", varI,          "int",   "-", "-");
     tablaLocal.add("ID", varDistActual, "float", "-", "-");
 
     tablaSimbolos.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
     tablaSimbolos.add("ID", varMasCercano, "float", "-", "-");
     tablaSimbolos.add("ID", varDistMin,    "float", "-", "-");
-    tablaSimbolos.add("ID", varI,          "i32",   "-", "-");
+    tablaSimbolos.add("ID", varI,          "int",   "-", "-");
     tablaSimbolos.add("ID", varDistActual, "float", "-", "-");
 
-    // =========================================================================
-    // 2. REGISTRO EN LA LISTA GLOBAL DE DECLARACIONES DE MACROS
-    // =========================================================================
+    // 2. Declaraciones
     ArrayList<Declaracion> declaracionesLocales = new ArrayList<>();
 
-    // A. Declaración del Arreglo Literal Anónimo
     ArrayList<String> varArreglo = new ArrayList<>();
     varArreglo.add(nombreArreglo);
     DeclaracionArray declArr = new DeclaracionArray(dimArreglo, varArreglo);
     parser.declaracionesMacro.add(declArr);
     declaracionesLocales.add(declArr);
 
-    // B. Declaración de Variables Floats Internas
     ArrayList<String> varsFloat = new ArrayList<>();
     varsFloat.add(varMasCercano); varsFloat.add(varDistMin); varsFloat.add(varDistActual);
-    Declaracion declFloats = new Declaracion("float", varsFloat);
+    Declaracion declFloats = new Declaracion("FLOAT", varsFloat);
     parser.declaracionesMacro.add(declFloats);
     declaracionesLocales.add(declFloats);
 
-    // C. Declaración del Índice del Bucle
     ArrayList<String> varsInt = new ArrayList<>();
     varsInt.add(varI);
-    Declaracion declInt = new Declaracion("i32", varsInt);
+    Declaracion declInt = new Declaracion("INT", varsInt);
     parser.declaracionesMacro.add(declInt);
     declaracionesLocales.add(declInt);
 
-    // LISTA DE PASOS DE EJECUCIÓN LÓGICA (Nodos secuenciales del AST)
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
-    // =========================================================================
-    // 3. POBLADO INICIAL DEL ARREGLO
-    // =========================================================================
+    // 3. Poblado inicial
     String[] valoresArreglo = listaId.replace("[", "").replace("]", "").split(",");
-
     for (int k = 0; k < valoresArreglo.length; k++) {
         String elementoLimpio = valoresArreglo[k].trim();
         if (!elementoLimpio.isEmpty()) {
-            pasos.add(new AsignacionArray(
-                nombreArreglo,
-                new IntLiteral(String.valueOf(k)),
-                new FloatLiteral(elementoLimpio),
-                dimArreglo
-            ));
+            pasos.add(new AsignacionArray(nombreArreglo, new IntLiteral(String.valueOf(k)), new FloatLiteral(elementoLimpio), dimArreglo));
         }
     }
 
-    // =========================================================================
-    // 4. DETECCIÓN DINÁMICA DE TIPO PARA 'ref' (Tu nuevo esquema de validación)
-    // =========================================================================
-    String tipoRef = ref.getTipo();
-    Expresion refConvertida = ref;
-    if ("INT".equals(tipoRef) || "i32".equals(tipoRef)) {
-        refConvertida = new ConversionFloat(ref);
-    }
+    // 4. Lógica de conversión (Auxiliar para instanciar fresco)
+    boolean needsConversion = "INT".equals(ref.getTipo()) || "i32".equals(ref.getTipo());
 
-    // =========================================================================
-    // 5. CONSTRUCCIÓN DEL SUBÁRBOL SEGÚN TU PSEUDOCÓDIGO OBJETIVO
-    // =========================================================================
+    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (INSTANCIACIÓN FRESCA)
 
-    // --- 5.1. masCercano ← ARR[0] ---
-    Expresion arr0 = new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo);
-    pasos.add(new Asignacion(varMasCercano, arr0, tablaLocal, "float"));
+    // 5.1. masCercano ← ARR[0]
+    pasos.add(new Asignacion(varMasCercano,
+        new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
+        tablaLocal, "float"));
 
-    // --- 5.2. IF ARR[0] - V >= 0 THEN difMin ← ARR[0] - V ELSE difMin ← V - ARR[0] ---
-    ArrayList<Sentencia> thenInicial = new ArrayList<>();
-    thenInicial.add(new Asignacion(varDistMin, new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), refConvertida, "float"), tablaLocal, "float"));
+    // 5.2. IF ARR[0] - V >= 0
+    pasos.add(new SentenciaIf(
+        new Menor(
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
+            new FloatLiteral("0.0"), "float"),
+        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaLocal, "float"))),
+        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaLocal, "float")))
+    ));
 
-    ArrayList<Sentencia> elseInicial = new ArrayList<>();
-    elseInicial.add(new Asignacion(varDistMin, new Resta(refConvertida, new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaLocal, "float"));
-
-    // Equivalencia lógica usando Menor: Si (ARR[0] - V < 0) es TRUE, va al ELSE del pseudocódigo, si es FALSE va al THEN.
-    Expresion condInicial = new Menor(new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), refConvertida, "float"), new FloatLiteral("0.0"), "float");
-    pasos.add(new SentenciaIf(condInicial, elseInicial, thenInicial));
-
-    // --- 5.3. i ← 1 ---
+    // 5.3. i ← 1
     pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaLocal, "i32"));
 
-    // --- 5.4. CUERPO DEL BUCLE WHILE ---
+    // 5.4. CUERPO DEL BUCLE WHILE
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
-    // IF ARR[i] - V >= 0 THEN dif ← ARR[i] - V ELSE dif ← V - ARR[i]
-    ArrayList<Sentencia> thenWhile = new ArrayList<>();
-    thenWhile.add(new Asignacion(varDistActual, new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), refConvertida, "float"), tablaLocal, "float"));
+    // IF ARR[i] - V >= 0
+    cuerpoWhile.add(new SentenciaIf(
+        new Menor(
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
+            new FloatLiteral("0.0"), "float"),
+        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaLocal, "float"))),
+        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaLocal, "float")))
+    ));
 
-    ArrayList<Sentencia> elseWhile = new ArrayList<>();
-    elseWhile.add(new Asignacion(varDistActual, new Resta(refConvertida, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaLocal, "float"));
-
-    Expresion condWhileIf = new Menor(new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), refConvertida, "float"), new FloatLiteral("0.0"), "float");
-    cuerpoWhile.add(new SentenciaIf(condWhileIf, elseWhile, thenWhile));
-
-    // IF dif < difMin THEN difMin ← dif; masCercano ← ARR[i];
-    ArrayList<Sentencia> cuerpoComparacionIf = new ArrayList<>();
-    cuerpoComparacionIf.add(new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaLocal, "float"));
-    cuerpoComparacionIf.add(new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaLocal, "float"));
-
-    Expresion condicionComparacion = new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float");
-    cuerpoWhile.add(new SentenciaIf(condicionComparacion, cuerpoComparacionIf, null));
+    // IF dif < difMin
+    cuerpoWhile.add(new SentenciaIf(
+        new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float"),
+        new java.util.ArrayList<>(java.util.Arrays.asList(
+            new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaLocal, "float"),
+            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaLocal, "float")
+        )),
+        null
+    ));
 
     // i ← i + 1
-    Expresion incrementoI = new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32");
-    cuerpoWhile.add(new Asignacion(varI, incrementoI, tablaLocal, "i32"));
+    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32"), tablaLocal, "i32"));
 
-    // --- 5.5. CONTROL DEL WHILE DO: while (i < N) ---
-    Expresion condicionWhile = new Menor(new IdLiteral(varI, "i32"), new IntLiteral(dimArreglo), "i32");
-    pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
+    // 5.5. Control del While
+    pasos.add(new SentenciaWhile(
+        new Menor(new IdLiteral(varI, "i32"), new IntLiteral(dimArreglo), "i32"),
+        cuerpoWhile, null));
 
-    // Retornamos el nodo empaquetado final listo para ser recorrido por tu graficador en orden estricto
-    RESULT = new ValorMasCercano(refConvertida, nombreArreglo, declaracionesLocales, pasos, varMasCercano);
+    // Retorno final
+    RESULT = new ValorMasCercano(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), nombreArreglo, declaracionesLocales, pasos, varMasCercano, listaId);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("factor",20, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-5)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }

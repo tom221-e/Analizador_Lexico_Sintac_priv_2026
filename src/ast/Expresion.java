@@ -16,4 +16,10 @@ public abstract class Expresion extends Nodo {
     public String getTipo() {
         return ""; // Devuelve un string vacío por defecto
     }
+    public String getValor() {
+        return ""; // Devuelve un string vacío por defecto
+    }
+    public Expresion copiar(){
+        return null;
+    }
 }

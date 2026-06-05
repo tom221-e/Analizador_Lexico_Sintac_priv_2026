@@ -17,6 +17,12 @@ public class IdLiteral extends Expresion {
     public String getNombreVariable() {
         return valor;
     }
+    @Override
+    public Expresion copiar() {
+        // Al hacer 'new' aquí, garantizas que es una dirección de memoria nueva
+        return new IdLiteral(this.valor, this.tipo);
+    }
+
 
     private String tipoLenguaje() {
         if (this.tipo == null) return "?";
