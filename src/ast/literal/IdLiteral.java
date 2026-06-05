@@ -3,7 +3,7 @@ package ast.literal;
 import ast.Expresion;
 import llvm.CodeGeneratorHelper;
 import parser.SymbolTable;
-import validator.ValidatorDataType; // Importamos tu validador
+// import validator.ValidatorDataType; // Importamos tu validador
 
 public class IdLiteral extends Expresion {
     private final String valor;
@@ -82,7 +82,7 @@ public class IdLiteral extends Expresion {
     }
 
     public String getNombre() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return this.valor; // O el nombre que tenga tu atributo string en esa clase (id, lexema, etc.)
     }
 
     public String getTipo() {

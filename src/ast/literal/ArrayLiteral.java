@@ -49,4 +49,8 @@ public class ArrayLiteral extends Expresion {
     protected String getEtiqueta() {
         return "ARRAY: " + valor;
     }
+    @Override
+    public String getTipo() {
+        return "FLOAT_ARRAY";
+    }
 }

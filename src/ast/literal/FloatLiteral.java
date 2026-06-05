@@ -25,4 +25,8 @@ public class FloatLiteral extends Expresion {
         resultado.append(String.format("  %1$s = fadd double 0.0, %2$s\n", this.getIr_ref(), getFloat()));
         return resultado.toString();
     }
+    @Override
+    public String getTipo() {
+        return "float";
+    }
 }

@@ -100,4 +100,9 @@ public class Asignacion extends Sentencia {
 
         return resultado.toString();
     }
+
+    @Override
+    public String getTipo() {
+        return tipo;
+    }
 }

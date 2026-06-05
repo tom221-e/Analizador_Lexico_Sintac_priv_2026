@@ -10,6 +10,10 @@ public class IntLiteral extends Expresion {
         this.valor = String.valueOf(valor);
     }
 
+    @Override
+    public String getTipo() {
+        return "i32";
+    }
 
     @Override
     protected String getEtiqueta() {

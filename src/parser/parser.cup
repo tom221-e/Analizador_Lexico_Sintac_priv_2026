@@ -9,7 +9,7 @@ import ast.relacional.*;
 import ast.unario.*;
 import ast.read.*;
 import ast.literal.*;
-import validator.ValidatorDataType;
+// import validator.ValidatorDataType;
 
 class Parser;
 
@@ -106,7 +106,7 @@ parser code {:
 
     public static SymbolTable tablaSimbolos = new SymbolTable();
 
-    public ValidatorDataType validador = new ValidatorDataType();
+    // public ValidatorDataType validador = new ValidatorDataType();
 
     public static ArrayList<Declaracion> declaracionesMacro = new ArrayList<>();
 
@@ -304,23 +304,23 @@ sentencia ::= sentencia_if:s {:
 | PRINT PAREN_A expr_logica:e PAREN_C {:
     System.out.println("REGLA 3.4: sentencia -> PRINT expresion");
     System.out.printf("REGLA 3.4: sentencia -> %s%n%n", e);
-        String tipo = validador.obtenerInfo(e, tablaSimbolos).getTipo();
-        String tipoLLVM = "";
-        if ("INT".equals(tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(tipo)) {
-            tipoLLVM = "i1";
-        } else if ("FLOAT_ARRAY".equals(tipo)) {          // ← nuevo
-            tipoLLVM = "array";
-            // obtener el nombre de la variable para buscar su tamaño
-            if (e instanceof ast.literal.IdLiteral) {
-                String nombreVar = ((ast.literal.IdLiteral) e).getNombre();
-                tam = tablaSimbolos.getTamano(nombreVar);
-            }
+
+    String tipo = e.getTipo();
+    String tipoLLVM = "";
+    tam = "0"; // Crucial: Resetear para evitar arrastrar tamaños de prints anteriores
+
+    if ("i32".equals(tipo)) {
+        tipoLLVM = "i32";
+    } else if ("float".equals(tipo) || "double".equals(tipo)) {
+        tipoLLVM = "double"; // printf en LLVM suele requerir promotion a double para flotantes
+    } else if ("i1".equals(tipo)) {
+        tipoLLVM = "i1";
+    } else if (tipo != null && tipo.matches("\\d+")) { // Si el tipo es un número, es un array (su tamaño)
+        tipoLLVM = "array";
+        tam = tipo; // Asignamos el tamaño extraído directamente del tipo del nodo
     }
-    RESULT = new SentenciaPrint(e, tipoLLVM, tam);  // ← pasa tamano
+
+    RESULT = new SentenciaPrint(e, tipoLLVM, tam);
 :}
 | PRINT PAREN_A STRING:str PAREN_C
 {:
@@ -581,6 +581,9 @@ factor ::= ENTERO:e {:
 :}
 | ID:e {:
       System.out.println("REGLA 14.4: factor -> ID");
+      if (!tablaSimbolos.exists(e)) {
+                throw new RuntimeException("ERROR SEMÁNTICO: La variable '" + e + "' no ha sido declarada.");
+            }
       String t = tablaSimbolos.getTipo(e);
       String tipoLLVM = "";
 
@@ -627,7 +630,7 @@ factor ::= ENTERO:e {:
 :}
 | VALOR_MAS_CERCANO PAREN_A expr_arit:ref COMA FLOAT_ARRAY:listaId PAREN_C
 {:
-    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Manteniendo etiqueta 'float') ===");
+    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Estructura Semántica AST Corregida) ===");
 
     // =========================================================================
     // 0. GENERACIÓN DE IDENTIFICADORES ÚNICOS LIMPIOS
@@ -639,13 +642,12 @@ factor ::= ENTERO:e {:
     String dimArreglo = String.valueOf(dimension);
 
     String varMasCercano = "mc_masCercano_" + sufijoUnico;
-    String varDistMin    = "mc_distMin_"    + sufijoUnico;
+    String varDistMin    = "mc_distMin_"    + sufijoUnico; // difMin
     String varI          = "mc_i_"          + sufijoUnico;
-    String varActual     = "mc_actual_"     + sufijoUnico;
-    String varDistActual = "mc_distActual_" + sufijoUnico;
+    String varDistActual = "mc_distActual_" + sufijoUnico; // dif
 
     // =========================================================================
-    // 1. ENTORNO SEMÁNTICO LOCAL ( Volvemos a usar "float" como a ti te gusta)
+    // 1. ENTORNO SEMÁNTICO LOCAL (Sin varActual para evitar aristas duplicadas)
     // =========================================================================
     parser.SymbolTable tablaLocal = new parser.SymbolTable();
 
@@ -653,14 +655,12 @@ factor ::= ENTERO:e {:
     tablaLocal.add("ID", varMasCercano, "float", "-", "-");
     tablaLocal.add("ID", varDistMin,    "float", "-", "-");
     tablaLocal.add("ID", varI,          "i32",   "-", "-");
-    tablaLocal.add("ID", varActual,     "float", "-", "-");
     tablaLocal.add("ID", varDistActual, "float", "-", "-");
 
     tablaSimbolos.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
     tablaSimbolos.add("ID", varMasCercano, "float", "-", "-");
     tablaSimbolos.add("ID", varDistMin,    "float", "-", "-");
     tablaSimbolos.add("ID", varI,          "i32",   "-", "-");
-    tablaSimbolos.add("ID", varActual,     "float", "-", "-");
     tablaSimbolos.add("ID", varDistActual, "float", "-", "-");
 
     // =========================================================================
@@ -675,9 +675,9 @@ factor ::= ENTERO:e {:
     parser.declaracionesMacro.add(declArr);
     declaracionesLocales.add(declArr);
 
-    // B. Declaración de Variables Floats Internas (Equivalen a double en LLVM)
+    // B. Declaración de Variables Floats Internas
     ArrayList<String> varsFloat = new ArrayList<>();
-    varsFloat.add(varMasCercano); varsFloat.add(varDistMin); varsFloat.add(varActual); varsFloat.add(varDistActual);
+    varsFloat.add(varMasCercano); varsFloat.add(varDistMin); varsFloat.add(varDistActual);
     Declaracion declFloats = new Declaracion("float", varsFloat);
     parser.declaracionesMacro.add(declFloats);
     declaracionesLocales.add(declFloats);
@@ -689,18 +689,17 @@ factor ::= ENTERO:e {:
     parser.declaracionesMacro.add(declInt);
     declaracionesLocales.add(declInt);
 
-    // LISTA DE PASOS DE EJECUCIÓN LÓGICA
+    // LISTA DE PASOS DE EJECUCIÓN LÓGICA (Nodos secuenciales del AST)
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
     // =========================================================================
-    // 3. POBLADO INICIAL DEL ARREGLO USANDO ASIGNACION_ARRAY
+    // 3. POBLADO INICIAL DEL ARREGLO
     // =========================================================================
     String[] valoresArreglo = listaId.replace("[", "").replace("]", "").split(",");
 
     for (int k = 0; k < valoresArreglo.length; k++) {
         String elementoLimpio = valoresArreglo[k].trim();
         if (!elementoLimpio.isEmpty()) {
-            // Usamos tu clase especializada AsignacionArray para inyectar cada store double
             pasos.add(new AsignacionArray(
                 nombreArreglo,
                 new IntLiteral(String.valueOf(k)),
@@ -711,71 +710,66 @@ factor ::= ENTERO:e {:
     }
 
     // =========================================================================
-    // 4. DETECCIÓN DINÁMICA DE TIPO PARA 'ref'
+    // 4. DETECCIÓN DINÁMICA DE TIPO PARA 'ref' (Tu nuevo esquema de validación)
     // =========================================================================
-    validator.ValidatorDataType validador = new validator.ValidatorDataType();
-    validator.ValidatorDataType.InfoNodo infoRef = validador.obtenerInfo(ref, tablaSimbolos);
-
+    String tipoRef = ref.getTipo();
     Expresion refConvertida = ref;
-    if (infoRef != null && "INT".equals(infoRef.getTipo())) {
-        refConvertida = new ConversionFloat(ref); // Genera el sitofp ordenado en SSA
+    if ("INT".equals(tipoRef) || "i32".equals(tipoRef)) {
+        refConvertida = new ConversionFloat(ref);
     }
 
     // =========================================================================
-    // 5. PASOS DE ALGORITMO (Inicialización y Bucle secuencial)
+    // 5. CONSTRUCCIÓN DEL SUBÁRBOL SEGÚN TU PSEUDOCÓDIGO OBJETIVO
     // =========================================================================
-    // mc_masCercano = nombreArreglo[0]
-    Expresion primerElemento = new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo);
-    pasos.add(new Asignacion(varMasCercano, primerElemento, tablaLocal, "float"));
 
-    // mc_distMin = refConvertida - mc_masCercano
-    Expresion restaInicial = new Resta(refConvertida, new IdLiteral(varMasCercano, "float"), "float");
-    pasos.add(new Asignacion(varDistMin, restaInicial, tablaLocal, "float"));
+    // --- 5.1. masCercano ← ARR[0] ---
+    Expresion arr0 = new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo);
+    pasos.add(new Asignacion(varMasCercano, arr0, tablaLocal, "float"));
 
-    // Valor Absoluto Inicial: if (mc_distMin < 0.0) { mc_distMin = 0.0 - mc_distMin }
-    ArrayList<Sentencia> cuerpoAbsInicial = new ArrayList<>();
-    Expresion inversionInicial = new Resta(new FloatLiteral("0.0"), new IdLiteral(varDistMin, "float"), "float");
-    cuerpoAbsInicial.add(new Asignacion(varDistMin, inversionInicial, tablaLocal, "float"));
-    Expresion condicionAbsInicial = new Menor(new IdLiteral(varDistMin, "float"), new FloatLiteral("0.0"), "float");
-    pasos.add(new SentenciaIf(condicionAbsInicial, cuerpoAbsInicial, null));
+    // --- 5.2. IF ARR[0] - V >= 0 THEN difMin ← ARR[0] - V ELSE difMin ← V - ARR[0] ---
+    ArrayList<Sentencia> thenInicial = new ArrayList<>();
+    thenInicial.add(new Asignacion(varDistMin, new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), refConvertida, "float"), tablaLocal, "float"));
 
-    // mc_i = 1
+    ArrayList<Sentencia> elseInicial = new ArrayList<>();
+    elseInicial.add(new Asignacion(varDistMin, new Resta(refConvertida, new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaLocal, "float"));
+
+    // Equivalencia lógica usando Menor: Si (ARR[0] - V < 0) es TRUE, va al ELSE del pseudocódigo, si es FALSE va al THEN.
+    Expresion condInicial = new Menor(new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), refConvertida, "float"), new FloatLiteral("0.0"), "float");
+    pasos.add(new SentenciaIf(condInicial, elseInicial, thenInicial));
+
+    // --- 5.3. i ← 1 ---
     pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaLocal, "i32"));
 
-    // --- Cuerpo del Bucle While ---
+    // --- 5.4. CUERPO DEL BUCLE WHILE ---
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
-    // mc_actual = nombreArreglo[mc_i]
-    Expresion elementoActual = new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo);
-    cuerpoWhile.add(new Asignacion(varActual, elementoActual, tablaLocal, "float"));
+    // IF ARR[i] - V >= 0 THEN dif ← ARR[i] - V ELSE dif ← V - ARR[i]
+    ArrayList<Sentencia> thenWhile = new ArrayList<>();
+    thenWhile.add(new Asignacion(varDistActual, new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), refConvertida, "float"), tablaLocal, "float"));
 
-    // mc_distActual = refConvertida - mc_actual
-    Expresion restaActual = new Resta(refConvertida, new IdLiteral(varActual, "float"), "float");
-    cuerpoWhile.add(new Asignacion(varDistActual, restaActual, tablaLocal, "float"));
+    ArrayList<Sentencia> elseWhile = new ArrayList<>();
+    elseWhile.add(new Asignacion(varDistActual, new Resta(refConvertida, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaLocal, "float"));
 
-    // Valor Absoluto del bucle: if (mc_distActual < 0.0) { mc_distActual = 0.0 - mc_distActual }
-    ArrayList<Sentencia> cuerpoAbsActual = new ArrayList<>();
-    Expresion inversionActual = new Resta(new FloatLiteral("0.0"), new IdLiteral(varDistActual, "float"), "float");
-    cuerpoAbsActual.add(new Asignacion(varDistActual, inversionActual, tablaLocal, "float"));
-    Expresion condicionAbsActual = new Menor(new IdLiteral(varDistActual, "float"), new FloatLiteral("0.0"), "float");
-    cuerpoWhile.add(new SentenciaIf(condicionAbsActual, cuerpoAbsActual, null));
+    Expresion condWhileIf = new Menor(new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), refConvertida, "float"), new FloatLiteral("0.0"), "float");
+    cuerpoWhile.add(new SentenciaIf(condWhileIf, elseWhile, thenWhile));
 
-    // Comparación de distancias: if (mc_distActual < mc_distMin) { mc_masCercano = mc_actual; mc_distMin = mc_distActual; }
+    // IF dif < difMin THEN difMin ← dif; masCercano ← ARR[i];
     ArrayList<Sentencia> cuerpoComparacionIf = new ArrayList<>();
-    cuerpoComparacionIf.add(new Asignacion(varMasCercano, new IdLiteral(varActual, "float"), tablaLocal, "float"));
     cuerpoComparacionIf.add(new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaLocal, "float"));
+    cuerpoComparacionIf.add(new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaLocal, "float"));
+
     Expresion condicionComparacion = new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float");
     cuerpoWhile.add(new SentenciaIf(condicionComparacion, cuerpoComparacionIf, null));
 
-    // mc_i = mc_i + 1
+    // i ← i + 1
     Expresion incrementoI = new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32");
     cuerpoWhile.add(new Asignacion(varI, incrementoI, tablaLocal, "i32"));
 
-    // Condición de salida: while (mc_i < dimArreglo)
+    // --- 5.5. CONTROL DEL WHILE DO: while (i < N) ---
     Expresion condicionWhile = new Menor(new IdLiteral(varI, "i32"), new IntLiteral(dimArreglo), "i32");
     pasos.add(new SentenciaWhile(condicionWhile, cuerpoWhile, null));
 
-    // Retornamos el nodo completo empaquetado para el AST general
+    // Retornamos el nodo empaquetado final listo para ser recorrido por tu graficador en orden estricto
     RESULT = new ValorMasCercano(refConvertida, nombreArreglo, declaracionesLocales, pasos, varMasCercano);
 :}
 | OP_RESTA factor:y {:

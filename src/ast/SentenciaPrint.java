@@ -91,23 +91,25 @@ public class SentenciaPrint extends Sentencia {
         resultado.append(exp.generarCodigo());
         String tempCall = CodeGeneratorHelper.getNewPointer();
 
-        if ("i32".equals(this.tipo)) {
+        // Modificamos las condiciones para que acepten variantes de nombres:
+        if ("i32".equals(this.tipo) || "INT".equalsIgnoreCase(this.tipo)) {
             resultado.append(String.format(
-                "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
-                tempCall, exp.getIr_ref()));
+                    "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
+                    tempCall, exp.getIr_ref()));
 
-        } else if ("float".equals(this.tipo)) {
+        } else if ("float".equals(this.tipo) || "double".equals(this.tipo) || "FLOAT".equalsIgnoreCase(this.tipo)) {
             resultado.append(String.format(
-                "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.float, i32 0, i32 0), double %s)\n",
-                tempCall, exp.getIr_ref()));
+                    "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.float, i32 0, i32 0), double %s)\n",
+                    tempCall, exp.getIr_ref()));
 
-        } else if ("i1".equals(this.tipo)) {
+
+        } else if ("i1".equals(this.tipo) || "BOOLEAN".equalsIgnoreCase(this.tipo)) {
             String registerInt = CodeGeneratorHelper.getNewPointer();
             resultado.append(String.format(
-                "  %s = zext i1 %s to i32\n", registerInt, exp.getIr_ref()));
+                    "  %s = zext i1 %s to i32\n", registerInt, exp.getIr_ref()));
             resultado.append(String.format(
-                "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
-                tempCall, registerInt));
+                    "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
+                    tempCall, registerInt));
         }
 
         return resultado.toString();

@@ -38,4 +38,8 @@ public class BoolLiteral extends Expresion {
 
         return resultado.toString();
     }
+    @Override
+    public String getTipo() {
+        return "i1";
+    }
 }

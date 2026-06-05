@@ -10,6 +10,7 @@ import ast.literal.*;
  * Optimizado: Solo existen arreglos de tipo FLOAT_ARRAY y la dimensión viene inyectada
  * como un String numérico en la variable tipo del IdLiteral.
  */
+
 public class ValidatorDataType {
 
     // --- FUNCIÓN 1: VALIDAR ARITMÉTICA (+, -, *, /) ---

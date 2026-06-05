@@ -35,4 +35,8 @@ public class NotLogico extends OperacionUnaria {
 
         return resultado.toString();
     }
+    @Override
+    public String getTipo() {
+        return "i1"; // El resultado de un NOT (!) siempre es un BOOLEAN
+    }
 }
