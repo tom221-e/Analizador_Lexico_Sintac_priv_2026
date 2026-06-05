@@ -15,8 +15,90 @@ class Parser;
 
 action code {:
     Hashtable table = new Hashtable();
-    String tam = "0" ;// ← nuevo; tamaño del array
-    int nivelLoop = 0;    // ← controla si un break o continue esta dentro de un loop o no
+    String tam = "0";     // Tamaño del array
+    int nivelLoop = 0;    // Controla breaks/continues
+
+    // Estructura auxiliar para retornar los nodos transformados y su tipo resultante
+    public class OpResult {
+        public Expresion izq;
+        public Expresion der;
+        public String tipoLLVM;
+        public OpResult(Expresion i, Expresion d, String t) {
+            this.izq = i; this.der = d; this.tipoLLVM = t;
+        }
+    }
+
+    // 🌟 HELPER ARITMÉTICO: Resuelve Coerción, Broadcasting y Validación de Arrays
+    public OpResult verificarYCoercer(Expresion e1, Expresion e2) {
+        String t1 = e1.getTipo(); // Asume que tus nodos retornan "i32", "float", "i1" o "\d+" (dimensión)
+        String t2 = e2.getTipo();
+
+        if ("i1".equals(t1) || "i1".equals(t2)) {
+            throw new RuntimeException("ERROR SEMÁNTICO: Operación aritmética inválida con tipos BOOLEAN.");
+        }
+
+        boolean esArray1 = t1.matches("\\d+");
+        boolean esArray2 = t2.matches("\\d+");
+
+        // Caso 1: Ambos son Arrays (FLOAT_ARRAY) -> Deben medir igual
+        if (esArray1 && esArray2) {
+            if (!t1.equals(t2)) {
+                throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones de arreglos incompatibles (" + t1 + " vs " + t2 + ").");
+            }
+            return new OpResult(e1, e2, t1); // El tipo resultante conserva la dimensión ("10", "50", etc.)
+        }
+
+        // Caso 2: Broadcasting (Array operado con Escalar) -> Inserta conversión si el escalar es INT
+        if (esArray1) {
+            Expresion der = "i32".equals(t2) ? new ConversionFloat(e2) : e2;
+            return new OpResult(e1, der, t1);
+        }
+        if (esArray2) {
+            Expresion izq = "i32".equals(t1) ? new ConversionFloat(e1) : e1;
+            return new OpResult(izq, e2, t2);
+        }
+
+        // Caso 3: Escalares Puros (INT vs FLOAT) -> Coerción estándar
+        if ("float".equals(t1) || "double".equals(t1)) {
+            Expresion der = "i32".equals(t2) ? new ConversionFloat(e2) : e2;
+            return new OpResult(e1, der, "float");
+        }
+        if ("float".equals(t2) || "double".equals(t2)) {
+            Expresion izq = "i32".equals(t1) ? new ConversionFloat(e1) : e1;
+            return new OpResult(izq, e2, "float");
+        }
+
+        return new OpResult(e1, e2, "i32"); // Ambos son enteros (i32)
+    }
+
+    // 🌟 HELPER RELACIONAL: Valida comparaciones entre vectores y escalares
+    public OpResult verificarRelacional(Expresion e1, Expresion e2) {
+        String t1 = e1.getTipo();
+        String t2 = e2.getTipo();
+
+        boolean esArray1 = t1.matches("\\d+");
+        boolean esArray2 = t2.matches("\\d+");
+
+        if (esArray1 && esArray2 && !t1.equals(t2)) {
+            throw new RuntimeException("ERROR SEMÁNTICO: No se pueden comparar arreglos de distintas dimensiones.");
+        }
+
+        String tipoFinal = "int"; // "int" por defecto para tu backend
+        Expresion izq = e1;
+        Expresion der = e2;
+
+        if ("i32".equals(t1) && ("float".equals(t2) || esArray2)) {
+            izq = new ConversionFloat(e1);
+            tipoFinal = "float";
+        } else if ("i32".equals(t2) && ("float".equals(t1) || esArray1)) {
+            der = new ConversionFloat(e2);
+            tipoFinal = "float";
+        } else if ("float".equals(t1) || "float".equals(t2) || esArray1 || esArray2) {
+            tipoFinal = "float";
+        }
+
+        return new OpResult(izq, der, tipoFinal);
+    }
 :};
 
 
@@ -274,54 +356,62 @@ sentencia ::= sentencia_if:s {:
 
 asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 15.1: sentencia -> ID = expresion");
-    System.out.printf("REGLA 15.1: sentencia -> %s = %s%n%n", id, e);
 
-    if (validador.validarAsignacion(id, e, tablaSimbolos)) {
-        System.out.println("Asignación válida.");
-        ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e, tablaSimbolos);
-        String tipoLLVM = "";
+    // Obtener tipo destino normalizado
+    String tDest = tablaSimbolos.getTipo(id);
+    if ("FLOAT_ARRAY".equals(tDest)) {
+        tDest = tablaSimbolos.getTamano(id);
+    } else if ("INT".equals(tDest)) tDest = "i32";
+    else if ("FLOAT".equals(tDest)) tDest = "float";
+    else if ("BOOLEAN".equals(tDest)) tDest = "i1";
 
-        if ("INT".equals(i1.getTipo())) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(i1.getTipo())) {
-            tipoLLVM = "double";
-        } else if ("BOOLEAN".equals(i1.getTipo())) {
-            tipoLLVM = "i1";
-        } else if (i1.getDim() > 0) {
-            tipoLLVM = String.valueOf(i1.getDim());   // ← caso array: pasa la dimensión
+    String tExp = e.getTipo();
+    boolean esArrayDest = tDest.matches("\\d+");
+    boolean esArrayExp = tExp.matches("\\d+");
+
+    if (esArrayDest) {
+        if (esArrayExp && !tDest.equals(tExp)) {
+            throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones incompatibles en asignación de arreglos.");
         }
-        
-        // INS[
-        if (tipoLLVM.isEmpty()) {
-            // fallback: leer el tipo desde la tabla de símbolos directamente
-            String tipoTabla = tablaSimbolos.getTipo(id);
-            if ("INT".equals(tipoTabla))     tipoLLVM = "i32";
-            else if ("FLOAT".equals(tipoTabla))   tipoLLVM = "double";
-            else if ("BOOLEAN".equals(tipoTabla)) tipoLLVM = "i1";
+        if (!esArrayExp && "i1".equals(tExp)) {
+            throw new RuntimeException("ERROR SEMÁNTICO: No se puede hacer broadcasting de un BOOLEAN a un FLOAT_ARRAY.");
         }
-        // ]INS
-
-        RESULT = new Asignacion(id, e, tablaSimbolos, tipoLLVM);
-
     } else {
-             // Detiene la ejecución si los tipos no son compatibles
-             throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles en la asignación de '" + id + "'");
+        if (esArrayExp) {
+            throw new RuntimeException("ERROR SEMÁNTICO: No se puede asignar un arreglo a la variable escalar '" + id + "'.");
+        }
+        if ("i1".equals(tDest) && !"i1".equals(tExp)) {
+            throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles para variable BOOLEAN '" + id + "'.");
+        }
     }
+
+    // Coerción en asignación escalar
+    Expresion exprFinal = e;
+    if ("float".equals(tDest) && "i32".equals(tExp)) {
+        exprFinal = new ConversionFloat(e);
+    }
+
+    RESULT = new Asignacion(id, exprFinal, tablaSimbolos, tDest);
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
-    System.out.println("REGLA 15.2: factor -> Asignacion ARRAY[" + exp + "]");
-    ValidatorDataType.InfoNodo infoIndice = validador.obtenerInfo(exp, tablaSimbolos);
-    // Validación del índice
-        if (!infoIndice.getTipo().equals("INT")) {
-            throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
-        }
+    System.out.println("REGLA 15.2: Asignacion ARRAY celdas");
 
-        // Validación de la asignación a la celda
-        if (validador.validarAsignacionCelda(i, ex, tablaSimbolos)) {
-            RESULT = new AsignacionArray(i, exp, ex, tablaSimbolos.getTamano(i));
-        } else {
-            throw new RuntimeException("ERROR SEMÁNTICO: Valor incompatible para el arreglo '" + i + "'");
-        }
+    if (!"i32".equals(exp.getTipo())) {
+        throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
+    }
+    if (!"FLOAT_ARRAY".equals(tablaSimbolos.getTipo(i))) {
+        throw new RuntimeException("ERROR SEMÁNTICO: '" + i + "' no es un arreglo.");
+    }
+    if ("i1".equals(ex.getTipo())) {
+        throw new RuntimeException("ERROR SEMÁNTICO: Tipo BOOLEAN incompatible para celda FLOAT.");
+    }
+
+    Expresion valFinal = ex;
+    if ("i32".equals(ex.getTipo())) {
+        valFinal = new ConversionFloat(ex);
+    }
+
+    RESULT = new AsignacionArray(i, exp, valFinal, tablaSimbolos.getTamano(i));
 :}
 ;
 
@@ -389,28 +479,25 @@ sentencia_alt ::= ALT_WHILE expr_logica:e bloque:b sentencia_alt:resto
 
 /* -------- EXPRESIONES -------- */
 
-expr_logica ::= expr_and:e1 OR expr_logica:e2{:
-    System.out.println("REGLA 10.1: expr_logica -> expr_logica OR expr_relacional");
-    System.out.printf("REGLA 10.1: expr_logica -> %s OR %s%n%n", e1, e2);
-    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
-    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
-    String tipoLLVM = "";
-    if ("INT".equals(i1.getTipo())) {
-         tipoLLVM = "i32";
-    } else if ("FLOAT".equals(i1.getTipo())) {
-         tipoLLVM = "float";
-    } else if ("BOOLEAN".equals(i1.getTipo())) {
-         tipoLLVM = "i1";
-    }
-    RESULT = new OperacionOr(e1, e2, tipoLLVM);
+
+expr_logica ::= expr_and:e1 OR expr_logica:e2 {:
+    System.out.println("REGLA 10.1: expr_logica -> expr_and OR expr_logica");
+
+    // Como e1 ya tiene su tipo LLVM adentro ("i32", "float", "i1"),
+    // se lo pasás directamente al constructor. ¡En una sola línea!
+    RESULT = new OperacionOr(e1, e2, e1.getTipo());
 :}
-| expr_and:e {: RESULT = e; :};
-expr_and    ::= expr_not:e1 AND expr_and:e2 {:
-    System.out.println("REGLA 10.2: expr_logica -> expr_logica AND expr_relacional");
-    System.out.printf("REGLA 10.2: expr_logica -> %s AND %s%n%n", e1, e2);
-    RESULT = new OperacionAnd(e1, e2, validador.obtenerTipoLLVM(e1, tablaSimbolos));
+| expr_and:e {:
+    RESULT = e;
+:};
+
+expr_and ::= expr_not:e1 AND expr_and:e2 {:
+    System.out.println("REGLA 10.2: expr_and -> expr_not AND expr_and");
+
+    // Lo mismo para el AND: tomás el tipo LLVM de e1 directamente
+    RESULT = new OperacionAnd(e1, e2, e1.getTipo());
 :}
-| expr_not:e  {:
+| expr_not:e {:
     RESULT = e;
 :};
 
@@ -426,289 +513,52 @@ expr_not    ::= NOT expr_not:e {:
 :};
 
 expr_relacional ::= expr_arit:e1 IGUALDAD expr_arit:e2 {:
-    System.out.println("REGLA 11.1: expr_relacional -> expr_arit IGUALDAD expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int"; // Por defecto para el backend
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float"; // Si ambos son FLOAT, forzamos "float" minúscula para el backend
-    }
-
-    System.out.printf("REGLA 11.1: expr_relacional -> %s == %s%n%n", e1, e2);
-    RESULT = new Igualdad(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new Igualdad(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 MAYOR expr_arit:e2 {:
-    System.out.println("REGLA 11.2: expr_relacional -> expr_arit MAYOR expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int";
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float";
-    }
-
-    System.out.printf("REGLA 11.2: expr_relacional -> %s > %s%n%n", e1, e2);
-    RESULT = new Mayor(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new Mayor(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 MENOR expr_arit:e2 {:
-    System.out.println("REGLA 11.3: expr_relacional -> expr_arit MENOR expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int";
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float";
-    }
-
-    System.out.printf("REGLA 11.3: expr_relacional -> %s < %s%n%n", e1, e2);
-    RESULT = new Menor(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new Menor(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 MAYORIGUAL expr_arit:e2 {:
-    System.out.println("REGLA 11.4: expr_relacional -> expr_arit MAYORIGUAL expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int";
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float";
-    }
-
-    System.out.printf("REGLA 11.4: expr_relacional -> %s >= %s%n%n", e1, e2);
-    RESULT = new MayorIgual(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new MayorIgual(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 MENORIGUAL expr_arit:e2 {:
-    System.out.println("REGLA 11.5: expr_relacional -> expr_arit MENORIGUAL expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int";
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float";
-    }
-
-    System.out.printf("REGLA 11.5: expr_relacional -> %s <= %s%n%n", e1, e2);
-    RESULT = new MenorIgual(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new MenorIgual(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 DESIGUAL expr_arit:e2 {:
-    System.out.println("REGLA 11.6: expr_relacional -> expr_arit DESIGUAL expr_arit");
-
-    String t1 = validador.obtenerTipo(e1, tablaSimbolos);
-    String t2 = validador.obtenerTipo(e2, tablaSimbolos);
-    String tipoFinal = "int";
-
-    if (t1.equals("INT") && t2.equals("FLOAT")) {
-        e1 = new ConversionFloat(e1);
-        tipoFinal = "float";
-    } else if (t2.equals("INT") && t1.equals("FLOAT")) {
-        e2 = new ConversionFloat(e2);
-        tipoFinal = "float";
-    } else if (t1.equals("FLOAT") || t2.equals("FLOAT")) {
-        tipoFinal = "float";
-    }
-
-    System.out.printf("REGLA 11.6: expr_relacional -> %s != %s%n%n", e1, e2);
-    RESULT = new Desigual(e1, e2, tipoFinal);
+    OpResult res = verificarRelacional(e1, e2);
+    RESULT = new Desigual(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e {:
-    System.out.println("REGLA 11.7: expr_relacional -> expr_arit");
-    System.out.printf("REGLA 11.7: expr_relacional -> %s%n%n", e);
     RESULT = e;
 :};
 
 expr_arit ::= expr_arit:e1 OP_SUMA termino:e2 {:
-    System.out.println("REGLA 12.1: expr_arit -> expr_arit OP_SUMA termino");
-
-    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo == null || tipo.equals("ERROR")) {
-        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Suma.");
-    }
-
-    Expresion izq = e1;
-    Expresion der = e2;
-
-    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
-    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
-
-    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
-        izq = new ConversionFloat(e1);
-    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
-        der = new ConversionFloat(e2);
-    }
-
-    String tipoLLVM = "";
-    int dimMax = Math.max(i1.getDim(), i2.getDim());
-
-    if (dimMax > 0) {
-        tipoLLVM = String.valueOf(dimMax);
-        System.out.println("   [CUP] Detectado contexto vectorial en Suma. Dimensión: " + tipoLLVM);
-    } else {
-        if ("INT".equals(tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(tipo)) {
-            tipoLLVM = "i1";
-        }
-    }
-
-    RESULT = new Suma(izq, der, tipoLLVM);
+    OpResult res = verificarYCoercer(e1, e2);
+    RESULT = new Suma(res.izq, res.der, res.tipoLLVM);
 :}
 | expr_arit:e1 OP_RESTA termino:e2 {:
-    System.out.println("REGLA 12.2: expr_arit -> expr_arit OP_RESTA termino");
-
-    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo == null || tipo.equals("ERROR")) {
-        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Resta.");
-    }
-
-    Expresion izq = e1;
-    Expresion der = e2;
-
-    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
-    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
-
-    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
-        izq = new ConversionFloat(e1);
-    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
-        der = new ConversionFloat(e2);
-    }
-
-    // NORMALIZADO: Cálculo directo y robusto de la dimensión para el entorno vectorial
-    String tipoLLVM = "";
-    int dimMax = Math.max(i1.getDim(), i2.getDim());
-
-    if (dimMax > 0) {
-        tipoLLVM = String.valueOf(dimMax);
-        System.out.println("   [CUP] Detectado contexto vectorial en Resta. Dimensión: " + tipoLLVM);
-    } else {
-        if ("INT".equals(tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(tipo)) {
-             tipoLLVM = "i1";
-        }
-    }
-
-    RESULT = new Resta(izq, der, tipoLLVM);
+    OpResult res = verificarYCoercer(e1, e2);
+    RESULT = new Resta(res.izq, res.der, res.tipoLLVM);
 :}
 | termino:e {:
     RESULT = e;
 :};
 
 termino ::= termino:e1 OP_MULTI factor:e2 {:
-    System.out.println("REGLA 13.1: termino -> termino OP_MULTI factor");
-
-    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo == null || tipo.equals("ERROR")) {
-        throw new RuntimeException("Error Semántico: Tipos incompatibles en la Multiplicación.");
-    }
-
-    Expresion izq = e1;
-    Expresion der = e2;
-
-    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
-    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
-
-    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
-        izq = new ConversionFloat(e1);
-    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
-        der = new ConversionFloat(e2);
-    }
-
-    // NORMALIZADO: Quita la dependencia de IdLiteral para soportar operaciones anidadas
-    String tipoLLVM = "";
-    int dimMax = Math.max(i1.getDim(), i2.getDim());
-
-    if (dimMax > 0) {
-        tipoLLVM = String.valueOf(dimMax);
-        System.out.println("   [CUP] Detectado contexto vectorial en Multiplicación. Dimensión: " + tipoLLVM);
-    } else {
-        if ("INT".equals(tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(tipo)) {
-             tipoLLVM = "i1";
-        }
-    }
-
-    RESULT = new Multiplicacion(izq, der, tipoLLVM);
+    OpResult res = verificarYCoercer(e1, e2);
+    RESULT = new Multiplicacion(res.izq, res.der, res.tipoLLVM);
 :}
 | termino:e1 OP_DIV factor:e2 {:
-    System.out.println("REGLA 13.2: termino -> termino OP_DIV factor");
-
-    String tipo = validador.validarAritmetica(e1, e2, tablaSimbolos);
-    if (tipo == null || tipo.equals("ERROR")) {
-        throw new RuntimeException("Error Semántico: Tipos incompatibles en la División.");
-    }
-
-    Expresion izq = e1;
-    Expresion der = e2;
-
-    ValidatorDataType.InfoNodo i1 = validador.obtenerInfo(e1, tablaSimbolos);
-    ValidatorDataType.InfoNodo i2 = validador.obtenerInfo(e2, tablaSimbolos);
-
-    if (i1.getTipo().equals("INT") && i2.getTipo().equals("FLOAT")) {
-        izq = new ConversionFloat(e1);
-    } else if (i1.getTipo().equals("FLOAT") && i2.getTipo().equals("INT")) {
-        der = new ConversionFloat(e2);
-    }
-
-    // NORMALIZADO: Propagación exacta de tamaños de arrays en divisiones de vectores o broadcasting
-    String tipoLLVM = "";
-    int dimMax = Math.max(i1.getDim(), i2.getDim());
-
-    if (dimMax > 0) {
-        tipoLLVM = String.valueOf(dimMax);
-        System.out.println("   [CUP] Detectado contexto vectorial en División. Dimensión: " + tipoLLVM);
-    } else {
-        if ("INT".equals(tipo)) {
-            tipoLLVM = "i32";
-        } else if ("FLOAT".equals(tipo) || "FLOAT_ARRAY".equals(tipo)) {
-            tipoLLVM = "float";
-        } else if ("BOOLEAN".equals(tipo)) {
-             tipoLLVM = "i1";
-        }
-    }
-
-    RESULT = new Division(izq, der, tipoLLVM);
+    OpResult res = verificarYCoercer(e1, e2);
+    RESULT = new Division(res.izq, res.der, res.tipoLLVM);
 :}
 | factor:e {:
     RESULT = e;
@@ -730,19 +580,22 @@ factor ::= ENTERO:e {:
     RESULT = new BoolLiteral(e);
 :}
 | ID:e {:
-    System.out.println("REGLA 14.4: factor -> ID");
-    System.out.printf("REGLA 14.4: factor -> %s%n%n", e);
-    String tipoLLVM = "";
-    if ("INT".equals(tablaSimbolos.getTipo(e))) {
-                tipoLLVM = "i32";
-            } else if ("FLOAT".equals(tablaSimbolos.getTipo(e))) {
-                tipoLLVM = "float";
-            } else if ("BOOLEAN".equals(tablaSimbolos.getTipo(e))) {
-                tipoLLVM = "i1";
-            }
+      System.out.println("REGLA 14.4: factor -> ID");
+      String t = tablaSimbolos.getTipo(e);
+      String tipoLLVM = "";
 
-    RESULT = new IdLiteral(e, tipoLLVM);
-:}
+      if ("INT".equals(t)) {
+          tipoLLVM = "i32";
+      } else if ("FLOAT".equals(t)) {
+          tipoLLVM = "float";
+      } else if ("BOOLEAN".equals(t)) {
+          tipoLLVM = "i1";
+      } else if ("FLOAT_ARRAY".equals(t)) {
+          tipoLLVM = tablaSimbolos.getTamano(e); //  Pasamos la dimensión ("10", "50", etc.) directamente
+      }
+
+      RESULT = new IdLiteral(e, tipoLLVM);
+  :}
 | ID:i CORCH_A expr_arit:exp CORCH_C {:
     System.out.println("REGLA 14.8: factor -> ARRAY[" + exp + "]");
     RESULT = new AccesoArray(i, exp, tablaSimbolos.getTamano(i));

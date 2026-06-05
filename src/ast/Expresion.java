@@ -13,5 +13,5 @@ public abstract class Expresion extends Nodo {
     public void setIr_ref(String ir_ref) {
         this.ir_ref = ir_ref;
     }
-
+    public abstract String getTipo();
 }

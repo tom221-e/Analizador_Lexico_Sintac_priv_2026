@@ -109,20 +109,26 @@ public abstract class OperacionBinaria extends Expresion {
         boolean esOperacionDeArreglo = this.tipo != null && this.tipo.matches("\\d+");
 
         if (esOperacionDeArreglo) {
-            // MODIFICACIÓN CLAVE: En vez de dejar que el helper cree un temporal aleatorio,
-            // modificamos temporalmente el comportamiento o llamamos a una versión que use ptrDestinoReal
             String tipoEstructuraLLVM = "[" + this.tipo + " x double]";
 
-            // Reutilizamos tu lógica limpia de broadcasting pero apuntando al destino final
             String ptrArrayIzq = this.izquierda.getIr_ref();
             String ptrArrayDer = this.derecha.getIr_ref();
 
-            validator.ValidatorDataType validador = new validator.ValidatorDataType();
-            parser.SymbolTable tabla = parser.Parser.tablaSimbolos;
-            validator.ValidatorDataType.InfoNodo infoIzq = validador.obtenerInfo(this.izquierda, tabla);
-            validator.ValidatorDataType.InfoNodo infoDer = validador.obtenerInfo(this.derecha, tabla);
+            // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos el tipo String de los nodos hijos
+            String tipoIzq = this.izquierda.getTipo();
+            String tipoDer = this.derecha.getTipo();
 
-            if (infoIzq.getDim() == 0) {
+            // Determinamos si son escalares comparando contra los tipos primitivos conocidos
+            boolean izqEsEscalar = "INT".equals(tipoIzq) || "i32".equals(tipoIzq) ||
+                    "FLOAT".equals(tipoIzq) || "float".equals(tipoIzq) ||
+                    "BOOLEAN".equals(tipoIzq) || "i1".equals(tipoIzq);
+
+            boolean derEsEscalar = "INT".equals(tipoDer) || "i32".equals(tipoDer) ||
+                    "FLOAT".equals(tipoDer) || "float".equals(tipoDer) ||
+                    "BOOLEAN".equals(tipoDer) || "i1".equals(tipoDer);
+
+            // 2. Procesamiento Izquierdo (Broadcasting o Puntero Real)
+            if (izqEsEscalar) {
                 String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
                 resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, this.tipo, this.izquierda.getIr_ref(), "Izquierdo"));
                 ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
@@ -132,7 +138,8 @@ public abstract class OperacionBinaria extends Expresion {
                 resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, this.izquierda.getIr_ref().trim()));
             }
 
-            if (infoDer.getDim() == 0) {
+            // 3. Procesamiento Derecho (Broadcasting o Puntero Real)
+            if (derEsEscalar) {
                 String arrayTempDer = CodeGeneratorHelper.getNewPointer();
                 resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, this.tipo, this.derecha.getIr_ref(), "Derecho"));
                 ptrArrayDer = CodeGeneratorHelper.getNewPointer();

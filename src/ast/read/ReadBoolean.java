@@ -51,4 +51,8 @@ public class ReadBoolean extends Expresion {
 
         return resultado.toString();
     }
+
+    public String getTipo() {
+        return "i1"; // Ideal para las operaciones lógicas (AND/OR) o condiciones del IF
+    }
 }

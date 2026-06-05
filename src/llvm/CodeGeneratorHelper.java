@@ -19,25 +19,20 @@ public class CodeGeneratorHelper {
 
         // Solo analizamos si la operación final de LLVM requiere alta precisión (double)
         if ("double".equals(tipoDestinoLLVM)) {
-            // Instanciamos tu validador semántico directamente
-            validator.ValidatorDataType validador = new validator.ValidatorDataType();
 
-            // Usamos la tabla global de tu Parser, igual que hace tu validador por defecto
-            parser.SymbolTable tabla = parser.Parser.tablaSimbolos;
+            // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos el tipo directamente de cada nodo expresión
+            String tipoIzq = izquierda.getTipo();
+            String tipoDer = derecha.getTipo();
 
-            // Obtenemos la info exacta de cada hijo usando TU lógica recursiva
-            validator.ValidatorDataType.InfoNodo infoIzq = validador.obtenerInfo(izquierda, tabla);
-            validator.ValidatorDataType.InfoNodo infoDer = validador.obtenerInfo(derecha, tabla);
-
-            // Si el izquierdo es INT, se castea a double
-            if (infoIzq != null && "INT".equals(infoIzq.getTipo())) {
+            // Si el izquierdo es INT (o su tipo LLVM i32), se castea a double
+            if ("INT".equals(tipoIzq) || "i32".equals(tipoIzq)) {
                 String nuevoPtr = CodeGeneratorHelper.getNewPointer();
                 sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtr, ptrIzq));
                 ptrIzq = nuevoPtr;
             }
 
-            // Si el derecho es INT, se castea a double
-            if (infoDer != null && "INT".equals(infoDer.getTipo())) {
+            // Si el derecho es INT (o su tipo LLVM i32), se castea a double
+            if ("INT".equals(tipoDer) || "i32".equals(tipoDer)) {
                 String nuevoPtr = CodeGeneratorHelper.getNewPointer();
                 sb.append(String.format("  %1$s = sitofp i32 %2$s to double\n", nuevoPtr, ptrDer));
                 ptrDer = nuevoPtr;
@@ -46,6 +41,7 @@ public class CodeGeneratorHelper {
 
         return new String[]{ptrIzq, ptrDer};
     }
+
     public static String ejecutarOperacionVectorialCompleta(ast.OperacionBinaria nodo, String refIzq, String refDer, String tamanoArreglo, String codigoALU) {
         StringBuilder sb = new StringBuilder();
         String tipoEstructuraLLVM = "[" + tamanoArreglo + " x double]";
@@ -53,16 +49,19 @@ public class CodeGeneratorHelper {
         String ptrArrayIzq = refIzq;
         String ptrArrayDer = refDer;
 
-        // 🌟 SOLUCIÓN: Usamos tu validador oficial para saber si son arreglos o no basándonos en los datos reales
-        validator.ValidatorDataType validador = new validator.ValidatorDataType();
-        parser.SymbolTable tabla = parser.Parser.tablaSimbolos;
+        // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos los tipos en formato String desde los hijos del nodo binario
+        String tipoIzq = nodo.getE1().getTipo();
+        String tipoDer = nodo.getE2().getTipo();
 
-        validator.ValidatorDataType.InfoNodo infoIzq = validador.obtenerInfo(nodo.getE1(), tabla);
-        validator.ValidatorDataType.InfoNodo infoDer = validador.obtenerInfo(nodo.getE2(), tabla);
+        // Un nodo es escalar si su tipo coincide con cualquiera de los tipos primitivos/escalares conocidos.
+        // (Si tu compilador para los arreglos devuelve el tamaño en dígitos, p.ej. "10", también podrías usar !tipoIzq.matches("\\d+"))
+        boolean izqEsEscalar = "INT".equals(tipoIzq) || "i32".equals(tipoIzq) ||
+                "FLOAT".equals(tipoIzq) || "float".equals(tipoIzq) ||
+                "BOOLEAN".equals(tipoIzq) || "i1".equals(tipoIzq);
 
-        // Si la dimensión es > 0, significa que es un arreglo. Por ende, NO es escalar.
-        boolean izqEsEscalar = (infoIzq.getDim() == 0);
-        boolean derEsEscalar = (infoDer.getDim() == 0);
+        boolean derEsEscalar = "INT".equals(tipoDer) || "i32".equals(tipoDer) ||
+                "FLOAT".equals(tipoDer) || "float".equals(tipoDer) ||
+                "BOOLEAN".equals(tipoDer) || "i1".equals(tipoDer);
 
         // 1. Procesamiento Izquierdo
         if (!izqEsEscalar) {
@@ -108,8 +107,7 @@ public class CodeGeneratorHelper {
 
         return sb.toString();
     }
-
-    /**
+    /*
      * Genera el bloque LLVM intermedio para realizar el Broadcasting de un escalar a un arreglo.
      * Como el escalar ya viene como un double, se elimina la instrucción de truncado fptrunc.
      */

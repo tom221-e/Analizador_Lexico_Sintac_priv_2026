@@ -49,4 +49,7 @@ public class ReadInt extends Expresion {
         // para crear el nodo con la etiqueta "READ: INT" y conectarlo
         return super.graficar(idPadre);
     }
+    public String getTipo() {
+        return "i32"; // Así tu helper de CUP sabe al toque que es un entero
+    }
 }

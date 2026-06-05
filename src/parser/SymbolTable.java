@@ -1,5 +1,6 @@
 package parser;
 
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -99,5 +100,30 @@ public class SymbolTable {
         }
 
         System.out.println("--------------------------------------------------------------------------------------");
+    }
+    
+    public void escribirArchivo(String ruta) {
+        try (PrintWriter pw = new PrintWriter(new java.io.FileWriter(ruta))) {
+            pw.println("--------------------------------------------------------------------------------------");
+            pw.printf("%-15s | %-15s | %-15s | %-15s | %-10s %n",
+                    "NOMBRE", "TOKEN", "TIPO", "VALOR", "LONGITUD");
+            pw.println("--------------------------------------------------------------------------------------");
+
+            for (SymbolInfo info : table.values()) {
+                String nombreAMostrar = (info.nombreOriginal() == null) ? "-" : info.nombreOriginal();
+                pw.printf("%-15s | %-15s | %-15s | %-15s | %-10s %n",
+                        nombreAMostrar,
+                        info.token(),
+                        info.type(),
+                        info.valor(),
+                        info.longitud());
+            }
+
+            pw.println("--------------------------------------------------------------------------------------");
+            pw.flush();
+            System.out.println("Tabla de símbolos generada: " + ruta);
+        } catch (java.io.IOException e) {
+            System.err.println("Error al escribir ts.txt: " + e.getMessage());
+        }
     }
 }
