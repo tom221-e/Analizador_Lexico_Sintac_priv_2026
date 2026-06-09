@@ -53,6 +53,10 @@ public class Main_parser {
 
                 // 2. Imprimimos la tabla de símbolos
                 parser.tablaSimbolos.print();
+                
+                // línea nueva — genera el archivo ts.txt
+                parser.tablaSimbolos.escribirArchivo("ts.txt");
+
                 System.out.println("Análisis sintáctico finalizado.");
 
                 // 3. Generación del archivo .dot y la imagen .png
@@ -118,7 +122,7 @@ public class Main_parser {
                     // PASO A: clang -c -o codigo_salida.o codigo_salida.ll
                     // -----------------------------------------------------------------
                     String[] comandoPasoA = {
-                            "clang", "-c",
+                            "C:\\Program Files\\LLVM\\bin\\clang.exe", "-c",
                             "-o", archivoObjetoSalida.getAbsolutePath(),
                             destinoLl.getAbsolutePath()
                     };
@@ -144,7 +148,7 @@ public class Main_parser {
                     // PASO B: clang -o programa.exe codigo_salida.o array_alu.ll scanf.o
                     // -----------------------------------------------------------------
                     String[] comandoPasoB = {
-                            "clang",
+                            "C:\\Program Files\\LLVM\\bin\\clang.exe",
                             "-o", rutaAbsolutaExe,
                             archivoObjetoSalida.getAbsolutePath(),
                             archivoAlu.getAbsolutePath(),

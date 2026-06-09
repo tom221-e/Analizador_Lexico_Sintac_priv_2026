@@ -38,6 +38,13 @@ public class Programa extends Nodo {
                 dot.append(d.graficar(miId));
             }
         }
+        if (decMacro != null) {
+            for (Declaracion d : decMacro) {
+                if (d != null) {
+                    dot.append(d.graficar(miId));
+                }
+            }
+        }
 
         // Luego las instrucciones
         if (instrucciones != null) {

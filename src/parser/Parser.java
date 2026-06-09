@@ -1660,26 +1660,19 @@ String tipoEspecial = "FLOAT_ARRAY";
 		int listaIdright = ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).right;
 		String listaId = (String)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		
-    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Estructura Semántica AST Corregida) ===");
+    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Usando solo Tabla Global) ===");
 
     // 0. ID únicos
     String sufijoUnico = String.valueOf(Math.abs(listaId.hashCode()));
     String nombreArreglo = "arr_literal_" + sufijoUnico;
     int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
     String dimArreglo = String.valueOf(dimension);
-    String varMasCercano = "mc_masCercano_" + sufijoUnico;
-    String varDistMin    = "mc_distMin_"    + sufijoUnico;
-    String varI          = "mc_i_"          + sufijoUnico;
-    String varDistActual = "mc_distActual_" + sufijoUnico;
+    String varMasCercano = "_mc_masCercano_" + sufijoUnico;
+    String varDistMin    = "_mc_distMin_"    + sufijoUnico;
+    String varI          = "_mc_i_"          + sufijoUnico;
+    String varDistActual = "_mc_distActual_" + sufijoUnico;
 
-    // 1. Entorno Semántico
-    parser.SymbolTable tablaLocal = new parser.SymbolTable();
-    tablaLocal.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
-    tablaLocal.add("ID", varMasCercano, "float", "-", "-");
-    tablaLocal.add("ID", varDistMin,    "float", "-", "-");
-    tablaLocal.add("ID", varI,          "int",   "-", "-");
-    tablaLocal.add("ID", varDistActual, "float", "-", "-");
-
+    // 1. Entorno Semántico (Solo Global)
     tablaSimbolos.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
     tablaSimbolos.add("ID", varMasCercano, "float", "-", "-");
     tablaSimbolos.add("ID", varDistMin,    "float", "-", "-");
@@ -1687,25 +1680,17 @@ String tipoEspecial = "FLOAT_ARRAY";
     tablaSimbolos.add("ID", varDistActual, "float", "-", "-");
 
     // 2. Declaraciones
-    ArrayList<Declaracion> declaracionesLocales = new ArrayList<>();
-
     ArrayList<String> varArreglo = new ArrayList<>();
     varArreglo.add(nombreArreglo);
-    DeclaracionArray declArr = new DeclaracionArray(dimArreglo, varArreglo);
-    parser.declaracionesMacro.add(declArr);
-    declaracionesLocales.add(declArr);
+    parser.declaracionesMacro.add(new DeclaracionArray(dimArreglo, varArreglo));
 
     ArrayList<String> varsFloat = new ArrayList<>();
     varsFloat.add(varMasCercano); varsFloat.add(varDistMin); varsFloat.add(varDistActual);
-    Declaracion declFloats = new Declaracion("FLOAT", varsFloat);
-    parser.declaracionesMacro.add(declFloats);
-    declaracionesLocales.add(declFloats);
+    parser.declaracionesMacro.add(new Declaracion("FLOAT", varsFloat));
 
     ArrayList<String> varsInt = new ArrayList<>();
     varsInt.add(varI);
-    Declaracion declInt = new Declaracion("INT", varsInt);
-    parser.declaracionesMacro.add(declInt);
-    declaracionesLocales.add(declInt);
+    parser.declaracionesMacro.add(new Declaracion("INT", varsInt));
 
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
@@ -1718,15 +1703,15 @@ String tipoEspecial = "FLOAT_ARRAY";
         }
     }
 
-    // 4. Lógica de conversión (Auxiliar para instanciar fresco)
+    // 4. Lógica de conversión
     boolean needsConversion = "INT".equals(ref.getTipo()) || "i32".equals(ref.getTipo());
 
-    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (INSTANCIACIÓN FRESCA)
+    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (Usando tablaSimbolos)
 
     // 5.1. masCercano ← ARR[0]
     pasos.add(new Asignacion(varMasCercano,
         new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
-        tablaLocal, "float"));
+        tablaSimbolos, "float"));
 
     // 5.2. IF ARR[0] - V >= 0
     pasos.add(new SentenciaIf(
@@ -1734,13 +1719,13 @@ String tipoEspecial = "FLOAT_ARRAY";
             new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
             new FloatLiteral("0.0"), "float"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaLocal, "float"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaSimbolos, "float"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaLocal, "float")))
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaSimbolos, "float")))
     ));
 
     // 5.3. i ← 1
-    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaLocal, "i32"));
+    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaSimbolos, "i32"));
 
     // 5.4. CUERPO DEL BUCLE WHILE
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
@@ -1751,23 +1736,23 @@ String tipoEspecial = "FLOAT_ARRAY";
             new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
             new FloatLiteral("0.0"), "float"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaLocal, "float"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaSimbolos, "float"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaLocal, "float")))
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaSimbolos, "float")))
     ));
 
     // IF dif < difMin
     cuerpoWhile.add(new SentenciaIf(
         new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float"),
         new java.util.ArrayList<>(java.util.Arrays.asList(
-            new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaLocal, "float"),
-            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaLocal, "float")
+            new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaSimbolos, "float"),
+            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaSimbolos, "float")
         )),
         null
     ));
 
     // i ← i + 1
-    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32"), tablaLocal, "i32"));
+    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32"), tablaSimbolos, "i32"));
 
     // 5.5. Control del While
     pasos.add(new SentenciaWhile(
@@ -1775,7 +1760,7 @@ String tipoEspecial = "FLOAT_ARRAY";
         cuerpoWhile, null));
 
     // Retorno final
-    RESULT = new ValorMasCercano(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), nombreArreglo, declaracionesLocales, pasos, varMasCercano, listaId);
+    RESULT = new ValorMasCercano(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), nombreArreglo, pasos, varMasCercano, listaId);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("factor",20, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-5)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
