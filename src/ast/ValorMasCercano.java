@@ -9,16 +9,14 @@ import llvm.CodeGeneratorHelper;
 public class ValorMasCercano extends Expresion {
     private final Expresion referencia;
     private final String nombreArreglo;
-    private final ArrayList<Declaracion> declaraciones;
     private final ArrayList<Sentencia> pasos;
     private final String punteroResultado;
     private final String tipo;
     private final String valoresArregloString; // <--- Nuevo campo
 
-    public ValorMasCercano(Expresion referencia, String nombreArreglo, ArrayList<Declaracion> declaraciones, ArrayList<Sentencia> pasos, String punteroResultado, String valoresArregloString) {
+    public ValorMasCercano(Expresion referencia, String nombreArreglo, ArrayList<Sentencia> pasos, String punteroResultado, String valoresArregloString) {
         this.referencia = referencia;
         this.nombreArreglo = nombreArreglo;
-        this.declaraciones = declaraciones;
         this.valoresArregloString = valoresArregloString;
         this.pasos = pasos;
         this.punteroResultado = punteroResultado;
@@ -41,14 +39,6 @@ public class ValorMasCercano extends Expresion {
 
         if (this.referencia != null) {
             sb.append(this.referencia.graficar(miId));
-        }
-
-        if (this.declaraciones != null) {
-            for (Declaracion decl : declaraciones) {
-                if (decl != null) {
-                    sb.append(decl.graficar(miId));
-                }
-            }
         }
 
         if (this.pasos != null) {
