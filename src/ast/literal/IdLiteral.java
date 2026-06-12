@@ -27,10 +27,10 @@ public class IdLiteral extends Expresion {
     private String tipoLenguaje() {
         if (this.tipo == null) return "?";
         return switch (this.tipo) {
-            case "i32"             -> "INT";
-            case "float", "double" -> "FLOAT";
-            case "i1"              -> "BOOL";
-            case "FLOAT_ARRAY"      -> "ARRAY";
+            case "INT"                  -> "i32";
+            case "FLOAT"    -> "float";
+            case "BOOLEAN", "BOOL"       -> "i1";
+            case "FLOAT_ARRAY", "ARRAY"        -> "ARRAY";
             default -> {
                 if (this.tipo.matches("\\d+")) yield "ARRAY[" + this.tipo + "]";
                 yield this.tipo;
@@ -41,7 +41,7 @@ public class IdLiteral extends Expresion {
     // Reemplazar getEtiqueta():
     @Override
     protected String getEtiqueta() {
-        return "ID(" + tipoLenguaje() + "): " + valor;
+        return "ID(" + this.tipo + "): " + valor;
     }
     /*@Override
     protected String getEtiqueta() {
@@ -55,6 +55,7 @@ public class IdLiteral extends Expresion {
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
+        tipo=tipoLenguaje();
 
         // Identificamos si es un tipo escalar conocido
         boolean esEscalar = "i32".equals(this.tipo) || "float".equals(this.tipo) || "i1".equals(this.tipo);

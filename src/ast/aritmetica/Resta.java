@@ -27,9 +27,9 @@ public class Resta extends OperacionBinaria {
         }
 
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 return "sub";   // Opcode plano para enteros de 32 bits
-            case "float":
+            case "FLOAT":
                 return "fsub";  // Opcode plano para punto flotante
             default:
                 return "sub";
@@ -50,11 +50,10 @@ public class Resta extends OperacionBinaria {
         // 2. Mapeamos el tipo de emisión correcto según el entorno
         String tipoEmision;
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 tipoEmision = "i32";
                 break;
-            case "float":
-            case "double":
+            case "FLOAT":
                 tipoEmision = "double"; // Forzamos double de 64 bits para tus operaciones matemáticas
                 break;
             default:

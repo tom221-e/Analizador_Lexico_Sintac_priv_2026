@@ -27,10 +27,9 @@ public class Division extends OperacionBinaria {
         }
 
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 return "sdiv"; // Opcode plano para enteros de 32 bits
-            case "float":
-            case "double":
+            case "FLOAT":
                 return "fdiv"; // Opcode plano para punto flotante
             default:
                 return "sdiv";
@@ -51,10 +50,10 @@ public class Division extends OperacionBinaria {
         // 2. Mapeamos los tipos explícitos para la instrucción de LLVM con sus debidos breaks
         String tipoEmision;
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 tipoEmision = "i32";
                 break;
-            case "float":
+            case "FLOAT":
                 tipoEmision = "double"; // Forzamos double de 64 bits para tus operaciones matemáticas
                 break;
             default:

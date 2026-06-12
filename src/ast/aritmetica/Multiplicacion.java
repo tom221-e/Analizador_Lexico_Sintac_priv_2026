@@ -27,10 +27,9 @@ public class Multiplicacion extends OperacionBinaria {
         }
 
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 return "mul";   // Opcode plano para enteros de 32 bits
-            case "float":
-            case "double":
+            case "FLOAT":
                 return "fmul";  // Opcode plano para punto flotante
             default:
                 return "mul";
@@ -51,11 +50,11 @@ public class Multiplicacion extends OperacionBinaria {
         // 2. Mapeamos el tipo de emisión correcto según el entorno
         String tipoEmision;
         switch (this.tipo) {
-            case "i32":
+            case "INT":
                 tipoEmision = "i32";
                 break;
-            case "float":
-                tipoEmision = "double"; // Mantenemos tu estándar de alta precisión a 64 bits
+            case "FLOAT":
+                tipoEmision = "double"; // Forzamos double de 64 bits para tus operaciones matemáticas
                 break;
             default:
                 tipoEmision = "i32";

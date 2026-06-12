@@ -30,10 +30,10 @@ public class Igualdad extends OperacionBinaria {
 
         // Evaluamos el tipo de los operandos para determinar el opcode escalar de LLVM
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 return "fcmp oeq"; // 'oeq' significa Ordered and Equal en LLVM
-            case "i32":
-            case "boolean":
+            case "INT":
+            case "BOOLEAN":
             default:
                 return "icmp eq";  // 'eq' significa Equal en LLVM
         }
@@ -53,18 +53,17 @@ public class Igualdad extends OperacionBinaria {
         // 2. Mapeamos el tipo con el que se van a comparar los operandos de entrada
         String tipoComparacion = "i32";
         switch (this.tipo) {
-            case "float":
-            case "double":
+            case "FLOAT":
                 tipoComparacion = "double"; // Comparamos en alta precisión de 64-bits
                 break;
-            case "i32":
+            case "INT":
                 tipoComparacion = "i32";
                 break;
-            case "boolean":
-                tipoComparacion = "i1";     // Comparación directa entre booleanos (i1)
+            case "BLOOLEAN":
+                tipoComparacion = "i1";     // Comparación lógica entre booleanos
                 break;
             default:
-                tipoComparacion = "i32";    // Respaldo seguro
+                tipoComparacion = "i32";    // Respaldo por defecto
                 break;
         }
 

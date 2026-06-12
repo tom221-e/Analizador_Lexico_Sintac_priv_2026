@@ -12,7 +12,7 @@ public class IntLiteral extends Expresion {
 
     @Override
     public String getTipo() {
-        return "i32";
+        return "INT";
     }
 
     @Override

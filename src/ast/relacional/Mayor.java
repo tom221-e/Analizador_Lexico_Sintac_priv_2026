@@ -31,11 +31,11 @@ public class Mayor extends OperacionBinaria {
 
         // Evaluamos el tipo de los operandos para determinar el opcode escalar de LLVM
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 return "fcmp ogt"; // 'ogt' significa Ordered Greater Than
-            case "i32":
+            case "INT":
                 return "icmp sgt";
-            case "boolean":
+            case "BOOLEAN":
             default:
                 return "icmp sgt"; // 'sgt' significa Signed Greater Than
         }
@@ -55,13 +55,13 @@ public class Mayor extends OperacionBinaria {
         // 2. Mapeamos el tipo con el que se van a comparar los operandos de entrada
         String tipoComparacion = "i32";
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 tipoComparacion = "double"; // Comparamos en alta precisión de 64-bits
                 break;
-            case "i32":
+            case "INT":
                 tipoComparacion = "i32";
                 break;
-            case "boolean":
+            case "BLOOLEAN":
                 tipoComparacion = "i1";     // Comparación lógica entre booleanos
                 break;
             default:

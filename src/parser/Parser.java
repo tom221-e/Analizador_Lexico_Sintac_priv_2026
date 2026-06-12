@@ -420,10 +420,10 @@ class CUP$Parser$actions {
 
     // 🌟 HELPER ARITMÉTICO: Resuelve Coerción, Broadcasting y Validación de Arrays
     public OpResult verificarYCoercer(Expresion e1, Expresion e2) {
-        String t1 = e1.getTipo(); // Asume que tus nodos retornan "i32", "float", "i1" o "\d+" (dimensión)
+        String t1 = e1.getTipo(); // Asume que tus nodos retornan "INT", "FLOAT", "BOOLEAN" o "\d+" (dimensión)
         String t2 = e2.getTipo();
 
-        if ("i1".equals(t1) || "i1".equals(t2)) {
+        if ("BOOLEAN".equals(t1) || "BOOLEAN".equals(t2)) {
             throw new RuntimeException("ERROR SEMÁNTICO: Operación aritmética inválida con tipos BOOLEAN.");
         }
 
@@ -440,25 +440,25 @@ class CUP$Parser$actions {
 
         // Caso 2: Broadcasting (Array operado con Escalar) -> Inserta conversión si el escalar es INT
         if (esArray1) {
-            Expresion der = "i32".equals(t2) ? new ConversionFloat(e2) : e2;
+            Expresion der = "INT".equals(t2) ? new ConversionFloat(e2) : e2;
             return new OpResult(e1, der, t1);
         }
         if (esArray2) {
-            Expresion izq = "i32".equals(t1) ? new ConversionFloat(e1) : e1;
+            Expresion izq = "INT".equals(t1) ? new ConversionFloat(e1) : e1;
             return new OpResult(izq, e2, t2);
         }
 
         // Caso 3: Escalares Puros (INT vs FLOAT) -> Coerción estándar
-        if ("float".equals(t1) || "double".equals(t1)) {
-            Expresion der = "i32".equals(t2) ? new ConversionFloat(e2) : e2;
-            return new OpResult(e1, der, "float");
+        if ("FLOAT".equals(t1) || "DOUBLE".equals(t1)) {
+            Expresion der = "INT".equals(t2) ? new ConversionFloat(e2) : e2;
+            return new OpResult(e1, der, "FLOAT");
         }
-        if ("float".equals(t2) || "double".equals(t2)) {
-            Expresion izq = "i32".equals(t1) ? new ConversionFloat(e1) : e1;
-            return new OpResult(izq, e2, "float");
+        if ("FLOAT".equals(t2) || "DOUBLE".equals(t2)) {
+            Expresion izq = "INT".equals(t1) ? new ConversionFloat(e1) : e1;
+            return new OpResult(izq, e2, "FLOAT");
         }
 
-        return new OpResult(e1, e2, "i32"); // Ambos son enteros (i32)
+        return new OpResult(e1, e2, "INT"); // Ambos son enteros (INT)
     }
 
     // 🌟 HELPER RELACIONAL: Valida comparaciones entre vectores y escalares
@@ -473,18 +473,18 @@ class CUP$Parser$actions {
             throw new RuntimeException("ERROR SEMÁNTICO: No se pueden comparar arreglos de distintas dimensiones.");
         }
 
-        String tipoFinal = "int"; // "int" por defecto para tu backend
+        String tipoFinal = "INT"; // "int" por defecto para tu backend
         Expresion izq = e1;
         Expresion der = e2;
 
-        if ("i32".equals(t1) && ("float".equals(t2) || esArray2)) {
+        if ("INT".equals(t1) && ("FLOAT".equals(t2) || esArray2)) {
             izq = new ConversionFloat(e1);
-            tipoFinal = "float";
-        } else if ("i32".equals(t2) && ("float".equals(t1) || esArray1)) {
+            tipoFinal = "FLOAT";
+        } else if ("INT".equals(t2) && ("FLOAT".equals(t1) || esArray1)) {
             der = new ConversionFloat(e2);
-            tipoFinal = "float";
-        } else if ("float".equals(t1) || "float".equals(t2) || esArray1 || esArray2) {
-            tipoFinal = "float";
+            tipoFinal = "FLOAT";
+        } else if ("FLOAT".equals(t1) || "FLOAT".equals(t2) || esArray1 || esArray2) {
+            tipoFinal = "FLOAT";
         }
 
         return new OpResult(izq, der, tipoFinal);
@@ -849,17 +849,12 @@ String tipoEspecial = "FLOAT_ARRAY";
     String tipoLLVM = "";
     tam = "0"; // Crucial: Resetear para evitar arrastrar tamaños de prints anteriores
 
-    if ("i32".equals(tipo)) {
-        tipoLLVM = "i32";
-    } else if ("float".equals(tipo) || "double".equals(tipo)) {
-        tipoLLVM = "double"; // printf en LLVM suele requerir promotion a double para flotantes
-    } else if ("i1".equals(tipo)) {
-        tipoLLVM = "i1";
-    } else if (tipo != null && tipo.matches("\\d+")) { // Si el tipo es un número, es un array (su tamaño)
+    if (tipo != null && tipo.matches("\\d+")) { // Si el tipo es un número, es un array (su tamaño)
         tipoLLVM = "array";
         tam = tipo; // Asignamos el tamaño extraído directamente del tipo del nodo
+    } else {
+        tipoLLVM = tipo;
     }
-
     RESULT = new SentenciaPrint(e, tipoLLVM, tam);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("sentencia",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-3)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -940,9 +935,7 @@ String tipoEspecial = "FLOAT_ARRAY";
     String tDest = tablaSimbolos.getTipo(id);
     if ("FLOAT_ARRAY".equals(tDest)) {
         tDest = tablaSimbolos.getTamano(id);
-    } else if ("INT".equals(tDest)) tDest = "i32";
-    else if ("FLOAT".equals(tDest)) tDest = "float";
-    else if ("BOOLEAN".equals(tDest)) tDest = "i1";
+    }
 
     String tExp = e.getTipo();
     boolean esArrayDest = tDest.matches("\\d+");
@@ -952,21 +945,21 @@ String tipoEspecial = "FLOAT_ARRAY";
         if (esArrayExp && !tDest.equals(tExp)) {
             throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones incompatibles en asignación de arreglos.");
         }
-        if (!esArrayExp && "i1".equals(tExp)) {
+        if (!esArrayExp && "BOOLEAN".equals(tExp)) {
             throw new RuntimeException("ERROR SEMÁNTICO: No se puede hacer broadcasting de un BOOLEAN a un FLOAT_ARRAY.");
         }
     } else {
         if (esArrayExp) {
             throw new RuntimeException("ERROR SEMÁNTICO: No se puede asignar un arreglo a la variable escalar '" + id + "'.");
         }
-        if ("i1".equals(tDest) && !"i1".equals(tExp)) {
+        if ("BOOLEAN".equals(tDest) && !"BOOLEAN".equals(tExp)) {
             throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles para variable BOOLEAN '" + id + "'.");
         }
     }
 
     // Coerción en asignación escalar
     Expresion exprFinal = e;
-    if ("float".equals(tDest) && "i32".equals(tExp)) {
+    if ("FLOAT".equals(tDest) && "INT".equals(tExp)) {
         exprFinal = new ConversionFloat(e);
     }
 
@@ -992,18 +985,18 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 15.2: Asignacion ARRAY celdas");
 
-    if (!"i32".equals(exp.getTipo())) {
+    if (!"INT".equals(exp.getTipo())) {
         throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
     }
     if (!"FLOAT_ARRAY".equals(tablaSimbolos.getTipo(i))) {
         throw new RuntimeException("ERROR SEMÁNTICO: '" + i + "' no es un arreglo.");
     }
-    if ("i1".equals(ex.getTipo())) {
+    if ("BOOLEAN".equals(ex.getTipo())) {
         throw new RuntimeException("ERROR SEMÁNTICO: Tipo BOOLEAN incompatible para celda FLOAT.");
     }
 
     Expresion valFinal = ex;
-    if ("i32".equals(ex.getTipo())) {
+    if ("INT".equals(ex.getTipo())) {
         valFinal = new ConversionFloat(ex);
     }
 
@@ -1174,7 +1167,7 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 10.1: expr_logica -> expr_and OR expr_logica");
 
-    // Como e1 ya tiene su tipo LLVM adentro ("i32", "float", "i1"),
+    // Como e1 ya tiene su tipo LLVM adentro ("INT", "FLOAT", "BOOLEAN"),
     // se lo pasás directamente al constructor. ¡En una sola línea!
     RESULT = new OperacionOr(e1, e2, e1.getTipo());
 
@@ -1547,14 +1540,10 @@ String tipoEspecial = "FLOAT_ARRAY";
       String t = tablaSimbolos.getTipo(e);
       String tipoLLVM = "";
 
-      if ("INT".equals(t)) {
-          tipoLLVM = "i32";
-      } else if ("FLOAT".equals(t)) {
-          tipoLLVM = "float";
-      } else if ("BOOLEAN".equals(t)) {
-          tipoLLVM = "i1";
-      } else if ("FLOAT_ARRAY".equals(t)) {
+      if ("FLOAT_ARRAY".equals(t)) {
           tipoLLVM = tablaSimbolos.getTamano(e); //  Pasamos la dimensión ("10", "50", etc.) directamente
+      } else {
+          tipoLLVM = t;
       }
 
       RESULT = new IdLiteral(e, tipoLLVM);
@@ -1673,11 +1662,11 @@ String tipoEspecial = "FLOAT_ARRAY";
     String varDistActual = "_mc_distActual_" + sufijoUnico;
 
     // 1. Entorno Semántico (Solo Global)
-    tablaSimbolos.add("ID", nombreArreglo, "float", dimArreglo, dimArreglo);
-    tablaSimbolos.add("ID", varMasCercano, "float", "-", "-");
-    tablaSimbolos.add("ID", varDistMin,    "float", "-", "-");
-    tablaSimbolos.add("ID", varI,          "int",   "-", "-");
-    tablaSimbolos.add("ID", varDistActual, "float", "-", "-");
+    tablaSimbolos.add("ID", nombreArreglo, "FLOAT_ARRAY", dimArreglo, dimArreglo);
+    tablaSimbolos.add("ID", varMasCercano, "FLOAT", "-", "-");
+    tablaSimbolos.add("ID", varDistMin,    "FLOAT", "-", "-");
+    tablaSimbolos.add("ID", varI,          "INT",   "-", "-");
+    tablaSimbolos.add("ID", varDistActual, "FLOAT", "-", "-");
 
     // 2. Declaraciones
     ArrayList<String> varArreglo = new ArrayList<>();
@@ -1704,28 +1693,28 @@ String tipoEspecial = "FLOAT_ARRAY";
     }
 
     // 4. Lógica de conversión
-    boolean needsConversion = "INT".equals(ref.getTipo()) || "i32".equals(ref.getTipo());
+    boolean needsConversion = "INT".equals(ref.getTipo()) || "INT".equals(ref.getTipo());
 
     // 5. CONSTRUCCIÓN DEL SUBÁRBOL (Usando tablaSimbolos)
 
     // 5.1. masCercano ← ARR[0]
     pasos.add(new Asignacion(varMasCercano,
         new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
-        tablaSimbolos, "float"));
+        tablaSimbolos, "FLOAT"));
 
     // 5.2. IF ARR[0] - V >= 0
     pasos.add(new SentenciaIf(
         new Menor(
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
-            new FloatLiteral("0.0"), "float"),
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+            new FloatLiteral("0.0"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "float"), tablaSimbolos, "float"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "FLOAT"), tablaSimbolos, "FLOAT"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaSimbolos, "float")))
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"), tablaSimbolos, "FLOAT")))
     ));
 
     // 5.3. i ← 1
-    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaSimbolos, "i32"));
+    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaSimbolos, "INT"));
 
     // 5.4. CUERPO DEL BUCLE WHILE
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
@@ -1733,30 +1722,30 @@ String tipoEspecial = "FLOAT_ARRAY";
     // IF ARR[i] - V >= 0
     cuerpoWhile.add(new SentenciaIf(
         new Menor(
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"),
-            new FloatLiteral("0.0"), "float"),
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+            new FloatLiteral("0.0"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), "float"), tablaSimbolos, "float"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT"), tablaSimbolos, "FLOAT"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "float"), tablaSimbolos, "float")))
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"), tablaSimbolos, "FLOAT")))
     ));
 
     // IF dif < difMin
     cuerpoWhile.add(new SentenciaIf(
-        new Menor(new IdLiteral(varDistActual, "float"), new IdLiteral(varDistMin, "float"), "float"),
+        new Menor(new IdLiteral(varDistActual, "FLOAT"), new IdLiteral(varDistMin, "FLOAT"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(
-            new Asignacion(varDistMin, new IdLiteral(varDistActual, "float"), tablaSimbolos, "float"),
-            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "i32"), dimArreglo), tablaSimbolos, "float")
+            new Asignacion(varDistMin, new IdLiteral(varDistActual, "FLOAT"), tablaSimbolos, "FLOAT"),
+            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), tablaSimbolos, "FLOAT")
         )),
         null
     ));
 
     // i ← i + 1
-    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "i32"), new IntLiteral("1"), "i32"), tablaSimbolos, "i32"));
+    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "INT"), new IntLiteral("1"), "INT"), tablaSimbolos, "INT"));
 
     // 5.5. Control del While
     pasos.add(new SentenciaWhile(
-        new Menor(new IdLiteral(varI, "i32"), new IntLiteral(dimArreglo), "i32"),
+        new Menor(new IdLiteral(varI, "INT"), new IntLiteral(dimArreglo), "INT"),
         cuerpoWhile, null));
 
     // Retorno final

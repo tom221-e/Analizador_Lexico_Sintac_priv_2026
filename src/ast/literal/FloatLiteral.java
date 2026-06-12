@@ -32,6 +32,6 @@ public class FloatLiteral extends Expresion {
     }
     @Override
     public String getTipo() {
-        return "float";
+        return "FLOAT";
     }
 }

@@ -28,11 +28,10 @@ public class Desigual extends OperacionBinaria {
 
         // Evaluamos el tipo de los operandos para el caso escalar
         switch (this.tipo) {
-            case "float":
-            case "double":
+            case "FLOAT":
                 return "fcmp one"; // 'one' significa Ordered and Not Equal en LLVM
-            case "i32":
-            case "boolean":
+            case "INT":
+            case "BOOLEAN":
             default:
                 return "icmp ne";  // 'ne' significa Not Equal en LLVM
         }
@@ -52,17 +51,17 @@ public class Desigual extends OperacionBinaria {
         // 2. Mapeamos el tipo con el que se van a comparar los operandos de entrada (con inicialización y breaks)
         String tipoComparacion = "i32";
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 tipoComparacion = "double"; // Comparamos en alta precisión de 64-bits
                 break;
-            case "i32":
+            case "INT":
                 tipoComparacion = "i32";
                 break;
-            case "i1":
-                tipoComparacion = "i1";     // Las condicionales previas ya son de 1 bit en LLVM
+            case "BLOOLEAN":
+                tipoComparacion = "i1";     // Comparación lógica entre booleanos
                 break;
             default:
-                tipoComparacion = "i32";    // Respaldo seguro por defecto
+                tipoComparacion = "i32";    // Respaldo por defecto
                 break;
         }
 

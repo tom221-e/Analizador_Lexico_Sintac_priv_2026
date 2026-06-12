@@ -30,10 +30,10 @@ public class Menor extends OperacionBinaria {
 
         // Evaluamos el tipo de los operandos para determinar el opcode escalar de LLVM
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 return "fcmp olt"; // 'olt' significa Ordered Less Than
-            case "i32":
-            case "boolean":
+            case "INT":
+            case "BLOOLEAN":
             default:
                 return "icmp slt"; // 'slt' significa Signed Less Than
         }
@@ -53,13 +53,13 @@ public class Menor extends OperacionBinaria {
         // 2. Mapeamos el tipo con el que se van a comparar los operandos de entrada
         String tipoComparacion = "i32";
         switch (this.tipo) {
-            case "float":
+            case "FLOAT":
                 tipoComparacion = "double"; // Comparamos en alta precisión de 64-bits
                 break;
-            case "i32":
+            case "INT":
                 tipoComparacion = "i32";
                 break;
-            case "boolean":
+            case "BLOOLEAN":
                 tipoComparacion = "i1";     // Comparación lógica entre booleanos
                 break;
             default:

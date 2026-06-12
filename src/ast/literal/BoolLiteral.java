@@ -40,6 +40,6 @@ public class BoolLiteral extends Expresion {
     }
     @Override
     public String getTipo() {
-        return "i1";
+        return "BOOLEAN";
     }
 }

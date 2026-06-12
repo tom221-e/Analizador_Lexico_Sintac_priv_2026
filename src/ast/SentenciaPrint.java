@@ -4,7 +4,7 @@ import llvm.CodeGeneratorHelper;
 
 public class SentenciaPrint extends Sentencia {
     private final Nodo contenido;
-    private final String tipo; // Recibe directamente: "i32", "float", "i1", "i8*", etc.
+    private String tipo; // Recibe directamente: "i32", "float", "i1", "i8*", etc.
     private final String tamano;  // ← nuevo campo
 
     public SentenciaPrint(Nodo contenido, String tipo, String tamano) {
@@ -27,10 +27,24 @@ public class SentenciaPrint extends Sentencia {
         return super.graficar(idPadre) +
                 (contenido != null ? contenido.graficar(miId) : "");
     }
+    private String tipoLenguaje() {
+        if (this.tipo == null) return "?";
+        return switch (this.tipo) {
+            case "INT"                  -> "i32";
+            case "FLOAT"    -> "float";
+            case "BOOLEAN", "BOOL"       -> "i1";
+            case "FLOAT_ARRAY", "ARRAY"        -> "ARRAY";
+            default -> {
+                if (this.tipo.matches("\\d+")) yield "ARRAY[" + this.tipo + "]";
+                yield this.tipo;
+            }
+        };
+    }
 
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
+        tipo=tipoLenguaje();
 
         if (this.contenido == null) return "";
 
