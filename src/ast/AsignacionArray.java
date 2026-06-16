@@ -29,8 +29,26 @@ public class AsignacionArray extends Sentencia {
         // 1. Graficamos el nodo actual (el "=")
         grafico.append(super.graficar(idPadre));
 
-        // 2. Graficamos el lado IZQUIERDO (el ID)
-        IdLiteral nodoId = new IdLiteral(nombre, "FLOAT_ARRAY");
+        // 🌟 REFACTORIZACIÓN: Formatear el globo izquierdo como NOMBRE[INDICE]
+        // Si el índice es un IdLiteral o IntLiteral, intentamos extraer su identificador/valor
+        String representacionIndice = "?";
+        if (this.indice instanceof ast.literal.IdLiteral) {
+            representacionIndice = ((ast.literal.IdLiteral) this.indice).getNombreVariable();
+        } else if (this.indice instanceof ast.literal.IntLiteral) {
+            // Asumiendo que tienes un método similar o puedes usar getEtiqueta/toString
+            representacionIndice = this.indice.getTipo(); // O el atributo que guarde el número
+            if (representacionIndice == null || "INT".equals(representacionIndice)) {
+                representacionIndice = indice.getValor(); // Respaldo genérico si es una variable indexada compleja
+            }
+        } else {
+            representacionIndice = "expr"; // Si es una expresión matemática compleja: ej: mediciones[i + 1]
+        }
+
+        // Construimos el string exacto para el globo: ej: "mediciones[i]"
+        String nombreGloboIzquierdo = this.nombre + "[" + representacionIndice + "]";
+
+        // 2. Graficamos el lado IZQUIERDO (Pasamos el nombre modificado NOMBRE[INDICE])
+        IdLiteral nodoId = new IdLiteral(nombreGloboIzquierdo, "FLOAT_ARRAY");
         grafico.append(nodoId.graficar(miId));
 
         // 3. Graficamos el lado DERECHO (el valor o expresión)

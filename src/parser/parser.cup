@@ -352,8 +352,11 @@ sentencia ::= sentencia_if:s {:
 asignacion::= ID:id IGUAL expr_logica:e {:
     System.out.println("REGLA 15.1: sentencia -> ID = expresion");
 
-    // Obtener tipo destino normalizado
-    String tDest = tablaSimbolos.getTipo(id);
+    // 1. Guardamos el tipo de nacimiento real para el idTipo del Nodo
+    String tipoOriginalID = tablaSimbolos.getTipo(id);
+
+    // Obtener tipo destino para las validaciones locales
+    String tDest = tipoOriginalID;
     if ("FLOAT_ARRAY".equals(tDest)) {
         tDest = tablaSimbolos.getTamano(id);
     }
@@ -380,11 +383,19 @@ asignacion::= ID:id IGUAL expr_logica:e {:
 
     // Coerción en asignación escalar
     Expresion exprFinal = e;
+    String tipoFinalExpresion = tExp; // Por defecto es el tipo de la expresión original
+
     if ("FLOAT".equals(tDest) && "INT".equals(tExp)) {
         exprFinal = new ConversionFloat(e);
+        tipoFinalExpresion = "FLOAT"; // 🌟 Ahora la expresión fue promovida a FLOAT
     }
 
-    RESULT = new Asignacion(id, exprFinal, tablaSimbolos, tDest);
+    // 🌟 RESULTADO CORREGIDO:
+    // id = nombre variable
+    // exprFinal = el nodo (casteado o no)
+    // tipoOriginalID = "INT", "FLOAT", "FLOAT_ARRAY" (Lo que necesita idTipo)
+    // tipoFinalExpresion = "INT", "FLOAT", "BOOLEAN" o la dimensión del arreglo ("10")
+    RESULT = new Asignacion(id, exprFinal, tipoOriginalID, tipoFinalExpresion);
 :}
 | ID:i CORCH_A expr_arit:exp CORCH_C IGUAL expr_logica:ex {:
     System.out.println("REGLA 15.2: Asignacion ARRAY celdas");
@@ -662,15 +673,15 @@ factor ::= ENTERO:e {:
         }
     }
 
-    // 4. Lógica de conversión
-    boolean needsConversion = "INT".equals(ref.getTipo()) || "INT".equals(ref.getTipo());
+    // 4. Lógica de conversión (🌟 Corregido el condicional duplicado)
+    boolean needsConversion = "INT".equals(ref.getTipo());
 
-    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (Usando tablaSimbolos)
+    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (🌟 Corregidos todos los new Asignacion)
 
     // 5.1. masCercano ← ARR[0]
     pasos.add(new Asignacion(varMasCercano,
         new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
-        tablaSimbolos, "FLOAT"));
+        "FLOAT", "FLOAT"));
 
     // 5.2. IF ARR[0] - V >= 0
     pasos.add(new SentenciaIf(
@@ -678,13 +689,15 @@ factor ::= ENTERO:e {:
             new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
             new FloatLiteral("0.0"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "FLOAT"), tablaSimbolos, "FLOAT"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "FLOAT"),
+            "FLOAT", "FLOAT"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"), tablaSimbolos, "FLOAT")))
+            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+            "FLOAT", "FLOAT")))
     ));
 
     // 5.3. i ← 1
-    pasos.add(new Asignacion(varI, new IntLiteral("1"), tablaSimbolos, "INT"));
+    pasos.add(new Asignacion(varI, new IntLiteral("1"), "INT", "INT"));
 
     // 5.4. CUERPO DEL BUCLE WHILE
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
@@ -695,23 +708,25 @@ factor ::= ENTERO:e {:
             new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
             new FloatLiteral("0.0"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT"), tablaSimbolos, "FLOAT"))),
+            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT"),
+            "FLOAT", "FLOAT"))),
         new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"), tablaSimbolos, "FLOAT")))
+            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+            "FLOAT", "FLOAT")))
     ));
 
     // IF dif < difMin
     cuerpoWhile.add(new SentenciaIf(
         new Menor(new IdLiteral(varDistActual, "FLOAT"), new IdLiteral(varDistMin, "FLOAT"), "FLOAT"),
         new java.util.ArrayList<>(java.util.Arrays.asList(
-            new Asignacion(varDistMin, new IdLiteral(varDistActual, "FLOAT"), tablaSimbolos, "FLOAT"),
-            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), tablaSimbolos, "FLOAT")
+            new Asignacion(varDistMin, new IdLiteral(varDistActual, "FLOAT"), "FLOAT", "FLOAT"),
+            new Asignacion(varMasCercano, new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT", "FLOAT")
         )),
         null
     ));
 
     // i ← i + 1
-    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "INT"), new IntLiteral("1"), "INT"), tablaSimbolos, "INT"));
+    cuerpoWhile.add(new Asignacion(varI, new Suma(new IdLiteral(varI, "INT"), new IntLiteral("1"), "INT"), "INT", "INT"));
 
     // 5.5. Control del While
     pasos.add(new SentenciaWhile(
