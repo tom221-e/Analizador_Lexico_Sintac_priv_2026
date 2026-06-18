@@ -56,7 +56,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
         btnCargar = new JButton("Cargar Archivo");
         btnGuardar = new JButton("Guardar Salida");
         btnGenerarAST = new JButton("Generar AST");
-        btnGenerarLLVM = new JButton("Generar .ll y .exe"); // Actualizado texto indicativo
+        btnGenerarLLVM = new JButton("Generar .ll y .exe");
 
         JLabel lblEntrada = new JLabel("Entrada:");
         JLabel lblSalida = new JLabel("Salida (Consola):");
@@ -179,6 +179,11 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 if (p.tablaSimbolos != null) {
                     System.out.println("\n--- TABLA DE SÍMBOLOS ---");
                     p.tablaSimbolos.print();
+
+                    // 🌟 SOLUCIÓN: Escritura automática en la raíz de ejecución de la app
+                    System.out.println("\n[Guardando Tabla de Símbolos en raíz...]");
+                    p.tablaSimbolos.escribirArchivo("ts.txt");
+                    System.out.println("Archivo 'ts.txt' generado exitosamente en la raíz.");
                 }
             }
         } catch (Exception e) {
@@ -264,7 +269,6 @@ public class VentanaPrueba extends javax.swing.JFrame {
         }
     }
 
-    // 🌟 MÉTODO MODIFICADO: Ahora genera el .ll y compila el .exe mediante la secuencia de la cátedra
     private void generarLLVMInteractivos() {
         String texto = input.getText();
         if (texto.trim().isEmpty()) {
@@ -282,9 +286,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 destinoLl = new File(destinoLl.getAbsolutePath() + ".ll");
             }
 
-            // Calculamos la ruta absoluta del ejecutable correspondiente cambiando la extensión a .exe
             String pathAbsolutoExe = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".exe";
-            // Calculamos el nombre del archivo objeto intermedio (.o) en base al destino .ll
             String pathAbsolutoO = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".o";
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -302,15 +304,19 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 Programa astRoot = (Programa) p.parse().value;
 
                 if (astRoot != null) {
+                    // 🌟 SOLUCIÓN: También guardamos automáticamente la TS al emitir LLVM
+                    if (p.tablaSimbolos != null) {
+                        System.out.println("[Guardando Tabla de Símbolos en raíz...]");
+                        p.tablaSimbolos.escribirArchivo("ts.txt");
+                    }
+
                     System.out.println("Escribiendo instrucciones IR estructuradas...");
                     try (PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl))) {
                         codigoLLVM.println(astRoot.generarCodigo());
-                        // 🌟 PROTECCIÓN CRÍTICA: Forzamos la descarga completa del buffer al disco duro
                         codigoLLVM.flush();
                     }
                     System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
 
-                    // 🌟 LOCALIZACIÓN DE DEPENDENCIAS: Buscamos dentro de la carpeta local Funcion/
                     String raizJar = System.getProperty("user.dir");
                     File archivoAlu = new File(raizJar + File.separator + "Funcion" + File.separator + "array_alu.ll");
                     File archivoScanfO = new File(raizJar + File.separator + "Funcion" + File.separator + "scanf.o");
@@ -329,7 +335,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
                     // -----------------------------------------------------------------
                     System.out.println("\nPaso 1/2 (Clang): Traduciendo código intermedio a objeto (.o)...");
                     String[] comandoPasoA = {
-                            "C:\\Program Files\\LLVM\\bin\\clang.exe", "-c",
+                            "Clang", "-c",
                             "-o", pathAbsolutoO,
                             destinoLl.getAbsolutePath()
                     };
@@ -355,7 +361,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
                     // -----------------------------------------------------------------
                     System.out.println("Paso 2/2 (Clang): Vinculando objetos y librerías de la cátedra...");
                     String[] comandoPasoB = {
-                            "C:\\Program Files\\LLVM\\bin\\clang.exe",
+                            "Clang",
                             "-o", pathAbsolutoExe,
                             pathAbsolutoO,
                             archivoAlu.getAbsolutePath(),
@@ -375,7 +381,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
                     if (statusB == 0) {
                         System.out.println("\n=== 🚀 COMPILACIÓN COMPLETADA CON ÉXITO ===");
                         System.out.println("Ejecutable generado en: " + pathAbsolutoExe);
-                        JOptionPane.showMessageDialog(this, "¡Archivos .ll, .o y ejecutable .exe creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "¡Archivos .ll, .o, ejecutable .exe y ts.txt creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         System.err.println("\n[!] El enlazador (Paso B) abortó el proceso. Código de salida: " + statusB);
                         JOptionPane.showMessageDialog(this, "El enlazador de Clang falló. Verificá que los prototipos de scanf coincidan.", "Error (Paso B)", JOptionPane.ERROR_MESSAGE);
