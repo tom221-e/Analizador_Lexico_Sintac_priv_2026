@@ -122,7 +122,7 @@ public class Main_parser {
                     // PASO A: clang -c -o codigo_salida.o codigo_salida.ll
                     // -----------------------------------------------------------------
                     String[] comandoPasoA = {
-                            "C:\\Program Files\\LLVM\\bin\\clang.exe", "-c",
+                            "Clang", "-c",
                             "-o", archivoObjetoSalida.getAbsolutePath(),
                             destinoLl.getAbsolutePath()
                     };
@@ -148,7 +148,7 @@ public class Main_parser {
                     // PASO B: clang -o programa.exe codigo_salida.o array_alu.ll scanf.o
                     // -----------------------------------------------------------------
                     String[] comandoPasoB = {
-                            "C:\\Program Files\\LLVM\\bin\\clang.exe",
+                            "Clang",
                             "-o", rutaAbsolutaExe,
                             archivoObjetoSalida.getAbsolutePath(),
                             archivoAlu.getAbsolutePath(),

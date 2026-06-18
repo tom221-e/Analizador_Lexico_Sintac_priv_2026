@@ -111,14 +111,15 @@ public abstract class OperacionBinaria extends Expresion {
         if (esOperacionDeArreglo) {
             String tipoEstructuraLLVM = "[" + this.tipo + " x double]";
 
-            String ptrArrayIzq = this.izquierda.getIr_ref();
-            String ptrArrayDer = this.derecha.getIr_ref();
+            String ptrArrayIzq;
+            String ptrArrayDer;
 
-            // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos el tipo String de los nodos hijos
+            String idNameIzq = this.izquierda.getId();
+            String idNameDer = this.derecha.getId();
+
             String tipoIzq = this.izquierda.getTipo();
             String tipoDer = this.derecha.getTipo();
 
-            // Determinamos si son escalares comparando contra los tipos primitivos conocidos
             boolean izqEsEscalar = "INT".equals(tipoIzq) || "i32".equals(tipoIzq) ||
                     "FLOAT".equals(tipoIzq) || "float".equals(tipoIzq) ||
                     "BOOLEAN".equals(tipoIzq) || "i1".equals(tipoIzq);
@@ -127,7 +128,7 @@ public abstract class OperacionBinaria extends Expresion {
                     "FLOAT".equals(tipoDer) || "float".equals(tipoDer) ||
                     "BOOLEAN".equals(tipoDer) || "i1".equals(tipoDer);
 
-            // 2. Procesamiento Izquierdo (Broadcasting o Puntero Real)
+            // 2. Procesamiento Izquierdo
             if (izqEsEscalar) {
                 String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
                 resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, this.tipo, this.izquierda.getIr_ref(), "Izquierdo"));
@@ -135,10 +136,18 @@ public abstract class OperacionBinaria extends Expresion {
                 resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
             } else {
                 ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, this.izquierda.getIr_ref().trim()));
+                // 🌟 VALIDACIÓN: Si idName contiene "nodo_", significa que es un ID interno del AST, no la variable real.
+                String refRealIzq = (idNameIzq != null && !idNameIzq.isEmpty() && !idNameIzq.contains("nodo_"))
+                        ? "%" + idNameIzq
+                        : this.izquierda.getIr_ref().trim();
+
+                // Si getIr_ref() ya trae el '%', se lo quitamos para no duplicarlo en el format
+                if (refRealIzq.startsWith("%%")) refRealIzq = refRealIzq.substring(1);
+
+                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, refRealIzq));
             }
 
-            // 3. Procesamiento Derecho (Broadcasting o Puntero Real)
+            // 3. Procesamiento Derecho
             if (derEsEscalar) {
                 String arrayTempDer = CodeGeneratorHelper.getNewPointer();
                 resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, this.tipo, this.derecha.getIr_ref(), "Derecho"));
@@ -146,7 +155,14 @@ public abstract class OperacionBinaria extends Expresion {
                 resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
             } else {
                 ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, this.derecha.getIr_ref().trim()));
+                // 🌟 VALIDACIÓN: Evitamos usar identificadores internos de nodos como variables de LLVM
+                String refRealDer = (idNameDer != null && !idNameDer.isEmpty() && !idNameDer.contains("nodo_"))
+                        ? "%" + idNameDer
+                        : this.derecha.getIr_ref().trim();
+
+                if (refRealDer.startsWith("%%")) refRealDer = refRealDer.substring(1);
+
+                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, refRealDer));
             }
 
             resultado.append("; --- Invocación Directa a la ALU de Arreglos ---\n");
