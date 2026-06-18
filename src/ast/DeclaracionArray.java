@@ -61,8 +61,8 @@ public class DeclaracionArray extends Declaracion {
         for (String var : variables) {
             // Genera directamente:  %nombreVariable = alloca [tamaño x float]
             // Agregamos el '%' antes del nombre para mantener consistencia con LLVM
-            resultado.append(String.format("%1$s = alloca [ %2$s x double]\n",
-                    "%" + var,
+            resultado.append(String.format("  %1$s = alloca [%2$s x double]\n", 
+                    "%" + var, 
                     this.tamano
             ));
             

@@ -1660,7 +1660,7 @@ String tipoEspecial = "FLOAT_ARRAY";
 		int listaIdright = ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).right;
 		String listaId = (String)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		
-    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Usando solo Tabla Global) ===");
+    System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Solución Unificada) ===");
 
     // 0. ID únicos
     String sufijoUnico = String.valueOf(Math.abs(listaId.hashCode()));
@@ -1694,36 +1694,41 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     ArrayList<Sentencia> pasos = new ArrayList<>();
 
-    // 3. Poblado inicial
-    String[] valoresArreglo = listaId.replace("[", "").replace("]", "").split(",");
-    for (int k = 0; k < valoresArreglo.length; k++) {
-        String elementoLimpio = valoresArreglo[k].trim();
-        if (!elementoLimpio.isEmpty()) {
-            pasos.add(new AsignacionArray(nombreArreglo, new IntLiteral(String.valueOf(k)), new FloatLiteral(elementoLimpio), dimArreglo));
-        }
-    }
+    // 3. Poblado inicial (🌟 CORREGIDO: Vinculamos el ArrayLiteral a la variable local)
+    ArrayLiteral nodoArray = new ArrayLiteral(listaId);
+    nodoArray.setNombreDestino(nombreArreglo); // <-- Aquí ocurre la magia
 
-    // 4. Lógica de conversión (🌟 Corregido el condicional duplicado)
+    pasos.add(new Asignacion(
+        nombreArreglo,
+        nodoArray,
+        "FLOAT_ARRAY",
+        "FLOAT_ARRAY"
+    ));
+
+    // 4. Lógica de conversión
     boolean needsConversion = "INT".equals(ref.getTipo());
 
-    // 5. CONSTRUCCIÓN DEL SUBÁRBOL (🌟 Corregidos todos los new Asignacion)
+    // 5. CONSTRUCCIÓN DEL SUBÁRBOL
 
     // 5.1. masCercano ← ARR[0]
     pasos.add(new Asignacion(varMasCercano,
         new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
         "FLOAT", "FLOAT"));
 
-    // 5.2. IF ARR[0] - V >= 0
+    // 5.2. IF ARR[0] - V >= 0 (🌟 CORREGIDO: Copias independientes de la referencia)
     pasos.add(new SentenciaIf(
         new Menor(
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
-            new FloatLiteral("0.0"), "FLOAT"),
-        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "FLOAT"),
-            "FLOAT", "FLOAT"))),
-        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistMin,
-            new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
-            "FLOAT", "FLOAT")))
+            new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo),
+            needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(),
+            "FLOAT"),
+        new java.util.ArrayList<>(java.util.Arrays.asList(
+            new Asignacion(varDistMin,
+                new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), "FLOAT"),
+                "FLOAT", "FLOAT"))),
+        new java.util.ArrayList<>(java.util.Arrays.asList(
+            new Asignacion(varDistMin,
+                new Resta(new AccesoArray(nombreArreglo, new IntLiteral("0"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+                "FLOAT", "FLOAT")))
     ));
 
     // 5.3. i ← 1
@@ -1732,17 +1737,20 @@ String tipoEspecial = "FLOAT_ARRAY";
     // 5.4. CUERPO DEL BUCLE WHILE
     ArrayList<Sentencia> cuerpoWhile = new ArrayList<>();
 
-    // IF ARR[i] - V >= 0
+    // IF ARR[i] - V >= 0 (🌟 CORREGIDO: Copias independientes aquí también)
     cuerpoWhile.add(new SentenciaIf(
         new Menor(
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
-            new FloatLiteral("0.0"), "FLOAT"),
-        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT"),
-            "FLOAT", "FLOAT"))),
-        new java.util.ArrayList<>(java.util.Arrays.asList(new Asignacion(varDistActual,
-            new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
-            "FLOAT", "FLOAT")))
+            new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo),
+            needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(),
+            "FLOAT"),
+        new java.util.ArrayList<>(java.util.Arrays.asList(
+            new Asignacion(varDistActual,
+                new Resta(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), "FLOAT"),
+                "FLOAT", "FLOAT"))),
+        new java.util.ArrayList<>(java.util.Arrays.asList(
+            new Asignacion(varDistActual,
+                new Resta(new AccesoArray(nombreArreglo, new IdLiteral(varI, "INT"), dimArreglo), needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), "FLOAT"),
+                "FLOAT", "FLOAT")))
     ));
 
     // IF dif < difMin
@@ -1760,10 +1768,10 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     // 5.5. Control del While
     pasos.add(new SentenciaWhile(
-        new Menor(new IdLiteral(varI, "INT"), new IntLiteral(dimArreglo), "INT"),
-        cuerpoWhile, null));
+            new Menor(new IdLiteral(varI, "INT"), new IntLiteral(dimArreglo), "INT"),
+            cuerpoWhile, null));
 
-    // Retorno final
+    // Retorno final limpio
     RESULT = new ValorMasCercano(needsConversion ? new ConversionFloat(ref.copiar()) : ref.copiar(), nombreArreglo, pasos, varMasCercano, listaId);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("factor",20, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-5)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);

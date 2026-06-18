@@ -50,6 +50,59 @@ public class SentenciaIf extends Sentencia {
 
     @Override
     public String generarCodigo() {
+        return generarCodigo(null);
+    }
+
+    public String generarCodigo(String labelEndExterno) {
+        StringBuilder resultado = new StringBuilder();
+
+        String labelThen = CodeGeneratorHelper.getNewTag();
+        String labelElse = CodeGeneratorHelper.getNewTag();
+        String labelEnd  = (labelEndExterno != null) ? labelEndExterno
+                                                     : CodeGeneratorHelper.getNewTag();
+
+        resultado.append(this.condicion.generarCodigo());
+
+        String destinoElse = (sentenciaElse != null && !sentenciaElse.isEmpty())
+                             ? labelElse : labelEnd;
+
+        resultado.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n\n",
+                this.condicion.getIr_ref(), labelThen, destinoElse));
+
+        // bloque THEN
+        resultado.append(labelThen).append(":\n");
+        if (cuerpoThen != null) {
+            for (Sentencia s : cuerpoThen) {
+                if (s != null) resultado.append(s.generarCodigo());
+            }
+        }
+        resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
+
+        // bloque ELSE
+        if (sentenciaElse != null && !sentenciaElse.isEmpty()) {
+            resultado.append(labelElse).append(":\n");
+            for (Sentencia s : sentenciaElse) {
+                if (s != null) {
+                    if (s instanceof SentenciaIf) {
+                        // ELIF: le pasa el labelEnd para compartir etiqueta de salida
+                        resultado.append(((SentenciaIf) s).generarCodigo(labelEnd));
+                    } else {
+                        resultado.append(s.generarCodigo());
+                    }
+                }
+            }
+            resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
+        }
+
+        // etiqueta de salida — solo si es propia (no heredada)
+        if (labelEndExterno == null) {
+            resultado.append(labelEnd).append(":\n");
+        }
+
+        return resultado.toString();
+    }
+    /*@Override
+    public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
         String labelThen = CodeGeneratorHelper.getNewTag();
@@ -102,5 +155,5 @@ public class SentenciaIf extends Sentencia {
         resultado.append(labelEnd).append(":\n");
 
         return resultado.toString();
-    }
+    }*/
 }

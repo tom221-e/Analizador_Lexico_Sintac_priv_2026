@@ -65,7 +65,7 @@ public class SentenciaWhile extends Sentencia {
         resultado.append(String.format("\n%1$s:\n", lblEvaluarAlt));
         if (this.alternativa != null) {
             // GENERACIÓN CRÍTICA: Ahora sí inyectamos el código del alt_while si existe
-            resultado.append(this.alternativa.generarCodigo());
+            resultado.append(this.alternativa.generarCodigo(lblCondicion));  // se agrega lblCondicion
         }
         // Si no hay alternativa, o si ya pasó por ella, va linealmente al fin
         resultado.append(String.format("  br label %%%1$s\n", lblFin));

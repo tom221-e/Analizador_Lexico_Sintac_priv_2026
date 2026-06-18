@@ -29,8 +29,29 @@ public class ValorMasCercano extends Expresion {
         // Asumimos que referencia.toString() devuelve "5" o el valor correspondiente
         return "SUBPROGRAMA: valor_mas_cercano(" + referencia.getValor() + ", " + valoresArregloString + ")";
     }
-
+    
     @Override
+    public String graficar(String idPadre) {
+        final String miId = this.getId();
+        StringBuilder sb = new StringBuilder();
+
+        // nodo propio
+        sb.append(super.graficar(idPadre));
+
+        // solo los pasos en orden — la referencia ya aparece en la etiqueta
+        if (this.pasos != null) {
+            for (Sentencia paso : pasos) {
+                if (paso != null) {
+                    sb.append(paso.graficar(miId));
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+    
+    
+    /*@Override
     public String graficar(String idPadre) {
         final String miId = this.getId();
         StringBuilder sb = new StringBuilder();
@@ -50,7 +71,8 @@ public class ValorMasCercano extends Expresion {
         }
 
         return sb.toString();
-    }
+    }*/
+    
 
     @Override
     public String generarCodigo() {
