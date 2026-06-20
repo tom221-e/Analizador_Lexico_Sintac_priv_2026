@@ -1,0 +1,19 @@
+ARRAY[5]: datos
+FLOAT: elem
+
+PROGRAM
+    datos[0] = 1.5
+    datos[1] = 2.5
+    datos[2] = 3.5
+    datos[3] = 4.5
+    datos[4] = 5.5
+    elem = datos[2]
+    PRINT(elem)
+    PRINT(datos[0])
+    print(datos)
+    datos[5] = 9.9
+
+% Output esperado:
+% 3.5
+% 1.5
+% Error: indice fuera de rango

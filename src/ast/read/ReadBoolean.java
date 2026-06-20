@@ -52,7 +52,12 @@ public class ReadBoolean extends Expresion {
         return resultado.toString();
     }
 
-    public String getTipo() {
+    /*public String getTipo() {
         return "i1"; // Ideal para las operaciones lógicas (AND/OR) o condiciones del IF
+    }*/
+    
+    @Override
+    public String getTipo() {
+        return "BOOLEAN";  // era "i1"
     }
 }

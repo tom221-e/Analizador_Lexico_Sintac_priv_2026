@@ -16,6 +16,11 @@ public class MenorIgual extends OperacionBinaria {
     }
 
     @Override
+    public String getTipo() {
+        return "BOOLEAN";  // el resultado de una comparación siempre es booleano
+    }
+    
+    @Override
     public String get_llvm_op_code() {
         if (this.tipo == null) {
             return "; ERROR: Tipo de dato nulo en la operación\n";

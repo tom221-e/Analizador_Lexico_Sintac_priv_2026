@@ -1,20 +1,25 @@
-INT: sensor, estado
-FLOAT: umbral
+BOOLEAN: A, B, resultado
+
 PROGRAM
-    sensor = 45
-    umbral = 50.5
-    estado = 1
+    A = true
+    B = false
+    resultado = !true
+    PRINT(resultado)
+    resultado = !false
+    PRINT(resultado)
+    resultado = !A
+    PRINT(resultado)
+    resultado = A && B
+    PRINT(resultado)
+    resultado = A || B
+    PRINT(resultado)
+    resultado = !A || B
+    PRINT(resultado)
 
-    print ("Chequeo de seguridad")
-
-    if sensor > 100
-        print ("ALERTA: Peligro Critico")
-    elif sensor > umbral
-        print ("Advertencia: Umbral superado")
-        if ! (estado == 0)
-            print ("Estado activo detectado")
-    else
-        print ("Sistema normal")
-        print ("Todo ok")
-
-    print ("Fin de monitoreo")
+% OUTPUT ESPERADO
+% 0
+% 1
+% 0
+% 0
+% 1
+% 0

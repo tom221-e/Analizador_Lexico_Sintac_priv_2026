@@ -1,34 +1,15 @@
-INT: a, b
-FLOAT: resultado , div
-ARRAY[3]: datos
-BOOLEAN: bull
+INT: n
+FLOAT: x
+BOOLEAN: b
+
 PROGRAM
-{* Este es un comentario multilínea
-   usando el formato de paréntesis.
-   Aquí definimos las variables iniciales.
-*}
+    PRINT("Ingrese un entero:")
+    n = READ_INT()
+    PRINT(n)
+    PRINT("Ingrese un flotante:")
+    x = READ_FLOAT()
+    PRINT(x)
+    PRINT("Ingrese un booleano (0/1):")
+    b = READ_BOOL()
+    PRINT(b)
 
-    a = 10
-    b = READ_INT()
-    div = READ_FLOAT()
-    bull = READ_BOOL()
-    PRINT (bull)
-    print ("Inicio de prueba con comentarios")
-
-    if a > b
-        resultado =  div + b
-        print ("Calculando division...")
-    ELIF a < b
-        print ("Esto no deberia ejecutarse")
-
-    print ("Inicio de prueba con comentarios")
-
-    while a > 0
-        a = a - 1
-        if a == 5
-            print ("Mitad del conteo")
-    alt_while b < 10
-        b = b + 1
-        print ("Incrementando b")
-
-    print ("Fin de programa con exito")

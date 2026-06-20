@@ -9,9 +9,16 @@ public class MayorIgual extends OperacionBinaria {
     public MayorIgual(Expresion izquierda, Expresion derecha, String tipo) {
         super(izquierda, derecha, tipo);
     }
-    public String getTipo(){
+    
+    /*public String getTipo(){
         return tipo;
+    }*/
+    
+    @Override
+    public String getTipo() {
+        return "BOOLEAN";  // el resultado de una comparación siempre es booleano
     }
+    
     @Override
     protected String getNombreOperacion() {
         return ">="; // Corresponde a MAYOR IGUAL (Corregido de "=>")

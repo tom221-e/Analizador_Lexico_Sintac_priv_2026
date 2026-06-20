@@ -35,7 +35,9 @@ public class IntLiteral extends Expresion {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
         this.setIr_ref(CodeGeneratorHelper.getNewPointer());
-        resultado.append(String.format("  %1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(getValor())));
+        //resultado.append(String.format("  %1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(getValor())));
+        String valorLimpio = getValor().replace(".", "").trim();
+        resultado.append(String.format("  %1$s = add i32 0, %2$s\n", this.getIr_ref(), Integer.parseInt(valorLimpio)));
         return resultado.toString();
     }
 

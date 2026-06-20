@@ -43,7 +43,13 @@ public class ReadFloat extends Expresion {
         // para crear el nodo con la etiqueta "READ: INT" y conectarlo
         return super.graficar(idPadre);
     }
-    public String getTipo() {
+    
+    /*public String getTipo() {
         return "float"; // Tu helper lo identificará como flotante para las coerciones
+    }*/
+    
+    @Override
+    public String getTipo() {
+        return "FLOAT";  // era "float"
     }
 }

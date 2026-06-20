@@ -1,0 +1,17 @@
+FLOAT: resultado
+
+PROGRAM
+    resultado = valor_mas_cercano(5., [1., 2., 8., 6., 4.])
+    PRINT(resultado)
+    resultado = valor_mas_cercano(1., [1., 5., 10., 20.])
+    PRINT(resultado)
+    resultado = valor_mas_cercano(18., [1., 5., 10., 20.])
+    PRINT(resultado)
+    resultado = valor_mas_cercano(5., [3., 7., 1., 9.])
+    PRINT(resultado)
+
+% OUTPUT ESPERADO
+% 6.0
+% 1.0
+% 20.0
+% 3.0

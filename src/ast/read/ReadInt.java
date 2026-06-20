@@ -22,18 +22,18 @@ public class ReadInt extends Expresion {
         // 1. Reservar memoria para el entero (alloca)
         // Guardamos la referencia a este espacio en ir_ref para poder hacer el load luego
         String ptrDest = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = alloca i32\n", ptrDest));
+        resultado.append(String.format("  %1$s = alloca i32\n", ptrDest));
 
         // 2. Llamar a scanf
         // Usamos la global @int_read_format que tu guía pide declarar al inicio
         String tempCall = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @int_read_format, i64 0, i64 0), i32* %2$s)\n",
+        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @int_read_format, i64 0, i64 0), i32* %2$s)\n",
                 tempCall, ptrDest));
 
         // 3. Cargar el valor leído en un registro virtual (load)
         // Este es el valor que el nodo de expresión debe exponer hacia afuera
         String valorLeido = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("%1$s = load i32, i32* %2$s\n",
+        resultado.append(String.format("  %1$s = load i32, i32* %2$s\n",
                 valorLeido, ptrDest));
 
         // Guardamos este registro en ir_ref para que si haces "x = readInt()",
@@ -49,7 +49,13 @@ public class ReadInt extends Expresion {
         // para crear el nodo con la etiqueta "READ: INT" y conectarlo
         return super.graficar(idPadre);
     }
-    public String getTipo() {
+    
+    /*public String getTipo() {
         return "i32"; // Así tu helper de CUP sabe al toque que es un entero
+    }*/
+    
+    @Override
+    public String getTipo() {
+        return "INT";  // era "i32"
     }
 }

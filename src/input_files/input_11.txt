@@ -1,0 +1,17 @@
+INT: a
+FLOAT: x, resultado
+
+PROGRAM
+    a = 5
+    x = 3.7
+    a = -a
+    PRINT(a)
+    resultado = -x
+    PRINT(resultado)
+    resultado = -2.5
+    PRINT(resultado)
+
+% OUTPUT ESPERADO
+% -5
+% -3.7
+% -2.5

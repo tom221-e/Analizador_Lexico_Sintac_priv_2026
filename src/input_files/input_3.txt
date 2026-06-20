@@ -1,17 +1,23 @@
-INT: a, b
-FLOAT: resultado
-ARRAY[4]: mediciones, sum, div
-PROGRAM
-    {* Comentario inicial *}
-    a = 10
-    b = 5
-    mediciones[1] = 0.0
-    mediciones[2] = 4.0
-    mediciones[3] = 2.0
+BOOLEAN: es_mayor, es_igual, es_menor
+INT: x, y
 
-    div[1] = 10.0
-    div[2] = 14.0
-    div[3] = 12.0
-    sum = mediciones / div
-    print (sum[2])
-    print ("Fin del programa")
+PROGRAM
+    x = 10
+    y = 5
+    es_mayor = x > y
+    PRINT(es_mayor)
+    es_igual = x == y
+    PRINT(es_igual)
+    es_menor = x < y
+    PRINT(es_menor)
+    es_mayor = true
+    PRINT(es_mayor)
+    es_igual = false
+    PRINT(es_igual)
+
+% OUTPUT ESPERADO
+% 1
+% 0
+% 0
+% 1
+% 0
