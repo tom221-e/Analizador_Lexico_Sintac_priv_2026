@@ -1,0 +1,25 @@
+INT: i, j
+
+PROGRAM
+    {*DEVOLUCION: Manejo de etiquetas, sentencias de control e iteración y cortocircuito booleano
+    El manejo de etiquetas en las instrucciones de control e iteración funciona correctamente. Sin embargo, no se implementó el cortocircuito booleano.
+    No se valida que el BREAK y CONTINUE se encuentren dentro de un LOOP.
+    *}
+    WHILE i < 10  %caso valido
+        i = i + 1
+        BREAK
+
+
+    WHILE i < 5   %caso valido, con loops anidados
+        WHILE j < 3
+            BREAK
+        j = j + 1
+        i = i + 1
+
+    %i = 5         % caso invalido, error semantico, break fuera de ciclo
+    %BREAK         % caso invalido, error semantico, break fuera de ciclo
+
+    {* FIN DEVOLUCION: Manejo de etiquetas, sentencias de control e iteración y cortocircuito booleano *}
+
+ 
+    print ("Fin del programa")

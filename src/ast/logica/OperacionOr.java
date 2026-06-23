@@ -14,6 +14,11 @@ public class OperacionOr extends OperacionBinaria {
     protected String getNombreOperacion() {
         return "OR"; // Token visual para el AST
     }
+    
+    @Override
+    public String getTipo() {
+        return "BOOLEAN";
+    }
 
     @Override
     public String get_llvm_op_code() {
@@ -26,24 +31,44 @@ public class OperacionOr extends OperacionBinaria {
      */
     @Override
     protected String obtenerCodigoEscalar() {
-        StringBuilder resultado = new StringBuilder();
+        StringBuilder res = new StringBuilder();
 
-        // 1. Solicitamos un nuevo registro temporal SSA para guardar el resultado del OR (i1)
-        this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+        // 1. Reservamos espacio para el resultado
+        String ptrResultado = CodeGeneratorHelper.getNewPointer();
+        res.append(String.format("  %s = alloca i1\n", ptrResultado));
+        // Inicializamos con false por defecto
+        res.append(String.format("  store i1 false, ptr %s\n", ptrResultado));
 
-        // 2. Al ser una operación lógica pura, el tipo de emisión en LLVM es estrictamente i1
-        String tipoEmision = "i1";
+        // 2. Generar izquierda
+        res.append(izquierda.generarCodigo());
 
-        // 3. Emitimos la instrucción formateada de LLVM:
-        // Formato: %ptro.X = or i1 %ptro.A, %ptro.B
-        resultado.append(String.format("  %1$s = %2$s %3$s %4$s, %5$s\n",
-                this.getIr_ref(),
-                this.get_llvm_op_code(),
-                tipoEmision,
-                this.izquierda.getIr_ref().trim(),
-                this.derecha.getIr_ref().trim()
-        ));
+        String tagDerecha = CodeGeneratorHelper.getNewTag();
+        String tagFin = CodeGeneratorHelper.getNewTag();
 
-        return resultado.toString();
+        // 3. Salto condicional
+        // Si izquierda es TRUE, saltamos a un bloque de éxito (etiquetaExito)
+        // Si es FALSE, vamos a tagDerecha
+        String etiquetaExito = CodeGeneratorHelper.getNewTag();
+        res.append(String.format("  br i1 %s, label %%%s, label %%%s\n",
+                izquierda.getIr_ref(), etiquetaExito, tagDerecha));
+
+        // 4. Si es TRUE: guardamos true y saltamos al FIN
+        res.append(etiquetaExito).append(":\n");
+        res.append(String.format("  store i1 true, ptr %s\n", ptrResultado));
+        res.append(String.format("  br label %%%s\n", tagFin));
+
+        // 5. Si es FALSE: evaluamos derecha y guardamos
+        res.append(tagDerecha).append(":\n");
+        res.append(derecha.generarCodigo());
+        res.append(String.format("  store i1 %s, ptr %s\n", derecha.getIr_ref(), ptrResultado));
+        res.append(String.format("  br label %%%s\n", tagFin));
+
+        // 6. Bloque FINAL: lectura
+        res.append(tagFin).append(":\n");
+        String finalReg = CodeGeneratorHelper.getNewPointer();
+        this.setIr_ref(finalReg);
+        res.append(String.format("  %s = load i1, ptr %s\n", finalReg, ptrResultado));
+
+        return res.toString();
     }
 }

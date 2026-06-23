@@ -1,5 +1,6 @@
-INT: a, b
+INT: a, b, i
 BOOLEAN: res
+FLOAT: acum
 PROGRAM
     {* Comentario inicial *}
     a = 10
@@ -7,5 +8,14 @@ PROGRAM
 
     res = a < b || b > 0
     print (res)
+
+    print ("ALT_WHILE")
+    WHILE i < 3
+        i = i + 1
+        PRINT(i)
+    ALT_WHILE acum < 20.0
+        acum = acum + 5.0
+        PRINT(acum)
+
     print ("Fin del programa")
 

@@ -1,0 +1,12 @@
+INT: i
+
+PROGRAM
+    WHILE i < 5
+        i = i + 1
+        IF i == 3
+            CONTINUE
+        PRINT(i)
+
+    %ERROR SEMÁNTICO: CONTINUE fuera de un ciclo.
+    %i = 1
+    %CONTINUE

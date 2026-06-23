@@ -1,0 +1,17 @@
+FLOAT: resultado
+INT: ref
+
+PROGRAM
+    resultado = valor_mas_cercano(5, [1., 2., 8., 6., 4.])
+    PRINT(resultado)
+
+
+    %resultado = valor_mas_cercano(18., [1., 5., 10., 20.])
+    %PRINT(resultado)
+
+    %resultado = valor_mas_cercano(5., [3., 7., 1., 9.])
+    %PRINT(resultado)
+
+    %ref = 10
+    %resultado = valor_mas_cercano(ref, [8., 12., 15., 3.])
+    %PRINT(resultado)

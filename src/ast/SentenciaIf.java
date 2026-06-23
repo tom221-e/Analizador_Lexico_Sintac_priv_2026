@@ -101,59 +101,5 @@ public class SentenciaIf extends Sentencia {
 
         return resultado.toString();
     }
-    /*@Override
-    public String generarCodigo() {
-        StringBuilder resultado = new StringBuilder();
 
-        String labelThen = CodeGeneratorHelper.getNewTag();
-        String labelElse = CodeGeneratorHelper.getNewTag();
-        String labelEnd  = CodeGeneratorHelper.getNewTag();
-
-        // Evaluamos la expresión condicional
-        resultado.append(this.condicion.generarCodigo());
-
-        String destinoElse = (sentenciaElse != null && !sentenciaElse.isEmpty()) ? labelElse : labelEnd;
-
-        // CORRECCIÓN: Añadido '%%' antes de %2$s y %3$s para generar el '%' requerido por LLVM
-        resultado.append(String.format("br i1 %1$s, label %%%2$s, label %%%3$s\n\n",
-                this.condicion.getIr_ref(),
-                labelThen,
-                destinoElse
-        ));
-
-        // ==========================================
-        // BLOQUE THEN
-        // ==========================================
-        resultado.append(labelThen).append(":\n");
-        if (cuerpoThen != null) {
-            for (Sentencia s : cuerpoThen) {
-                if (s != null) {
-                    resultado.append(s.generarCodigo());
-                }
-            }
-        }
-        // CORRECCIÓN: Añadido '%%' para el salto incondicional (br label %tag.X)
-        resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
-
-        // ==========================================
-        // BLOQUE ELSE
-        // ==========================================
-        if (sentenciaElse != null && !sentenciaElse.isEmpty()) {
-            resultado.append(labelElse).append(":\n");
-            for (Sentencia s : sentenciaElse) {
-                if (s != null) {
-                    resultado.append(s.generarCodigo());
-                }
-            }
-            // CORRECCIÓN: Añadido '%%' para el salto incondicional
-            resultado.append(String.format("  br label %%%1$s\n\n", labelEnd));
-        }
-
-        // ==========================================
-        // ETIQUETA DE SALIDA
-        // ==========================================
-        resultado.append(labelEnd).append(":\n");
-
-        return resultado.toString();
-    }*/
 }

@@ -1,0 +1,20 @@
+INT: sensor, estado
+FLOAT: umbral
+PROGRAM
+    sensor = 45
+    umbral = 50.5
+    estado = 1
+
+    print ("Chequeo de seguridad")
+
+    if sensor > 100
+        print ("ALERTA: Peligro Critico")
+    elif sensor > umbral
+        print ("Advertencia: Umbral superado")
+        if ! (estado == 0)
+            print ("Estado activo detectado")
+    else
+        print ("Sistema normal")
+        print ("Todo ok")
+
+    print ("Fin de monitoreo")

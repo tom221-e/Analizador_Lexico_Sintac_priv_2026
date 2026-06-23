@@ -1,0 +1,11 @@
+INT: a, b
+BOOLEAN: res
+PROGRAM
+    {* Comentario inicial *}
+    a = 10
+    b = 5
+
+    res = a < b || b > 0
+    print (res)
+    print ("Fin del programa")
+

@@ -1,0 +1,14 @@
+INT: x, nota
+
+PROGRAM
+    x = 7
+    IF x > 5
+        PRINT(x)
+
+    nota = 7
+    IF nota >= 9
+        PRINT(nota)
+    ELIF nota >= 7
+        PRINT(nota)
+    ELIF nota >= 4
+        PRINT(nota)

@@ -1,0 +1,14 @@
+BOOLEAN: es_mayor, es_igual
+INT: x
+
+PROGRAM
+    x = 10
+    IF x > 5
+        es_mayor = true
+        PRINT(es_mayor)
+    ELIF x == 5
+        es_igual = true
+        PRINT(es_igual)
+    ELSE
+        es_mayor = false
+        PRINT(es_mayor)
