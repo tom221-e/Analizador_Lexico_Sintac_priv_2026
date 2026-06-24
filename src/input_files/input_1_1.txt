@@ -53,7 +53,7 @@ PROGRAM
 
             {* comentario dentro del if *}
             c = valor_mas_cercano(5, [1.0,2.0,5.4,8.0,10.0]) + valor_mas_cercano(7, [1.0,2.0,5.4,8.0,10.0])
-            print ("Mitad de: camino")
+            print ("Mitad de: camino ")
             print (c)
             break
         elif c > 8

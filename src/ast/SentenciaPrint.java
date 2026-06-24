@@ -61,8 +61,10 @@ public class SentenciaPrint extends Sentencia {
             CodeGeneratorHelper.agregarConstanteGlobal(declaracionGlobal);
             int longitud = strLit.getLongitudStr();
             String tempCall = CodeGeneratorHelper.getNewPointer();
+            // Usa sintaxis 'ptr' moderna, consistente con el resto del backend.
+            // getLongitudStr() ya cuenta los bytes UTF-8 + \0A + \00.
             resultado.append(String.format(
-                    "  %1$s = call i32 (i8*, ...) @printf(i8* getelementptr ([%2$d x i8], [%2$d x i8]* %3$s, i32 0, i32 0))\n",
+                    "  %1$s = call i32 (i8*, ...) @printf(ptr getelementptr ([%2$d x i8], [%2$d x i8]* %3$s, i32 0, i32 0))\n",
                     tempCall, longitud, strLit.getIr_ref()));
             return resultado.toString();
         }
