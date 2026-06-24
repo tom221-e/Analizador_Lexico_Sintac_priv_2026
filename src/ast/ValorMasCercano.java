@@ -20,7 +20,7 @@ public class ValorMasCercano extends Expresion {
         this.valoresArregloString = valoresArregloString;
         this.pasos = pasos;
         this.punteroResultado = punteroResultado;
-        this.tipo = "float";
+        this.tipo = "FLOAT";
     }
 
     @Override
@@ -104,5 +104,10 @@ public class ValorMasCercano extends Expresion {
         sb.append("  ; --- FIN SUBPROGRAMA ISOLADO ---\n\n");
 
         return sb.toString();
+    }
+
+    @Override
+    public String getTipo() {
+        return tipo;
     }
 }

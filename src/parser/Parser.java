@@ -404,6 +404,7 @@ public class Parser extends java_cup.runtime.lr_parser {
 class CUP$Parser$actions {
 
 
+    public static int contadorMacros = 0;
     Hashtable table = new Hashtable();
     String tam = "0";     // Tamaño del array
     int nivelLoop = 0;    // Controla breaks/continues
@@ -1663,8 +1664,9 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Solución Unificada) ===");
 
     // 0. ID únicos
-    String sufijoUnico = String.valueOf(Math.abs(listaId.hashCode()));
-    String nombreArreglo = "arr_literal_" + sufijoUnico;
+    contadorMacros++;
+    String sufijoUnico = String.valueOf(contadorMacros);
+    String nombreArreglo = "_arr_literal_" + sufijoUnico;
     int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
     String dimArreglo = String.valueOf(dimension);
     String varMasCercano = "_mc_masCercano_" + sufijoUnico;
