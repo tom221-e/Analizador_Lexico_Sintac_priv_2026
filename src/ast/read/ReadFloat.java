@@ -24,7 +24,7 @@ public class ReadFloat extends Expresion {
 
         // 2. Llamar a scanf usando el formato exacto @double_read_format (%lf)
         String tempCall = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @double_read_format, i64 0, i64 0), double* %2$s)\n",
+        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @double_read_format, i64 0, i64 0), double* %2$s)\n",
                 tempCall, ptrDest));
 
         // 3. Cargar el valor double leído a un registro virtual para retornarlo

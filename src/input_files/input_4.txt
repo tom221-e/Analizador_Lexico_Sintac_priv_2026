@@ -1,15 +1,36 @@
-INT: n
-FLOAT: x
+INT: n, i
+FLOAT: x, promedio
 BOOLEAN: b
+ARRAY[4]: datos
 
 PROGRAM
-    PRINT("Ingrese un entero:")
+    PRINT("=== PRUEBA INTEGRAL ===")
+
+    PRINT("Ingrese un entero (ej: 3):")
     n = READ_INT()
     PRINT(n)
-    PRINT("Ingrese un flotante:")
+
+    PRINT("Ingrese un flotante (ej: 2.5):")
     x = READ_FLOAT()
     PRINT(x)
-    PRINT("Ingrese un booleano (0/1):")
-    b = READ_BOOL()
+
+    datos[0] = 1.5
+    datos[1] = 2.5
+    datos[2] = 3.5
+    datos[3] = 4.5
+
+    promedio = datos[0] + datos[1] + datos[2] + datos[3]
+    PRINT(promedio)
+
+    b = n > 2 && x < 10.0
     PRINT(b)
+
+    WHILE i < n
+        i = i + 1
+        PRINT(i)
+    ALT_WHILE promedio < 20.0
+        promedio = promedio + 5.0
+        PRINT(promedio)
+
+    PRINT("Fin")
 

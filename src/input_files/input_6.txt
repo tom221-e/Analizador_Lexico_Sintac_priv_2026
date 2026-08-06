@@ -18,7 +18,7 @@ PROGRAM
 
     %i = 5         % caso invalido, error semantico, break fuera de ciclo
     %BREAK         % caso invalido, error semantico, break fuera de ciclo
-
+    %CONTINUE
     {* FIN DEVOLUCION: Manejo de etiquetas, sentencias de control e iteración y cortocircuito booleano *}
 
     i = 0
@@ -29,4 +29,4 @@ PROGRAM
         PRINT(i)
     PRINT(i)
  
-    print ("Fin del programa")
+    print ("Fin del programa Input 6")

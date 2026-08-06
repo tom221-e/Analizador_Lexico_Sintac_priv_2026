@@ -17,6 +17,9 @@ public class IdLiteral extends Expresion {
     public String getNombreVariable() {
         return valor;
     }
+    public String getValor() {
+        return valor;
+    }
     @Override
     public Expresion copiar() {
         // Al hacer 'new' aquí, garantizas que es una dirección de memoria nueva

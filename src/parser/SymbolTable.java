@@ -126,4 +126,10 @@ public class SymbolTable {
             System.err.println("Error al escribir ts.txt: " + e.getMessage());
         }
     }
+    public void vaciarTabla() {
+        // Si tu estructura se llama "tabla", "variables", "simbolos", etc., usa ese nombre.
+        if (this.table != null) {
+            this.table.clear();
+        }
+    }
 }

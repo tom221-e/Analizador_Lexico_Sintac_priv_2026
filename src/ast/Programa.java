@@ -18,6 +18,7 @@ public class Programa extends Nodo {
     public String graficar() {
         return "digraph AST {\n" +
                 "node [shape=circle];\n" +
+                "ordering=out;\n" +  
                 this.graficar(null) + // Llama al método protegido iniciando la raíz
                 "\n}";
     }
@@ -82,15 +83,19 @@ public class Programa extends Nodo {
         llvm.append("target triple = \"x86_64-pc-windows-msvc19.16.27038\"\n\n");
         llvm.append("declare i32 @printf(i8*, ...)\n");
         llvm.append("declare i32 @scanf(i8*, ...)\n\n");
-        llvm.append("declare i32 @exit(i32)\n");                    // ← nuevo
+        llvm.append("declare i32 @exit(i32)\n");             
         llvm.append("declare void @operar_arreglos(double*, double*, double*, i32, i32)\n\n");
-        llvm.append("declare void @llvm.memset.p0.i64(ptr, i8, i64, i1)\n\n");  // ← agregar \n
+        llvm.append("declare void @llvm.memset.p0.i64(ptr, i8, i64, i1)\n\n");
+        llvm.append("declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg)\n"); 
+        llvm.append("declare i32 @comparar_arreglos(ptr, ptr, i32, i32)\n");
+        llvm.append("declare i32 @fflush(ptr)\n");
+
 
         // Formatos fijos para Print y Read
         llvm.append("@.integer = private constant [4 x i8] c\"%d\\0A\\00\"\n");
-        llvm.append("@.float = private constant [4 x i8] c\"%f\\0A\\00\"\n");
-        llvm.append("@int_read_format = unnamed_addr constant [3 x i8] c\"%d\\00\"\n");
-        llvm.append("@double_read_format = unnamed_addr constant [4 x i8] c\"%lf\\00\"\n\n");
+        llvm.append("@.float = private constant [4 x i8] c\"%f\\0A\\00\"\n");   //%g → 11 (sin decimales innecesarios) ; %f → 11.000000 (siempre 6 decimales)
+        llvm.append("@int_read_format    = unnamed_addr constant [4 x i8] c\" %d\\00\"\n");
+        llvm.append("@double_read_format = unnamed_addr constant [5 x i8] c\" %lf\\00\"\n\n");
         llvm.append("@.bounds_error = private constant [30 x i8] c\"Error: indice fuera de rango\\0A\\00\"\n\n");
         llvm.append("@.array_ini  = private constant [2 x i8] c\"[\\00\"\n");
         llvm.append("@.array_elem = private constant [4 x i8] c\"%g \\00\"\n");

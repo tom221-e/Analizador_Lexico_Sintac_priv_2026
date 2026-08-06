@@ -59,4 +59,7 @@ public class IntLiteral extends Expresion {
 
         return grafico.toString();
     }
+    public String getFloat(){
+        return valor+".0";
+    }
 }

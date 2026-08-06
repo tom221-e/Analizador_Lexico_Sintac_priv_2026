@@ -155,6 +155,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
         System.setErr(ps);
 
         try {
+            limpiarEstado(); //limpieza de Estado.
             if (sLexico.isSelected()) {
                 System.out.println("=== INICIANDO ANÁLISIS LÉXICO ===");
                 lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
@@ -173,6 +174,15 @@ public class VentanaPrueba extends javax.swing.JFrame {
                 parser.Parser p = new parser.Parser(lexico, sf);
 
                 p.parse();
+                
+                if (!p.erroresSemanticos.isEmpty()) {
+                    System.err.println("\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+                    for (String error : p.erroresSemanticos) {
+                        System.err.println(error);
+                    }
+                    System.err.println("Total: " + p.erroresSemanticos.size() + " error(es).");
+                    return;  // no generar AST ni LLVM
+                }
 
                 System.out.println("Resultado: ¡Análisis sintáctico correcto!");
 
@@ -180,7 +190,7 @@ public class VentanaPrueba extends javax.swing.JFrame {
                     System.out.println("\n--- TABLA DE SÍMBOLOS ---");
                     p.tablaSimbolos.print();
 
-                    // 🌟 SOLUCIÓN: Escritura automática en la raíz de ejecución de la app
+                    // Escritura automática en la raíz de ejecución de la app
                     System.out.println("\n[Guardando Tabla de Símbolos en raíz...]");
                     p.tablaSimbolos.escribirArchivo("ts.txt");
                     System.out.println("Archivo 'ts.txt' generado exitosamente en la raíz.");
@@ -206,66 +216,69 @@ public class VentanaPrueba extends javax.swing.JFrame {
             return;
         }
 
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Seleccione dónde guardar el gráfico del AST (.png)");
-        int seleccion = chooser.showSaveDialog(this);
+        // Guardado directo en la raíz sin preguntar
+        String raizJar = System.getProperty("user.dir");
+        File destinoPng = new File(raizJar, "arbol.png");
 
-        if (seleccion == JFileChooser.APPROVE_OPTION) {
-            File destinoPng = chooser.getSelectedFile();
-            if (!destinoPng.getName().toLowerCase().endsWith(".png")) {
-                destinoPng = new File(destinoPng.getAbsolutePath() + ".png");
-            }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
+        System.setOut(ps); System.setErr(ps);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(baos);
-            PrintStream oldOut = System.out;
-            PrintStream oldErr = System.err;
-            System.setOut(ps); System.setErr(ps);
+        try {
+            limpiarEstado(); //limpieza de Estado.
+            System.out.println("=== COMPILANDO PARA EXPORTAR AST ===");
+            lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
+            SymbolFactory sf = new ComplexSymbolFactory();
+            parser.Parser p = new parser.Parser(lexico, sf);
 
-            try {
-                System.out.println("=== COMPILANDO PARA EXPORTAR AST ===");
-                lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
-                SymbolFactory sf = new ComplexSymbolFactory();
-                parser.Parser p = new parser.Parser(lexico, sf);
-
-                Programa astRoot = (Programa) p.parse().value;
-
-                if (astRoot != null) {
-                    File tempDot = new File("temp_arbol.dot");
-                    try (PrintWriter grafico = new PrintWriter(new FileWriter(tempDot))) {
-                        grafico.println(astRoot.graficar());
-                    }
-
-                    System.out.println("Llamando a Graphviz para estructurar la imagen...");
-                    Process process = Runtime.getRuntime().exec(new String[]{
-                            "dot", "-Tpng", tempDot.getAbsolutePath(), "-o", destinoPng.getAbsolutePath()
-                    });
-
-                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                        String line;
-                        while ((line = errorReader.readLine()) != null) {
-                            System.err.println("Graphviz Warning/Error: " + line);
-                        }
-                    }
-
-                    int exitCode = process.waitFor();
-                    if (exitCode == 0) {
-                        System.out.println("Imagen del AST exportada con éxito en:\n" + destinoPng.getAbsolutePath());
-                        JOptionPane.showMessageDialog(this, "¡Gráfico del AST generado con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                    } else {
-                        System.err.println("Graphviz falló con código de salida: " + exitCode);
-                    }
-
-                    tempDot.delete();
+            Programa astRoot = (Programa) p.parse().value;
+            if (!p.erroresSemanticos.isEmpty()) {
+                System.err.println("\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+                for (String error : p.erroresSemanticos) {
+                    System.err.println(error);
                 }
-            } catch (Exception e) {
-                System.err.println("Error procesando o renderizando el AST:");
-                e.printStackTrace(System.out);
-            } finally {
-                System.out.flush(); System.err.flush();
-                System.setOut(oldOut); System.setErr(oldErr);
-                txtOutput.setText(baos.toString());
+                System.err.println("Total: " + p.erroresSemanticos.size() + " error(es).");
+                return;  // no generar AST ni LLVM
             }
+
+            if (astRoot != null) {
+                // Guardamos el .dot temporal en la misma raíz
+                File tempDot = new File(raizJar, "temp_arbol.dot");
+                try (PrintWriter grafico = new PrintWriter(new FileWriter(tempDot))) {
+                    grafico.println(astRoot.graficar());
+                }
+
+                System.out.println("Llamando a Graphviz para estructurar la imagen...");
+                Process process = Runtime.getRuntime().exec(new String[]{
+                        "dot", "-Tpng", tempDot.getAbsolutePath(), "-o", destinoPng.getAbsolutePath()
+                });
+
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String line;
+                    while ((line = errorReader.readLine()) != null) {
+                        System.err.println("Graphviz Warning/Error: " + line);
+                    }
+                }
+
+                int exitCode = process.waitFor();
+                if (exitCode == 0) {
+                    System.out.println("Imagen del AST exportada con éxito en:\n" + destinoPng.getAbsolutePath());
+                    JOptionPane.showMessageDialog(this, "¡Gráfico del AST generado con éxito como 'arbol.png'!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    System.err.println("Graphviz falló con código de salida: " + exitCode);
+                }
+
+                tempDot.delete();
+            }
+        } catch (Exception e) {
+            System.err.println("Error procesando o renderizando el AST:");
+            e.printStackTrace(System.out);
+        } finally {
+            System.out.flush(); System.err.flush();
+            System.setOut(oldOut); System.setErr(oldErr);
+            txtOutput.setText(baos.toString());
         }
     }
 
@@ -276,127 +289,143 @@ public class VentanaPrueba extends javax.swing.JFrame {
             return;
         }
 
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Seleccione dónde guardar el archivo LLVM de salida (.ll)");
-        int seleccion = chooser.showSaveDialog(this);
+        // Guardado directo en la raíz con el nombre "programa"
+        String raizJar = System.getProperty("user.dir");
+        File destinoLl = new File(raizJar, "programa.ll");
+        String pathAbsolutoExe = new File(raizJar, "programa.exe").getAbsolutePath();
+        String pathAbsolutoO = new File(raizJar, "programa.o").getAbsolutePath();
 
-        if (seleccion == JFileChooser.APPROVE_OPTION) {
-            File destinoLl = chooser.getSelectedFile();
-            if (!destinoLl.getName().toLowerCase().endsWith(".ll")) {
-                destinoLl = new File(destinoLl.getAbsolutePath() + ".ll");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
+        System.setOut(ps); System.setErr(ps);
+
+        try {
+            limpiarEstado(); //limpieza de Estado.
+            System.out.println("=== COMPILANDO PARA GENERAR LLVM IR ===");
+            lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
+            SymbolFactory sf = new ComplexSymbolFactory();
+            parser.Parser p = new parser.Parser(lexico, sf);
+
+            Programa astRoot = (Programa) p.parse().value;
+            if (!p.erroresSemanticos.isEmpty()) {
+                System.err.println("\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+                for (String error : p.erroresSemanticos) {
+                    System.err.println(error);
+                }
+                System.err.println("Total: " + p.erroresSemanticos.size() + " error(es).");
+                return;  // no generar AST ni LLVM
             }
 
-            String pathAbsolutoExe = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".exe";
-            String pathAbsolutoO = destinoLl.getAbsolutePath().substring(0, destinoLl.getAbsolutePath().lastIndexOf('.')) + ".o";
+            if (astRoot != null) {
+                // Guardamos automáticamente la TS al emitir LLVM
+                if (p.tablaSimbolos != null) {
+                    System.out.println("[Guardando Tabla de Símbolos en raíz...]");
+                    p.tablaSimbolos.escribirArchivo("ts.txt");
+                }
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(baos);
-            PrintStream oldOut = System.out;
-            PrintStream oldErr = System.err;
-            System.setOut(ps); System.setErr(ps);
+                System.out.println("Escribiendo instrucciones IR estructuradas...");
+                try (PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl))) {
+                    codigoLLVM.println(astRoot.generarCodigo());
+                    codigoLLVM.flush();
+                }
+                System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
 
-            try {
-                System.out.println("=== COMPILANDO PARA GENERAR LLVM IR ===");
-                lexer.Lexer lexico = new lexer.Lexer(new StringReader(texto));
-                SymbolFactory sf = new ComplexSymbolFactory();
-                parser.Parser p = new parser.Parser(lexico, sf);
+                File archivoAlu = new File(raizJar + File.separator + "Funcion" + File.separator + "array_alu.ll");
+                File archivoScanfO = new File(raizJar + File.separator + "Funcion" + File.separator + "scanf.o");
 
-                Programa astRoot = (Programa) p.parse().value;
+                System.out.println("Verificando dependencias en la carpeta '/Funcion'...");
 
-                if (astRoot != null) {
-                    // 🌟 SOLUCIÓN: También guardamos automáticamente la TS al emitir LLVM
-                    if (p.tablaSimbolos != null) {
-                        System.out.println("[Guardando Tabla de Símbolos en raíz...]");
-                        p.tablaSimbolos.escribirArchivo("ts.txt");
-                    }
+                if (!archivoAlu.exists() ||!archivoScanfO.exists()) {
+                    System.err.println("[!] ERROR CRÍTICO: Falta 'array_alu.ll' o 'scanf.o' en la ruta /Funcion.");
+                    System.err.println("Asegúrate de que ambos archivos existan en: " + raizJar + File.separator + "Funcion");
+                    JOptionPane.showMessageDialog(this, "Faltan componentes en la carpeta Funcion/ (Se requieren array_alu.ll y scanf.o)", "Error de Dependencias", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
-                    System.out.println("Escribiendo instrucciones IR estructuradas...");
-                    try (PrintWriter codigoLLVM = new PrintWriter(new FileWriter(destinoLl))) {
-                        codigoLLVM.println(astRoot.generarCodigo());
-                        codigoLLVM.flush();
-                    }
-                    System.out.println("Código intermedio (.ll) guardado exitosamente en:\n" + destinoLl.getAbsolutePath());
+                // -----------------------------------------------------------------
+                // PASO A: clang -c -o programa.o programa.ll
+                // -----------------------------------------------------------------
+                System.out.println("\nPaso 1/2 (Clang): Traduciendo código intermedio a objeto (.o)...");
+                String[] comandoPasoA = {
+                        "clang", "-c",
+                        "-o", pathAbsolutoO,
+                        destinoLl.getAbsolutePath()
+                };
 
-                    String raizJar = System.getProperty("user.dir");
-                    File archivoAlu = new File(raizJar + File.separator + "Funcion" + File.separator + "array_alu.ll");
-                    File archivoScanfO = new File(raizJar + File.separator + "Funcion" + File.separator + "scanf.o");
+                Process procPasoA = Runtime.getRuntime().exec(comandoPasoA);
 
-                    System.out.println("Verificando dependencias en la carpeta '/Funcion'...");
-
-                    if (!archivoAlu.exists() || !archivoScanfO.exists()) {
-                        System.err.println("[!] ERROR CRÍTICO: Falta 'array_alu.ll' o 'scanf.o' en la ruta /Funcion.");
-                        System.err.println("Asegúrate de que ambos archivos existan en: " + raizJar + File.separator + "Funcion");
-                        JOptionPane.showMessageDialog(this, "Faltan componentes en la carpeta Funcion/ (Se requieren array_alu.ll y scanf.o)", "Error de Dependencias", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-
-                    // -----------------------------------------------------------------
-                    // PASO A: clang -c -o program.o program.ll
-                    // -----------------------------------------------------------------
-                    System.out.println("\nPaso 1/2 (Clang): Traduciendo código intermedio a objeto (.o)...");
-                    String[] comandoPasoA = {
-                            "Clang", "-c",
-                            "-o", pathAbsolutoO,
-                            destinoLl.getAbsolutePath()
-                    };
-
-                    Process procPasoA = Runtime.getRuntime().exec(comandoPasoA);
-
-                    try (BufferedReader errorA = new BufferedReader(new InputStreamReader(procPasoA.getErrorStream()))) {
-                        String lineaError;
-                        while ((lineaError = errorA.readLine()) != null) {
-                            System.err.println("Clang (Paso A) Log: " + lineaError);
-                        }
-                    }
-
-                    int statusA = procPasoA.waitFor();
-                    if (statusA != 0) {
-                        System.err.println("[!] El Paso A falló de forma crítica. Enlace abortado.");
-                        JOptionPane.showMessageDialog(this, "Error de sintaxis LLVM IR. Clang no pudo crear el código objeto.", "Error (Paso A)", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-
-                    // -----------------------------------------------------------------
-                    // PASO B: clang -o program.exe program.o array_alu.ll scanf.o
-                    // -----------------------------------------------------------------
-                    System.out.println("Paso 2/2 (Clang): Vinculando objetos y librerías de la cátedra...");
-                    String[] comandoPasoB = {
-                            "Clang",
-                            "-o", pathAbsolutoExe,
-                            pathAbsolutoO,
-                            archivoAlu.getAbsolutePath(),
-                            archivoScanfO.getAbsolutePath()
-                    };
-
-                    Process procPasoB = Runtime.getRuntime().exec(comandoPasoB);
-
-                    try (BufferedReader errorB = new BufferedReader(new InputStreamReader(procPasoB.getErrorStream()))) {
-                        String lineaError;
-                        while ((lineaError = errorB.readLine()) != null) {
-                            System.err.println("Clang (Paso B) Log: " + lineaError);
-                        }
-                    }
-
-                    int statusB = procPasoB.waitFor();
-                    if (statusB == 0) {
-                        System.out.println("\n=== 🚀 COMPILACIÓN COMPLETADA CON ÉXITO ===");
-                        System.out.println("Ejecutable generado en: " + pathAbsolutoExe);
-                        JOptionPane.showMessageDialog(this, "¡Archivos .ll, .o, ejecutable .exe y ts.txt creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
-                    } else {
-                        System.err.println("\n[!] El enlazador (Paso B) abortó el proceso. Código de salida: " + statusB);
-                        JOptionPane.showMessageDialog(this, "El enlazador de Clang falló. Verificá que los prototipos de scanf coincidan.", "Error (Paso B)", JOptionPane.ERROR_MESSAGE);
+                try (BufferedReader errorA = new BufferedReader(new InputStreamReader(procPasoA.getErrorStream()))) {
+                    String lineaError;
+                    while ((lineaError = errorA.readLine()) != null) {
+                        System.err.println("Clang (Paso A) Log: " + lineaError);
                     }
                 }
-            } catch (Exception e) {
-                System.err.println("Error fatal emitiendo código o ejecutando Clang:");
-                e.printStackTrace(System.out);
-            } finally {
-                System.out.flush(); System.err.flush();
-                System.setOut(oldOut); System.setErr(oldErr);
-                txtOutput.setText(baos.toString());
+
+                int statusA = procPasoA.waitFor();
+                if (statusA != 0) {
+                    System.err.println("[!] El Paso A falló de forma crítica. Enlace abortado.");
+                    JOptionPane.showMessageDialog(this, "Error de sintaxis LLVM IR. Clang no pudo crear el código objeto.", "Error (Paso A)", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // -----------------------------------------------------------------
+                // PASO B: clang -o programa.exe programa.o array_alu.ll scanf.o
+                // -----------------------------------------------------------------
+                System.out.println("Paso 2/2 (Clang): Vinculando objetos y librerías de la cátedra...");
+                String[] comandoPasoB = {
+                        "clang",
+                        "-o", pathAbsolutoExe,
+                        pathAbsolutoO,
+                        archivoAlu.getAbsolutePath(),
+                        archivoScanfO.getAbsolutePath(),
+                        "-lmsvcrt",
+                        "-llegacy_stdio_definitions"
+                };
+
+                Process procPasoB = Runtime.getRuntime().exec(comandoPasoB);
+
+                try (BufferedReader errorB = new BufferedReader(new InputStreamReader(procPasoB.getErrorStream()))) {
+                    String lineaError;
+                    while ((lineaError = errorB.readLine()) != null) {
+                        System.err.println("Clang (Paso B) Log: " + lineaError);
+                    }
+                }
+
+                int statusB = procPasoB.waitFor();
+                if (statusB == 0) {
+                    System.out.println("\n=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                    System.out.println("Ejecutable generado en: " + pathAbsolutoExe);
+                    JOptionPane.showMessageDialog(this, "¡Archivos programa.ll, programa.o, programa.exe y ts.txt creados con total éxito!", "Éxito de Compilación", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    System.err.println("\n[!] El enlazador (Paso B) abortó el proceso. Código de salida: " + statusB);
+                    JOptionPane.showMessageDialog(this, "El enlazador de Clang falló. Verificá que los prototipos de scanf coincidan.", "Error (Paso B)", JOptionPane.ERROR_MESSAGE);
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Error fatal emitiendo código o ejecutando Clang:");
+            e.printStackTrace(System.out);
+        } finally {
+            System.out.flush(); System.err.flush();
+            System.setOut(oldOut); System.setErr(oldErr);
+            txtOutput.setText(baos.toString());
         }
     }
+    private void limpiarEstado() {
+        System.out.println("\n[SISTEMA] Iniciando limpieza de estado interno...");
+
+        // 1. Invocamos la función nativa del parser que limpia todo el estado estático
+        // (tablas de símbolos, listas de variables, contadores, etc.)
+        parser.Parser.resetEstado();
+        llvm.CodeGeneratorHelper.reset();
+        
+        // 2. Forzamos la liberación de memoria para destruir el AST anterior
+        System.gc();
+
+        System.out.println("[SISTEMA] Entorno limpio y listo para nueva compilación.\n");
+    }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new VentanaPrueba().setVisible(true));

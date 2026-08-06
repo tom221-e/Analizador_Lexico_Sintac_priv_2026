@@ -46,10 +46,27 @@ public class Main_parser {
 
             SymbolFactory sf = new ComplexSymbolFactory();
             Parser parser = new Parser(lexer, sf);
-
+/*if (!parser.erroresSemanticos.isEmpty()) {
+    System.err.println("\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+    for (String error : parser.erroresSemanticos) {
+        System.err.println(error);
+    }
+    System.err.println("Total: " + parser.erroresSemanticos.size() + " error(es).");
+    return;  // no generar código si hay errores
+}*/
             try {
                 // 1. Capturamos el objeto raíz del AST (Programa)
                 Programa astRoot = (Programa) parser.parse().value;
+                
+    // ← acá va el chequeo, DESPUÉS del parse()
+    if (!parser.erroresSemanticos.isEmpty()) {
+        System.err.println("\n=== ERRORES SEMÁNTICOS ENCONTRADOS ===");
+        for (String error : parser.erroresSemanticos) {
+            System.err.println(error);
+        }
+        System.err.println("Total: " + parser.erroresSemanticos.size() + " error(es).");
+        return;  // no generar código si hay errores
+    }
 
                 // 2. Imprimimos la tabla de símbolos
                 parser.tablaSimbolos.print();
@@ -81,7 +98,7 @@ public class Main_parser {
                     System.out.println("AST generado exitosamente: arbol.dot y arbol.png");
 
                     // =========================================================================
-                    // 🌟 BACKEND: GENERACIÓN DE LLVM IR (.ll)
+                    // BACKEND: GENERACIÓN DE LLVM IR (.ll)
                     // =========================================================================
                     System.out.println("Generando código LLVM IR...");
 
@@ -91,20 +108,20 @@ public class Main_parser {
                     // Invocamos el método maestro que dispara la recursividad en todo el AST
                     codigoLLVM.println(astRoot.generarCodigo());
 
-                    // 🌟 PROTECCIÓN: Vaciamos y cerramos explícitamente para asegurar la persistencia en disco
+                    // PROTECCIÓN: Vaciamos y cerramos explícitamente para asegurar la persistencia en disco
                     codigoLLVM.flush();
                     codigoLLVM.close();
 
                     System.out.println("Código LLVM IR generado exitosamente: " + destinoLl.getAbsolutePath());
 
                     // =========================================================================
-                    // 🌟 COMPILACIÓN AUTOMÁTICA REQUERIDA POR LA CÁTEDRA (Paso A y Paso B)
+                    // COMPILACIÓN AUTOMÁTICA REQUERIDA POR LA CÁTEDRA (Paso A y Paso B)
                     // =========================================================================
                     System.out.println("\nIniciando secuencia de compilación nativa con Clang...");
 
                     String raizProyecto = System.getProperty("user.dir");
 
-                    // 📁 Ambas dependencias se encuentran juntas en el directorio /Funcion
+                    // Ambas dependencias se encuentran juntas en el directorio /Funcion
                     File archivoAlu = new File(raizProyecto + File.separator + "Funcion" + File.separator + "array_alu.ll");
                     File archivoScanfO = new File(raizProyecto + File.separator + "Funcion" + File.separator + "scanf.o");
 
@@ -122,7 +139,7 @@ public class Main_parser {
                     // PASO A: clang -c -o codigo_salida.o codigo_salida.ll
                     // -----------------------------------------------------------------
                     String[] comandoPasoA = {
-                            "Clang", "-c",
+                            "C:\\\\Program Files\\\\LLVM\\\\bin\\\\clang.exe", "-c",
                             "-o", archivoObjetoSalida.getAbsolutePath(),
                             destinoLl.getAbsolutePath()
                     };
@@ -148,11 +165,13 @@ public class Main_parser {
                     // PASO B: clang -o programa.exe codigo_salida.o array_alu.ll scanf.o
                     // -----------------------------------------------------------------
                     String[] comandoPasoB = {
-                            "Clang",
+                            "C:\\\\Program Files\\\\LLVM\\\\bin\\\\clang.exe",
                             "-o", rutaAbsolutaExe,
                             archivoObjetoSalida.getAbsolutePath(),
                             archivoAlu.getAbsolutePath(),
-                            archivoScanfO.getAbsolutePath()
+                            archivoScanfO.getAbsolutePath(),
+                            "-lmsvcrt",
+                            "-llegacy_stdio_definitions"
                     };
 
                     System.out.println("Paso 2/2: Enlazando ejecutables y librerías auxiliares...");
@@ -168,7 +187,7 @@ public class Main_parser {
 
                     int statusB = procPasoB.waitFor();
                     if (statusB == 0) {
-                        System.out.println("\n=== 🚀 COMPILACIÓN COMPLETADA CON ÉXITO ===");
+                        System.out.println("\n=== COMPILACIÓN COMPLETADA CON ÉXITO ===");
                         System.out.println("Ejecutable binario creado en: " + rutaAbsolutaExe);
                     } else {
                         System.err.println("[!] ERROR: El enlazador de Clang falló. Código de salida: " + statusB);

@@ -70,7 +70,7 @@ public class SentenciaPrint extends Sentencia {
         }
 
         // CASO 2: array completo
-        // 🌟 CORRECCIÓN CLAVE: Solo entramos acá si el tamaño es diferente de "0" y no es null.
+        // CORRECCIÓN: Solo entramos acá si el tamaño es diferente de "0" y no es null.
         // Si es "0", sabemos que es un print(arreglo[indice]).
         boolean esArregloCompleto = (tipoMapeado.contains("ARRAY") || "array".equalsIgnoreCase(this.tipo))
                 && this.tamano != null && !this.tamano.equals("0");
@@ -118,7 +118,7 @@ public class SentenciaPrint extends Sentencia {
         // Identificamos tipos
         boolean esInt = "i32".equals(tipoMapeado) || "INT".equalsIgnoreCase(this.tipo) || "INT".equalsIgnoreCase(tipoRealHijo);
 
-        // 🌟 MAGIA: Si el tipo incluye ARRAY y llegó hasta acá, es SÍ O SÍ una celda flotante. Lo forzamos a Float.
+        // Si el tipo incluye ARRAY y llegó hasta acá, es SÍ O SÍ una celda flotante. Lo forzamos a Float.
         boolean esFloat = "float".equals(tipoMapeado) || "double".equals(tipoMapeado) ||
                 "FLOAT".equalsIgnoreCase(this.tipo) || "FLOAT".equalsIgnoreCase(tipoRealHijo) ||
                 tipoMapeado.contains("ARRAY") || tipoRealHijo.contains("ARRAY") || "array".equalsIgnoreCase(this.tipo);
@@ -129,12 +129,20 @@ public class SentenciaPrint extends Sentencia {
             resultado.append(String.format(
                     "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
                     tempCall, exp.getIr_ref()));
+            // Al final, después de emitir el printf:
+String flushReg = CodeGeneratorHelper.getNewPointer();
+resultado.append(String.format(
+    "  %1$s = call i32 @fflush(ptr null)\n", flushReg));
 
         } else if (esFloat) {
             // Imprime incondicionalmente como double (tu arreglo en LLVM es double)
             resultado.append(String.format(
                     "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.float, i32 0, i32 0), double %s)\n",
                     tempCall, exp.getIr_ref()));
+            // Al final, después de emitir el printf:
+String flushReg = CodeGeneratorHelper.getNewPointer();
+resultado.append(String.format(
+    "  %1$s = call i32 @fflush(ptr null)\n", flushReg));
 
         } else if (esBool) {
             String registerInt = CodeGeneratorHelper.getNewPointer();
@@ -142,6 +150,10 @@ public class SentenciaPrint extends Sentencia {
             resultado.append(String.format(
                     "  %s = call i32 (i8*, ...) @printf(i8* getelementptr ([4 x i8], [4 x i8]* @.integer, i32 0, i32 0), i32 %s)\n",
                     tempCall, registerInt));
+            // Al final, después de emitir el printf:
+String flushReg = CodeGeneratorHelper.getNewPointer();
+resultado.append(String.format(
+    "  %1$s = call i32 @fflush(ptr null)\n", flushReg));
         } else {
             // Si por algún milagro oscuro no detecta el tipo, te chismosea en el archivo .ll en lugar de desaparecer
             resultado.append(String.format(

@@ -27,7 +27,7 @@ public class ReadInt extends Expresion {
         // 2. Llamar a scanf
         // Usamos la global @int_read_format que tu guía pide declarar al inicio
         String tempCall = CodeGeneratorHelper.getNewPointer();
-        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @int_read_format, i64 0, i64 0), i32* %2$s)\n",
+        resultado.append(String.format("  %1$s = call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @int_read_format, i64 0, i64 0), i32* %2$s)\n",
                 tempCall, ptrDest));
 
         // 3. Cargar el valor leído en un registro virtual (load)

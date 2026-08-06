@@ -41,7 +41,7 @@ public class StringLiteral extends Expresion {
     private void calcularTamanoLLVM() {
         // Codificar en Latin-1: cada carácter del rango 0x00–0xFF queda en un solo byte.
         // Caracteres fuera de Latin-1 (p.ej. emojis) se reemplazan por '?' automáticamente.
-        Charset latin1 = Charset.forName("UTF-16");
+        Charset latin1 = Charset.forName("UTF-8"); // se cambia utf16 por 8
         byte[] bytes = this.valor.getBytes(latin1);
 
         StringBuilder sb = new StringBuilder();

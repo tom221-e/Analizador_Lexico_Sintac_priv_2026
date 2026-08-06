@@ -52,4 +52,5 @@ public class ConversionFloat extends Expresion {
 
         return resultado.toString();
     }
+    public String getTipo() { return "FLOAT"; }
 }

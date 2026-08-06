@@ -381,12 +381,23 @@ public class Parser extends java_cup.runtime.lr_parser {
 
 
 
-
+    
     public static SymbolTable tablaSimbolos = new SymbolTable();
 
     // public ValidatorDataType validador = new ValidatorDataType();
 
     public static ArrayList<Declaracion> declaracionesMacro = new ArrayList<>();
+
+    public static int macroCount = 0;   // reset de estado
+ public static java.util.List<String> erroresSemanticos = new java.util.ArrayList<>();  // ← agregar acá
+
+
+    public static void resetEstado() {
+        tablaSimbolos = new SymbolTable();
+        declaracionesMacro = new ArrayList<>();
+        erroresSemanticos = new java.util.ArrayList<>();
+        macroCount = 0;
+    }
 
     public void syntax_error(Symbol s){
         System.out.println("Error en la linea "+ (s.left+1)+ " Columna "+ s.right+ ". Valor simbolo '"
@@ -399,12 +410,13 @@ public class Parser extends java_cup.runtime.lr_parser {
     }
 
 
+
 /** Cup generated class to encapsulate user supplied action code.*/
 @SuppressWarnings({"rawtypes", "unchecked", "unused"})
 class CUP$Parser$actions {
 
 
-    public static int contadorMacros = 0;
+    //public static int contadorMacros = 0;
     Hashtable table = new Hashtable();
     String tam = "0";     // Tamaño del array
     int nivelLoop = 0;    // Controla breaks/continues
@@ -419,13 +431,14 @@ class CUP$Parser$actions {
         }
     }
 
-    // 🌟 HELPER ARITMÉTICO: Resuelve Coerción, Broadcasting y Validación de Arrays
+    // HELPER ARITMÉTICO: Resuelve Coerción, Broadcasting y Validación de Arrays
     public OpResult verificarYCoercer(Expresion e1, Expresion e2) {
         String t1 = e1.getTipo(); // Asume que tus nodos retornan "INT", "FLOAT", "BOOLEAN" o "\d+" (dimensión)
         String t2 = e2.getTipo();
 
         if ("BOOLEAN".equals(t1) || "BOOLEAN".equals(t2)) {
-            throw new RuntimeException("ERROR SEMÁNTICO: Operación aritmética inválida con tipos BOOLEAN.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: Operación aritmética inválida con tipos BOOLEAN.");
+erroresSemanticos.add("ERROR SEMÁNTICO: Operación aritmética inválida con tipos BOOLEAN.");
         }
 
         boolean esArray1 = t1.matches("\\d+");
@@ -434,19 +447,26 @@ class CUP$Parser$actions {
         // Caso 1: Ambos son Arrays (FLOAT_ARRAY) -> Deben medir igual
         if (esArray1 && esArray2) {
             if (!t1.equals(t2)) {
-                throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones de arreglos incompatibles (" + t1 + " vs " + t2 + ").");
+                //throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones de arreglos incompatibles (" + t1 + " vs " + t2 + ").");
+erroresSemanticos.add("ERROR SEMÁNTICO: Dimensiones de arreglos incompatibles (" + t1 + " vs " + t2 + ").");
             }
             return new OpResult(e1, e2, t1); // El tipo resultante conserva la dimensión ("10", "50", etc.)
         }
 
         // Caso 2: Broadcasting (Array operado con Escalar) -> Inserta conversión si el escalar es INT
         if (esArray1) {
-            Expresion der = "INT".equals(t2) ? new ConversionFloat(e2) : e2;
-            return new OpResult(e1, der, t1);
+                // Primero convertimos el escalar a Float si es INT
+                Expresion escalar = "INT".equals(t2) ? new ConversionFloat(e2) : e2;
+                // Inyectamos el nodo de broadcasting para que el escalar sea un arreglo de tamaño t1
+                Expresion der = new FloatIntAarray(escalar, t1);
+                return new OpResult(e1, der, t1);
         }
         if (esArray2) {
-            Expresion izq = "INT".equals(t1) ? new ConversionFloat(e1) : e1;
-            return new OpResult(izq, e2, t2);
+                // Primero convertimos el escalar a Float si es INT
+                Expresion escalar = "INT".equals(t1) ? new ConversionFloat(e1) : e1;
+                // Inyectamos el nodo de broadcasting para que el escalar sea un arreglo de tamaño t2
+                Expresion izq = new FloatIntAarray(escalar, t2);
+                return new OpResult(izq, e2, t2);
         }
 
         // Caso 3: Escalares Puros (INT vs FLOAT) -> Coerción estándar
@@ -462,18 +482,33 @@ class CUP$Parser$actions {
         return new OpResult(e1, e2, "INT"); // Ambos son enteros (INT)
     }
 
-    // 🌟 HELPER RELACIONAL: Valida comparaciones entre vectores y escalares
+    // HELPER RELACIONAL: Valida comparaciones entre vectores y escalares
     public OpResult verificarRelacional(Expresion e1, Expresion e2) {
         String t1 = e1.getTipo();
         String t2 = e2.getTipo();
+
+        boolean esBool1 = "BOOLEAN".equals(t1);
+        boolean esBool2 = "BOOLEAN".equals(t2);
+
+        // Rechazar solo si UNO es BOOLEAN y el OTRO no lo es (mezcla incompatible)
+        if (esBool1 != esBool2) {
+            erroresSemanticos.add("ERROR SEMÁNTICO: No se puede comparar un tipo BOOLEAN con un tipo no-BOOLEAN.");
+        }
 
         boolean esArray1 = t1.matches("\\d+");
         boolean esArray2 = t2.matches("\\d+");
 
         if (esArray1 && esArray2 && !t1.equals(t2)) {
-            throw new RuntimeException("ERROR SEMÁNTICO: No se pueden comparar arreglos de distintas dimensiones.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: No se pueden comparar arreglos de distintas dimensiones.");
+            erroresSemanticos.add("ERROR SEMÁNTICO: No se pueden comparar arreglos de distintas dimensiones.");
         }
 
+
+if (esArray1 && esArray2 && t1.equals(t2)) {
+    // comparación array == array o array != array
+    // devolver la dimensión como tipo para que OperacionBinaria detecte arrays
+    return new OpResult(e1, e2, t1);  // t1 = "5" (la dimensión)
+}
         String tipoFinal = "INT"; // "int" por defecto para tu backend
         Expresion izq = e1;
         Expresion der = e2;
@@ -490,6 +525,7 @@ class CUP$Parser$actions {
 
         return new OpResult(izq, der, tipoFinal);
     }
+
 
   private final Parser parser;
 
@@ -894,7 +930,8 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("REGLA 3.5: sentencia -> BREAK");
     System.out.printf("REGLA 3.5: sentencia -> break%n%n");
     if (nivelLoop == 0) {
-        throw new RuntimeException("ERROR SEMÁNTICO: BREAK fuera de un ciclo.");
+        //throw new RuntimeException("ERROR SEMÁNTICO: BREAK fuera de un ciclo.");
+erroresSemanticos.add("ERROR SEMÁNTICO: BREAK fuera de un ciclo.");
     }
     System.out.println("BREAK válido, nivelLoop = " + nivelLoop);
     RESULT = new SentenciaBreak();
@@ -911,7 +948,8 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("REGLA 3.6: sentencia -> CONTINUE");
     System.out.printf("REGLA 3.6: sentencia -> continue%n%n");
     if (nivelLoop == 0) {
-        throw new RuntimeException("ERROR SEMÁNTICO: CONTINUE fuera de un ciclo.");
+        //throw new RuntimeException("ERROR SEMÁNTICO: CONTINUE fuera de un ciclo.");
+erroresSemanticos.add("ERROR SEMÁNTICO: CONTINUE fuera de un ciclo.");
     }
     RESULT = new SentenciaContinue();
 
@@ -947,30 +985,44 @@ String tipoEspecial = "FLOAT_ARRAY";
 
     if (esArrayDest) {
         if (esArrayExp && !tDest.equals(tExp)) {
-            throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones incompatibles en asignación de arreglos.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: Dimensiones incompatibles en asignación de arreglos.");
+erroresSemanticos.add("ERROR SEMÁNTICO: Dimensiones incompatibles en asignación de arreglos.");
         }
         if (!esArrayExp && "BOOLEAN".equals(tExp)) {
-            throw new RuntimeException("ERROR SEMÁNTICO: No se puede hacer broadcasting de un BOOLEAN a un FLOAT_ARRAY.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: No se puede hacer broadcasting de un BOOLEAN a un FLOAT_ARRAY.");
+erroresSemanticos.add("ERROR SEMÁNTICO: No se puede hacer broadcasting de un BOOLEAN a un FLOAT_ARRAY.");
         }
     } else {
         if (esArrayExp) {
-            throw new RuntimeException("ERROR SEMÁNTICO: No se puede asignar un arreglo a la variable escalar '" + id + "'.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: No se puede asignar un arreglo a la variable escalar '" + id + "'.");
+erroresSemanticos.add("ERROR SEMÁNTICO: No se puede asignar un arreglo a la variable escalar .");
         }
         if ("BOOLEAN".equals(tDest) && !"BOOLEAN".equals(tExp)) {
-            throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles para variable BOOLEAN '" + id + "'.");
+            //throw new RuntimeException("ERROR SEMÁNTICO: Tipos incompatibles para variable BOOLEAN '" + id + "'.");
+erroresSemanticos.add("ERROR SEMÁNTICO: Tipos incompatibles para variable BOOLEAN.");
+        }
+        if ("INT".equals(tDest) && "FLOAT".equals(tExp)) {   //Corrección 2 — Asignación FLOAT → INT no se detecta
+            //throw new RuntimeException("ERROR SEMÁNTICO: No se puede asignar un FLOAT a la variable entera '" + id + "'.");
+erroresSemanticos.add("ERROR SEMÁNTICO: No se puede asignar un FLOAT a la variable entera.");
+        }
+        if (("INT".equals(tDest) || "FLOAT".equals(tDest)) && "BOOLEAN".equals(tExp)) {
+            erroresSemanticos.add("ERROR SEMÁNTICO: No se puede asignar BOOLEAN a la variable " + tDest + ".");
         }
     }
-
+    if (e instanceof ast.literal.ArrayLiteral) {
+            ((ast.literal.ArrayLiteral) e).setNombreDestino(id);
+        }
     // Coerción en asignación escalar
     Expresion exprFinal = e;
     String tipoFinalExpresion = tExp; // Por defecto es el tipo de la expresión original
 
     if ("FLOAT".equals(tDest) && "INT".equals(tExp)) {
         exprFinal = new ConversionFloat(e);
-        tipoFinalExpresion = "FLOAT"; // 🌟 Ahora la expresión fue promovida a FLOAT
+        tipoFinalExpresion = "FLOAT"; // Ahora la expresión fue promovida a FLOAT
     }
 
-    // 🌟 RESULTADO CORREGIDO:
+
+    // RESULTADO CORREGIDO:
     // id = nombre variable
     // exprFinal = el nodo (casteado o no)
     // tipoOriginalID = "INT", "FLOAT", "FLOAT_ARRAY" (Lo que necesita idTipo)
@@ -998,13 +1050,16 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("REGLA 15.2: Asignacion ARRAY celdas");
 
     if (!"INT".equals(exp.getTipo())) {
-        throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
+        //throw new RuntimeException("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
+erroresSemanticos.add("ERROR SEMÁNTICO: El índice del arreglo '" + i + "' debe ser tipo INT.");
     }
     if (!"FLOAT_ARRAY".equals(tablaSimbolos.getTipo(i))) {
-        throw new RuntimeException("ERROR SEMÁNTICO: '" + i + "' no es un arreglo.");
+        //throw new RuntimeException("ERROR SEMÁNTICO: '" + i + "' no es un arreglo.");
+erroresSemanticos.add("ERROR SEMÁNTICO: '" + i + "' no es un arreglo.");
     }
     if ("BOOLEAN".equals(ex.getTipo())) {
-        throw new RuntimeException("ERROR SEMÁNTICO: Tipo BOOLEAN incompatible para celda FLOAT.");
+        //throw new RuntimeException("ERROR SEMÁNTICO: Tipo BOOLEAN incompatible para celda FLOAT.");
+erroresSemanticos.add("ERROR SEMÁNTICO: Tipo BOOLEAN incompatible para celda FLOAT.");
     }
 
     Expresion valFinal = ex;
@@ -1179,8 +1234,10 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 10.1: expr_logica -> expr_and OR expr_logica");
 
-    // Como e1 ya tiene su tipo LLVM adentro ("INT", "FLOAT", "BOOLEAN"),
-    // se lo pasás directamente al constructor. ¡En una sola línea!
+    if (!"BOOLEAN".equals(e1.getTipo()) || !"BOOLEAN".equals(e2.getTipo())) {
+        erroresSemanticos.add("ERROR SEMÁNTICO: El operador OR requiere operandos BOOLEAN.");
+    }
+    // Como e1 ya tiene su tipo LLVM adentro ("INT", "FLOAT", "BOOLEAN"), se lo pasás directamente al constructor.
     RESULT = new OperacionOr(e1, e2, e1.getTipo());
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_logica",14, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1213,9 +1270,11 @@ String tipoEspecial = "FLOAT_ARRAY";
 		Expresion e2 = (Expresion)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
     System.out.println("REGLA 10.2: expr_and -> expr_not AND expr_and");
-
+    if (!"BOOLEAN".equals(e1.getTipo()) || !"BOOLEAN".equals(e2.getTipo())) {
+        erroresSemanticos.add("ERROR SEMÁNTICO: El operador AND requiere operandos BOOLEAN.");
+    }
     // Lo mismo para el AND: tomás el tipo LLVM de e1 directamente
-    RESULT = new OperacionAnd(e1, e2, e1.getTipo());
+    RESULT = new OperacionAnd(e1, e2, e1.getTipo());  //en lugar de e.getTipo() -> "BOOLEAN"
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_and",15, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1245,6 +1304,9 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
     System.out.println("REGLA 10.3: expr_logica -> NOT expr_relacional");
     System.out.printf("REGLA 10.3: expr_logica -> NOT %s%n%n", e);
+    if (!"BOOLEAN".equals(e.getTipo())) {
+        erroresSemanticos.add("ERROR SEMÁNTICO: El operador NOT solo puede aplicarse a expresiones BOOLEAN.");
+    }
     RESULT = new NotLogico(e);
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("expr_not",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1547,7 +1609,8 @@ String tipoEspecial = "FLOAT_ARRAY";
 		
       System.out.println("REGLA 14.4: factor -> ID");
       if (!tablaSimbolos.exists(e)) {
-                throw new RuntimeException("ERROR SEMÁNTICO: La variable '" + e + "' no ha sido declarada.");
+                //throw new RuntimeException("ERROR SEMÁNTICO: La variable '" + e + "' no ha sido declarada.");
+erroresSemanticos.add("ERROR SEMÁNTICO: La variable '" + e + "' no ha sido declarada.");
             }
       String t = tablaSimbolos.getTipo(e);
       String tipoLLVM = "";
@@ -1664,8 +1727,8 @@ String tipoEspecial = "FLOAT_ARRAY";
     System.out.println("=== REGLA: Macro 'VALOR_MAS_CERCANO' (Solución Unificada) ===");
 
     // 0. ID únicos
-    contadorMacros++;
-    String sufijoUnico = String.valueOf(contadorMacros);
+    parser.macroCount++;
+    String sufijoUnico = String.valueOf(parser.macroCount);
     String nombreArreglo = "_arr_literal_" + sufijoUnico;
     int dimension = listaId.replace("[", "").replace("]", "").split(",").length;
     String dimArreglo = String.valueOf(dimension);

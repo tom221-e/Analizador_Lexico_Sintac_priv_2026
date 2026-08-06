@@ -44,6 +44,8 @@ public class OperacionAnd extends OperacionBinaria {
         String tagFin = CodeGeneratorHelper.getNewTag();
 
         // 3. Lógica AND: Si izquierda es FALSE, cortocircuitamos al final (resultado FALSE).
+        // Inicializar resultado en false ANTES del br
+        res.append(String.format("  store i1 false, ptr %s\n", ptrResultado));
         // Si es TRUE, evaluamos la derecha.
         res.append(String.format("  br i1 %s, label %%%s, label %%%s\n",
                 izquierda.getIr_ref(), tagDerecha, tagFin));

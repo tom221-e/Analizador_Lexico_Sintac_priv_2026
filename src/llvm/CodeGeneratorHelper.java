@@ -11,6 +11,12 @@ public class CodeGeneratorHelper {
     private static final Stack<String> continueStack = new Stack<>();
     private static List<String> constantesGlobales = new ArrayList<>();
 
+    public static void reset() {  // Corrección: resetea estado entre distintas compilaciones
+        nextID = 0;
+        breakStack.clear();
+        continueStack.clear();
+        constantesGlobales.clear();
+    }
     private CodeGeneratorHelper(){}
 
     public static String[] castearOperandosAlVuelo(ast.Expresion izquierda, ast.Expresion derecha, String tipoDestinoLLVM, StringBuilder sb) {
@@ -20,7 +26,7 @@ public class CodeGeneratorHelper {
         // Solo analizamos si la operación final de LLVM requiere alta precisión (double)
         if ("double".equals(tipoDestinoLLVM)) {
 
-            // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos el tipo directamente de cada nodo expresión
+            // NUEVA VALIDACIÓN DIRECTA: Obtenemos el tipo directamente de cada nodo expresión
             String tipoIzq = izquierda.getTipo();
             String tipoDer = derecha.getTipo();
 
@@ -46,120 +52,88 @@ public class CodeGeneratorHelper {
         StringBuilder sb = new StringBuilder();
         String tipoEstructuraLLVM = "[" + tamanoArreglo + " x double]";
 
-        String ptrArrayIzq = refIzq;
-        String ptrArrayDer = refDer;
-
-        // 🌟 NUEVA VALIDACIÓN DIRECTA: Obtenemos los tipos en formato String desde los hijos del nodo binario
+        // Obtenemos los tipos directamente de los hijos
         String tipoIzq = nodo.getE1().getTipo();
         String tipoDer = nodo.getE2().getTipo();
 
-        // Un nodo es escalar si su tipo coincide con cualquiera de los tipos primitivos/escalares conocidos.
-        // (Si tu compilador para los arreglos devuelve el tamaño en dígitos, p.ej. "10", también podrías usar !tipoIzq.matches("\\d+"))
-        boolean izqEsEscalar = "INT".equals(tipoIzq) || "i32".equals(tipoIzq) ||
-                "FLOAT".equals(tipoIzq) || "float".equals(tipoIzq) ||
-                "BOOLEAN".equals(tipoIzq) || "i1".equals(tipoIzq);
+        // Determinamos si es escalar: si el tipo es un número/bool, NO es un array
+        // Ajusta esta lógica según cómo devuelva el tamaño tu getTipo() (ej. si devuelve "int" o "[10 x int]")
+        /*boolean izqEsEscalar = !tipoIzq.contains("x");
+        boolean derEsEscalar = !tipoDer.contains("x");*/
+        boolean izqEsEscalar = !tipoIzq.matches("\\d+");
+        boolean derEsEscalar = !tipoDer.matches("\\d+");
 
-        boolean derEsEscalar = "INT".equals(tipoDer) || "i32".equals(tipoDer) ||
-                "FLOAT".equals(tipoDer) || "float".equals(tipoDer) ||
-                "BOOLEAN".equals(tipoDer) || "i1".equals(tipoDer);
+        String ptrArrayIzq, ptrArrayDer;
 
         // 1. Procesamiento Izquierdo
         if (!izqEsEscalar) {
-            // Si es un Arreglo Real (como %mediciones), extraemos su puntero inicial con getelementptr
-            ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-            sb.append("; --- Obtener puntero plano del arreglo izquierdo ---\n");
+            ptrArrayIzq = getNewPointer();
             sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, refIzq.trim()));
         } else {
-            // Si es un escalar (un número o variable simple), se genera su bloque de Broadcasting
-            String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
-            sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, tamanoArreglo, refIzq, "Izquierdo"));
-            ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
+            String arrayTempIzq = getNewPointer();
+            sb.append(generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, tamanoArreglo, refIzq, "Izquierdo"));
+            ptrArrayIzq = getNewPointer();
             sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
         }
 
         // 2. Procesamiento Derecho
         if (!derEsEscalar) {
-            // Si es un Arreglo Real, extraemos su puntero inicial
-            ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-            sb.append("; --- Obtener puntero plano del arreglo derecho ---\n");
+            ptrArrayDer = getNewPointer();
             sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, refDer.trim()));
         } else {
-            // Si es un escalar, se genera su bloque de Broadcasting
-            String arrayTempDer = CodeGeneratorHelper.getNewPointer();
-            sb.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, tamanoArreglo, refDer, "Derecho"));
-            ptrArrayDer = CodeGeneratorHelper.getNewPointer();
+            String arrayTempDer = getNewPointer();
+            sb.append(generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, tamanoArreglo, refDer, "Derecho"));
+            ptrArrayDer = getNewPointer();
             sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
         }
 
-        // 3. Generación del contenedor del resultado final
-        String temporalResultado = CodeGeneratorHelper.getNewPointer();
+        String temporalResultado = getNewPointer();
         nodo.setIr_ref(temporalResultado);
 
-        sb.append("; --- Llamada final a la función ALU de Arreglos ---\n");
         sb.append(String.format("  %1$s = alloca %2$s\n", temporalResultado, tipoEstructuraLLVM));
-
-        String ptrResultadoPlano = CodeGeneratorHelper.getNewPointer();
-        sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrResultadoPlano, tipoEstructuraLLVM, temporalResultado));
-
-        // 4. Invocación matemática real a la función externa
+        String ptrResultadoPlano = temporalResultado;
         sb.append(String.format("  call void @operar_arreglos(ptr %1$s, ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
                 ptrArrayIzq, ptrArrayDer, ptrResultadoPlano, tamanoArreglo, codigoALU));
 
         return sb.toString();
     }
-    /*
-     * Genera el bloque LLVM intermedio para realizar el Broadcasting de un escalar a un arreglo.
-     * Como el escalar ya viene como un double, se elimina la instrucción de truncado fptrunc.
-     */
+
     public static String generarBloqueBroadcasting(String arrayTemp, String tipoEstructura, String tamano, String valRef, String lado) {
         StringBuilder sb = new StringBuilder();
 
-        // 🌟 CORRECCIÓN: El comentario ahora refleja la persistencia de alta precisión
-        sb.append(String.format("; --- Broadcasting %1$s (Mantenido nativamente como double) ---\n", lado));
+        sb.append(String.format("; --- Broadcasting %1$s (double) ---\n", lado));
         sb.append(String.format("  %1$s = alloca %2$s\n", arrayTemp, tipoEstructura));
 
-        // Asignamos y limpiamos el índice del iterador (i32)
-        String idx = CodeGeneratorHelper.getNewPointer();
+        String idx = getNewPointer();
         sb.append(String.format("  %1$s = alloca i32\n", idx));
         sb.append(String.format("  store i32 0, ptr %1$s\n", idx));
 
-        // Generamos las etiquetas de salto para el bucle
-        String labelCond = CodeGeneratorHelper.getNewTag();
-        String labelBody = CodeGeneratorHelper.getNewTag();
-        String labelEnd  = CodeGeneratorHelper.getNewTag();
+        String labelCond = getNewTag();
+        String labelBody = getNewTag();
+        String labelEnd  = getNewTag();
 
-        // --- Bloque Condición ---
         sb.append("  br label %" + labelCond + "\n");
         sb.append(labelCond + ":\n");
-        String tIdx = CodeGeneratorHelper.getNewPointer();
+        String tIdx = getNewPointer();
         sb.append(String.format("  %1$s = load i32, ptr %2$s\n", tIdx, idx));
-        String cmp = CodeGeneratorHelper.getNewPointer();
+        String cmp = getNewPointer();
         sb.append(String.format("  %1$s = icmp slt i32 %2$s, %3$s\n", cmp, tIdx, tamano));
         sb.append(String.format("  br i1 %1$s, label %%%2$s, label %%%3$s\n", cmp, labelBody, labelEnd));
 
-        // --- Bloque Cuerpo ---
         sb.append(labelBody + ":\n");
-
-        // 🌟 SOLUCCIÓN AL GRÁFICO SSA: Expandimos el iterador tIdx (i32) a i64 para el cálculo de puntero
-        String tIdx64 = CodeGeneratorHelper.getNewPointer();
+        String tIdx64 = getNewPointer();
         sb.append(String.format("  %1$s = sext i32 %2$s to i64\n", tIdx64, tIdx));
 
-        // Obtenemos la posición de memoria usando el índice i64 expandido
-        String ptrPos = CodeGeneratorHelper.getNewPointer();
+        String ptrPos = getNewPointer();
         sb.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 %4$s\n", ptrPos, tipoEstructura, arrayTemp, tIdx64));
-
-        // 🌟 MIGRADO: Se elimina el 'fptrunc' obsoleto. Se almacena directamente como 'double'
         sb.append(String.format("  store double %1$s, ptr %2$s\n", valRef.trim(), ptrPos));
 
-        // Incrementamos el iterador indexado (i32 habitual)
-        String nIdx = CodeGeneratorHelper.getNewPointer();
+        String nIdx = getNewPointer();
         sb.append(String.format("  %1$s = add i32 %2$s, 1\n", nIdx, tIdx));
         sb.append(String.format("  store i32 %1$s, ptr %2$s\n", nIdx, idx));
         sb.append("  br label %" + labelCond + "\n");
 
-        // --- Cierre del bucle ---
         sb.append(labelEnd + ":\n");
-
         return sb.toString();
     }
 
@@ -213,8 +187,11 @@ public class CodeGeneratorHelper {
     public static String getCurrentContinueTag() {
         return continueStack.isEmpty() ? null : continueStack.peek();
     }
+    
     public static void agregarConstanteGlobal(String declaracion) {
-        constantesGlobales.add(declaracion);
+        if (!constantesGlobales.contains(declaracion)) {
+            constantesGlobales.add(declaracion);
+        }
     }
 
 

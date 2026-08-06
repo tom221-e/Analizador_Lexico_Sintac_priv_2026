@@ -2,7 +2,8 @@ INT: a, b
 FLOAT: x, y, resultado
 
 PROGRAM
-    a = 10
+    a = READ_INT()
+    PRINT(a)
     b = 3
     x = 2.5
     y = 1.5

@@ -58,60 +58,41 @@ public class Asignacion extends Sentencia {
     @Override
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
-
-        // 🌟 CORREGIDO: Ahora usamos 'idTipo' en lugar de ir a buscarlo a la tabla
+        String nombreVar = getNombreP(); // Esta es la dirección de la variable real (ej: %a1)
         String tipoNormalizado = idTipo != null ? idTipo.toUpperCase() : "";
 
-        String nombreVar = this.getNombreP();
-        if (!nombreVar.startsWith("%")) {
-            nombreVar = "%" + nombreVar;
-        }
 
-        // SI EL DESTINO ES UN ARREGLO (Maneja tanto FLOAT_ARRAY como la dimensión en dígitos del nuevo validador)
-        if (tipoNormalizado.contains("ARRAY") || tipoNormalizado.matches("\\d+") || this.tipo.matches("\\d+")) {
 
-            // 🌟 CORREGIDO: Si el tipo consolidado es un número dígito, esa es la dimensión.
-            // Si no, la dimensión debería venir en el propio 'idTipo' o 'this.tipo'.
-            String tamano = this.tipo.matches("\\d+") ? this.tipo : tipoNormalizado;
-            if (!tamano.matches("\\d+")) {
-                tamano = "10"; // Respaldo seguro por defecto si no se logra extraer numéricamente
-            }
-
-            String tipoEstructuraLLVM = "[" + tamano + " x double]";
-
-            // 1. Obtener el puntero a la celda 0 del arreglo
-            String ptrDestinoReal = CodeGeneratorHelper.getNewPointer();
-            resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n",
-                    ptrDestinoReal, tipoEstructuraLLVM, nombreVar));
-
-            // 2. Delegación de código para operaciones vectoriales
-            if (this.valor instanceof ast.OperacionBinaria) {
-                resultado.append(((ast.OperacionBinaria) this.valor).generarCodigoConDestino(ptrDestinoReal));
-            } else {
-                if (this.valor != null) resultado.append(this.valor.generarCodigo());
-            }
-            return resultado.toString();
-        }
-
-        // CAMINO ESCALAR TRADICIONAL
+        // 1. Generar el valor (la operación o el literal)
         if (this.valor != null) {
             resultado.append(this.valor.generarCodigo());
         }
 
+        // 2. Si es una operación de ARREGLO
+        if (tipoNormalizado.contains("ARRAY") || (this.valor instanceof OperacionBinaria && this.valor.getTipo().matches("\\d+"))) {
+
+            String ptrOrigen = this.valor.getIr_ref(); // Este es el temporal creado por OperacionBinaria
+
+            // Si el puntero de origen es distinto al destino, necesitamos copiarlo
+            if (ptrOrigen != null && !ptrOrigen.equals(nombreVar)) {
+                // Obtenemos el tamaño del arreglo (o el valor de 'tipo')
+                String tamano = this.valor.getTipo().matches("\\d+") ? this.valor.getTipo() : "10";
+                long bytes = Long.parseLong(tamano) * 8; // double = 8 bytes
+
+                resultado.append(String.format("  call void @llvm.memcpy.p0.p0.i64(ptr %1$5s, ptr %2$s, i64 %3$s, i1 false)\n",
+                        nombreVar, ptrOrigen, bytes));
+            }
+            }
+
+        // --- CAMINO ESCALAR TRADICIONAL ---
+        String valorRef = this.valor.getIr_ref();
+
         switch (tipoNormalizado) {
-            case "INT" ->
-                    resultado.append(String.format("  store i32 %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
-            case "FLOAT" -> // 🌟 Agregado DOUBLE por si acaso tu backend lo usa
-                    resultado.append(String.format("  store double %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
-            case "BOOLEAN" ->
-                    resultado.append(String.format("  store i1 %1$s, ptr %2$s\n", this.valor.getIr_ref(), nombreVar));
+            case "INT" -> resultado.append(String.format("  store i32 %1$s, ptr %2$s\n", valorRef, nombreVar));
+            case "FLOAT" -> resultado.append(String.format("  store double %1$s, ptr %2$s\n", valorRef, nombreVar));
+            case "BOOLEAN" -> resultado.append(String.format("  store i1 %1$s, ptr %2$s\n", valorRef, nombreVar));
         }
 
-        return resultado.toString();
-    }
-
-    @Override
-    public String getTipo() {
-        return tipo;
-    }
+            return resultado.toString();
+        }
 }

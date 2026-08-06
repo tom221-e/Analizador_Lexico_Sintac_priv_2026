@@ -19,10 +19,11 @@ public abstract class OperacionBinaria extends Expresion {
 
     private String tipoLenguaje() {
         if (this.tipo == null) return "?";
+        if (this.tipo.matches("\\d+")) return "ARRAY[" + this.tipo + "]";
         return switch (this.tipo) {
-            case "i32"             -> "INT";
+            case "i32" -> "INT";
             case "float", "double" -> "FLOAT";
-            case "i1"              -> "BOOL";
+            case "i1" -> "BOOL";
             default -> {
                 // si ya es INT/FLOAT/BOOL/dimensión numérica, mostrar directo
                 if (this.tipo.matches("\\d+")) yield "ARRAY[" + this.tipo + "]";
@@ -36,7 +37,7 @@ public abstract class OperacionBinaria extends Expresion {
     protected String getEtiqueta() {
         return String.format("%s (%s)", this.getNombreOperacion(), tipoLenguaje());
     }
-    
+
     /*@Override
     protected String getEtiqueta() {
         return String.format("%s", this.getNombreOperacion());
@@ -45,6 +46,7 @@ public abstract class OperacionBinaria extends Expresion {
     public Expresion getE1() {
         return izquierda;
     }
+
     public Expresion getE2() {
         return derecha;
     }
@@ -58,6 +60,7 @@ public abstract class OperacionBinaria extends Expresion {
                 izquierda.graficar(miId) +
                 derecha.graficar(miId);
     }
+
     public abstract String get_llvm_op_code();
 
 
@@ -67,114 +70,84 @@ public abstract class OperacionBinaria extends Expresion {
     public String generarCodigo() {
         StringBuilder resultado = new StringBuilder();
 
-        // 1. RECURSIVIDAD CENTRALIZADA: Evaluamos las expresiones de los hijos primero
-        if (this.izquierda != null) {
-            resultado.append(this.izquierda.generarCodigo());
-        }
-        if (this.derecha != null) {
-            resultado.append(this.derecha.generarCodigo());
-        }
+        // Guardamos el tipo ANTES de generar código de los hijos,
+        // porque IdLiteral pisa su propio tipo al generar su código.
+        String tipoIzqOriginal = this.izquierda != null ? this.izquierda.getTipo() : null;
+        String tipoDerOriginal = this.derecha != null ? this.derecha.getTipo() : null;
 
-        // 2. DETECCIÓN DE CONTEXTO VECTORIAL (Si el tipo es puramente numérico/dimensión)
-        boolean esOperacionDeArreglo = this.tipo != null && this.tipo.matches("\\d+");
-
-        if (esOperacionDeArreglo) {
-            // Pasamos los registros de los hijos, la dimensión y el código de operación de la ALU
-            resultado.append(CodeGeneratorHelper.ejecutarOperacionVectorialCompleta(
-                    this,
-                    this.izquierda.getIr_ref(),
-                    this.derecha.getIr_ref(),
-                    this.tipo,
-                    this.get_llvm_op_code()
-            ));
-        } else {
-            // 3. CAMINO ESCALAR: El padre invoca la estructura específica formateada por la clase hija
-            resultado.append(this.obtenerCodigoEscalar());
-        }
-
-        return resultado.toString();
-    }
-    // NUEVO MÉTODO: Permite que el asignador le diga dónde guardar el resultado vectorial
-    public String generarCodigoConDestino(String ptrDestinoReal) {
-        StringBuilder resultado = new StringBuilder();
-
-        // 1. Evaluamos los hijos primero
-        if (this.izquierda != null) {
-            resultado.append(this.izquierda.generarCodigo());
-        }
-        if (this.derecha != null) {
-            resultado.append(this.derecha.generarCodigo());
-        }
+        if (this.izquierda != null) resultado.append(this.izquierda.generarCodigo());
+        if (this.derecha != null) resultado.append(this.derecha.generarCodigo());
 
         boolean esOperacionDeArreglo = this.tipo != null && this.tipo.matches("\\d+");
 
         if (esOperacionDeArreglo) {
-            String tipoEstructuraLLVM = "[" + this.tipo + " x double]";
+            String opCode = this.get_llvm_op_code();
 
-            String ptrArrayIzq;
-            String ptrArrayDer;
+            // NUEVO: si un lado es escalar, lo convertimos a un array real en memoria
+            String ptrIzq = this.izquierda.getIr_ref();
+            String ptrDer = this.derecha.getIr_ref();
 
-            String idNameIzq = this.izquierda.getId();
-            String idNameDer = this.derecha.getId();
+            boolean izqEsArreglo = tipoIzqOriginal != null &&
+                    (tipoIzqOriginal.contains("ARRAY") || tipoIzqOriginal.matches("\\d+") || tipoIzqOriginal.contains("x double"));
+            boolean derEsArreglo = tipoDerOriginal != null &&
+                    (tipoDerOriginal.contains("ARRAY") || tipoDerOriginal.matches("\\d+") || tipoDerOriginal.contains("x double"));
 
-            String tipoIzq = this.izquierda.getTipo();
-            String tipoDer = this.derecha.getTipo();
-
-            boolean izqEsEscalar = "INT".equals(tipoIzq) || "i32".equals(tipoIzq) ||
-                    "FLOAT".equals(tipoIzq) || "float".equals(tipoIzq) ||
-                    "BOOLEAN".equals(tipoIzq) || "i1".equals(tipoIzq);
-
-            boolean derEsEscalar = "INT".equals(tipoDer) || "i32".equals(tipoDer) ||
-                    "FLOAT".equals(tipoDer) || "float".equals(tipoDer) ||
-                    "BOOLEAN".equals(tipoDer) || "i1".equals(tipoDer);
-
-            // 2. Procesamiento Izquierdo
-            if (izqEsEscalar) {
-                String arrayTempIzq = CodeGeneratorHelper.getNewPointer();
-                resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempIzq, tipoEstructuraLLVM, this.tipo, this.izquierda.getIr_ref(), "Izquierdo"));
-                ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, arrayTempIzq));
-            } else {
-                ptrArrayIzq = CodeGeneratorHelper.getNewPointer();
-                // 🌟 VALIDACIÓN: Si idName contiene "nodo_", significa que es un ID interno del AST, no la variable real.
-                String refRealIzq = (idNameIzq != null && !idNameIzq.isEmpty() && !idNameIzq.contains("nodo_"))
-                        ? "%" + idNameIzq
-                        : this.izquierda.getIr_ref().trim();
-
-                // Si getIr_ref() ya trae el '%', se lo quitamos para no duplicarlo en el format
-                if (refRealIzq.startsWith("%%")) refRealIzq = refRealIzq.substring(1);
-
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayIzq, tipoEstructuraLLVM, refRealIzq));
+            if (!izqEsArreglo) {
+                ptrIzq = broadcastEscalar(this.izquierda, tipoIzqOriginal, this.tipo, resultado);
+            }
+            if (!derEsArreglo) {
+                ptrDer = broadcastEscalar(this.derecha, tipoDerOriginal, this.tipo, resultado);
             }
 
-            // 3. Procesamiento Derecho
-            if (derEsEscalar) {
-                String arrayTempDer = CodeGeneratorHelper.getNewPointer();
-                resultado.append(CodeGeneratorHelper.generarBloqueBroadcasting(arrayTempDer, tipoEstructuraLLVM, this.tipo, this.derecha.getIr_ref(), "Derecho"));
-                ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, arrayTempDer));
+            if ("5".equals(opCode) || "6".equals(opCode)) {
+                this.setIr_ref(CodeGeneratorHelper.getNewPointer());
+                resultado.append("; --- Invocación a comparar_arreglos ---\n");
+                resultado.append(String.format(
+                        "  %1$s = call i32 @comparar_arreglos(ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
+                        this.getIr_ref(), ptrIzq, ptrDer, this.tipo, opCode));
+                String boolReg = CodeGeneratorHelper.getNewPointer();
+                resultado.append(String.format(
+                        "  %1$s = icmp ne i32 %2$s, 0\n",
+                        boolReg, this.getIr_ref()));
+                this.setIr_ref(boolReg);
             } else {
-                ptrArrayDer = CodeGeneratorHelper.getNewPointer();
-                // 🌟 VALIDACIÓN: Evitamos usar identificadores internos de nodos como variables de LLVM
-                String refRealDer = (idNameDer != null && !idNameDer.isEmpty() && !idNameDer.contains("nodo_"))
-                        ? "%" + idNameDer
-                        : this.derecha.getIr_ref().trim();
-
-                if (refRealDer.startsWith("%%")) refRealDer = refRealDer.substring(1);
-
-                resultado.append(String.format("  %1$s = getelementptr %2$s, ptr %3$s, i64 0, i64 0\n", ptrArrayDer, tipoEstructuraLLVM, refRealDer));
+                String ptrDestino = CodeGeneratorHelper.getNewPointer();
+                resultado.append(String.format(
+                        "  %1$s = alloca [%2$s x double]\n", ptrDestino, this.tipo));
+                resultado.append("; --- Invocación a la ALU de Arreglos ---\n");
+                resultado.append(String.format(
+                        "  call void @operar_arreglos(ptr %1$s, ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
+                        ptrIzq, ptrDer, ptrDestino, this.tipo, opCode));
+                this.setIr_ref(ptrDestino);
             }
-
-            resultado.append("; --- Invocación Directa a la ALU de Arreglos ---\n");
-            resultado.append(String.format("  call void @operar_arreglos(ptr %1$s, ptr %2$s, ptr %3$s, i32 %4$s, i32 %5$s)\n",
-                    ptrArrayIzq, ptrArrayDer, ptrDestinoReal, this.tipo, this.get_llvm_op_code()));
-
-            this.setIr_ref(ptrDestinoReal);
         } else {
             resultado.append(this.obtenerCodigoEscalar());
         }
 
         return resultado.toString();
     }
-    
+
+    // NUEVO: convierte un valor escalar (ya generado, en 'ir_ref') en un array de N doubles
+    private String broadcastEscalar(Expresion escalar, String tipoEscalar, String tamano, StringBuilder resultado) {
+        int n = Integer.parseInt(tamano);
+        String valor = escalar.getIr_ref();
+
+        // Si es entero, lo pasamos a double
+        if ("INT".equalsIgnoreCase(tipoEscalar) || "i32".equals(tipoEscalar)) {
+            String conv = CodeGeneratorHelper.getNewPointer();
+            resultado.append(String.format("  %1$s = sitofp i32 %2$s to double\n", conv, valor));
+            valor = conv;
+        }
+
+        String ptrArr = CodeGeneratorHelper.getNewPointer();
+        resultado.append(String.format("  %1$s = alloca [%2$d x double]\n", ptrArr, n));
+        for (int i = 0; i < n; i++) {
+            String ptrElem = CodeGeneratorHelper.getNewPointer();
+            resultado.append(String.format(
+                    "  %1$s = getelementptr [%2$d x double], ptr %3$s, i64 0, i64 %4$d\n",
+                    ptrElem, n, ptrArr, i));
+            resultado.append(String.format("  store double %1$s, ptr %2$s\n", valor, ptrElem));
+        }
+        return ptrArr;
+    }
 }

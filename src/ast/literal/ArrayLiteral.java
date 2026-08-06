@@ -27,32 +27,32 @@ public class ArrayLiteral extends Expresion {
         String[] elementos = limpio.split("\\s*,\\s*");
         int n = elementos.length;
 
-        // 2. Determinar el puntero base
-        // Si nos dieron un destino, usamos ese (con el % de LLVM). Si no, pedimos uno nuevo.
-        String ptrBase = (this.nombreDestino != null) ? "%" + this.nombreDestino : CodeGeneratorHelper.getNewPointer();
+        // 2. Determinar el puntero base.
+        // Si se llamó setNombreDestino(), escribimos directamente en esa variable ya declarada.
+        // Si no, allocamos un temporal (caso de uso standalone).
+        String ptrBase = (this.nombreDestino != null)
+                ? "%" + this.nombreDestino
+                : CodeGeneratorHelper.getNewPointer();
         this.setIr_ref(ptrBase);
 
-        // 3. Reservar espacio en el stack SÓLO si no viene de la macro
+        // 3. Reservar espacio en el stack SOLO si no hay destino externo
         if (this.nombreDestino == null) {
-            resultado.append(String.format("%1$s = alloca [%2$s x double]\n", ptrBase, n));
+            resultado.append(String.format("  %1$s = alloca [%2$d x double]\n", ptrBase, n));
         }
 
-        // 4. Llenar el arreglo existente posición por posición utilizando ptr
+        // 4. Llenar el arreglo posición por posición usando i64 (consistente con el resto del backend)
         for (int i = 0; i < n; i++) {
             String ptrElemento = CodeGeneratorHelper.getNewPointer();
 
-            // getelementptr [N x double], ptr %nombreArreglo, i32 0, i32 i
-            resultado.append(String.format("%1$s = getelementptr [%2$s x double], ptr %3$s, i32 0, i32 %4$s\n",
+            resultado.append(String.format("  %1$s = getelementptr [%2$d x double], ptr %3$s, i64 0, i64 %4$d\n",
                     ptrElemento, n, ptrBase, i));
 
-            // Forzar formato double (.0)
-            String valorFormateado = elementos[i];
+            String valorFormateado = elementos[i].trim();
             if (!valorFormateado.contains(".")) {
                 valorFormateado += ".0";
             }
 
-            // Guardar el valor directamente en la memoria unificada
-            resultado.append(String.format("store double %1$s, ptr %2$s\n", valorFormateado, ptrElemento));
+            resultado.append(String.format("  store double %1$s, ptr %2$s\n", valorFormateado, ptrElemento));
         }
 
         return resultado.toString();
